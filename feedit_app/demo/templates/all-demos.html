@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo</title>
+</head>
+<body>
+    <p>Hello World</p>
+    {% if items %}
+    <ul>
+        {% for item in items %}
+            <li><a href="{% url 'demo' item.id %}">{{ item.name }}</a></li>
+            <li>{{ item.address }}</li>
+            <li>{{ item.phone_no }}</li>
+            <li>{{ item.amount }}</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+        No Item
+    {% endif %}
+</body>
+</html>

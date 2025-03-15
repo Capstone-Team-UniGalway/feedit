@@ -28,7 +28,7 @@ if ENVIRONMENT == "development":
     environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Security & Debug
-SECRET_KEY = env("SECRET_KEY", default="super-secret-key")
+SECRET_KEY = env("SECRET_KEY")
 DEBUG = env.bool("DEBUG", default=False)
 
 
@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # created
+    'demo'
 ]
 
 MIDDLEWARE = [
