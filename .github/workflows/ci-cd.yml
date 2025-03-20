@@ -35,7 +35,7 @@ jobs:
         run: flake8 . | tee flake8_report.txt
 
       - name: Upload linting and formatting reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: lint-format-reports
           path: |
@@ -62,7 +62,7 @@ jobs:
         run: bandit -r . -f json -o bandit_report.json
 
       - name: Upload Bandit report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: bandit-report
           path: bandit_report.json
@@ -87,7 +87,7 @@ jobs:
         run: pip-audit -o json > pip_audit_report.json
 
       - name: Upload pip-audit report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: pip-audit-report
           path: pip_audit_report.json
@@ -116,7 +116,7 @@ jobs:
           coverage xml
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-coverage-report
           path: coverage.xml
@@ -153,7 +153,7 @@ jobs:
         run: grype $ECR_REPOSITORY_URI:$IMAGE_TAG -o json > grype_report.json
 
       - name: Upload Grype scan report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: grype-scan-report
           path: grype_report.json
