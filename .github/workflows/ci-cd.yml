@@ -1,0 +1,190 @@
+name: Consolidated DevSecOps CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  ###############################
+  # FORMAT AND LINT REPORT ONLY
+  ###############################
+  format-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install format & lint tools
+        run: pip install black flake8
+
+      - name: Run black (code formatter) and export report
+        run: black --check . 2>&1 | tee black_report.txt
+
+      - name: Run flake8 (linter) and export report
+        run: flake8 . | tee flake8_report.txt
+
+      - name: Upload linting and formatting reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: lint-format-reports
+          path: |
+            black_report.txt
+            flake8_report.txt
+
+  #########################################
+  # STATIC CODE SECURITY SCAN (Bandit)
+  #########################################
+  static-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install Bandit (Python static security scanner)
+        run: pip install bandit
+
+      - name: Run Bandit and save report
+        run: bandit -r . -f json -o bandit_report.json
+
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v3
+        with:
+          name: bandit-report
+          path: bandit_report.json
+
+  #########################################
+  # DEPENDENCY VULNERABILITY SCAN (pip-audit)
+  #########################################
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install pip-audit (dependency vulnerability scanner)
+        run: pip install pip-audit
+
+      - name: Run pip-audit and save report
+        run: pip-audit -o json > pip_audit_report.json
+
+      - name: Upload pip-audit report
+        uses: actions/upload-artifact@v3
+        with:
+          name: pip-audit-report
+          path: pip_audit_report.json
+
+  #########################################
+  # UNIT TESTS WITH COVERAGE REPORT
+  #########################################
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies & test tools
+        run: |
+          pip install -r requirements.txt
+          pip install pytest coverage
+
+      - name: Run pytest with coverage and export XML report
+        run: |
+          coverage run -m pytest
+          coverage xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-coverage-report
+          path: coverage.xml
+
+  #########################################
+  # BUILD, SCAN IMAGE (Grype), AND PUSH TO ECR
+  #########################################
+  build-scan-push:
+    runs-on: ubuntu-latest
+    needs: [format-lint, static-security, dependency-check, test]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build Docker image
+        run: |
+          docker build -t $ECR_REPOSITORY_URI:$IMAGE_TAG .
+          docker tag $ECR_REPOSITORY_URI:$IMAGE_TAG $ECR_REPOSITORY_URI:latest
+
+      - name: Install Grype (container vulnerability scanner)
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Scan Docker image with Grype and save report
+        run: grype $ECR_REPOSITORY_URI:$IMAGE_TAG -o json > grype_report.json
+
+      - name: Upload Grype scan report
+        uses: actions/upload-artifact@v3
+        with:
+          name: grype-scan-report
+          path: grype_report.json
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push $ECR_REPOSITORY_URI:$IMAGE_TAG
+          docker push $ECR_REPOSITORY_URI:latest
+
+  #########################################
+  # DEPLOY TO EC2, RUN MIGRATIONS & COLLECTSTATIC
+  #########################################
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-scan-push
+    steps:
+      - name: Deploy and run post-deploy tasks on EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker pull $ECR_REPOSITORY_URI:latest
+            docker stop feedit-app || true
+            docker rm feedit-app || true
+            docker run -d --name feedit-app -p 8000:8000 \
+              -e DJANGO_SETTINGS_MODULE=app.settings.production \
+              -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
+              -e AWS_STORAGE_BUCKET_NAME=${{ secrets.AWS_STORAGE_BUCKET_NAME }} \
+              $ECR_REPOSITORY_URI:latest
+
+            docker exec feedit-app python manage.py migrate --noinput
+            docker exec feedit-app python manage.py collectstatic --noinput
