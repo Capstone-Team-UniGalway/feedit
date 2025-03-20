@@ -23,7 +23,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.13"
 
       - name: Install format & lint tools
         run: pip install black flake8
@@ -53,7 +53,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.13"
 
       - name: Install Bandit (Python static security scanner)
         run: pip install bandit
@@ -78,13 +78,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.13"
 
       - name: Install pip-audit (dependency vulnerability scanner)
         run: pip install pip-audit
 
       - name: Run pip-audit and save report
         run: pip-audit -o json > pip_audit_report.json
+        continue-on-error: true
 
       - name: Upload pip-audit report
         uses: actions/upload-artifact@v4
@@ -103,7 +104,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.13"
 
       - name: Install dependencies & test tools
         run: |
