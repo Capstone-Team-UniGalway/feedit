@@ -1,0 +1,21 @@
+# Ignore database files
+*.db
+*.sqlite3
+
+# Ignore environment files
+.env
+*.env
+
+# Ignore Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore other unnecessary files
+.DS_Store
+*.log
+*.bak
+*.swp
+
+# Ignore any other files or directories you don't want in the image
+node_modules/
