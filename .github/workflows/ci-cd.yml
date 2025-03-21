@@ -199,10 +199,10 @@ jobs:
             echo "Docker pull completed..."
 
             echo "Stop the current running container if exist..."
-            docker stop container_name || true
+            docker stop feedit-app || true
 
             echo "Remove the previous container..."
-            docker rm container_name || true
+            docker rm feedit-app || true
 
             echo "Running the container"
             docker run -d --name feedit-app -p 8000:8000 ${{ env.ECR_REPOSITORY_URI }}:latest
