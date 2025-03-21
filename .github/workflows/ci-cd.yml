@@ -178,10 +178,10 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "Pulling image: $ECR_REPOSITORY_URI:latest"
-            docker pull $ECR_REPOSITORY_URI:latest
+            echo "Pulling image: ${{ env.ECR_REPOSITORY_URI }}:latest"
+            docker pull ${{ env.ECR_REPOSITORY_URI }}:latest
             echo "Stopping and removing container (if any)"
             docker stop feedit-app || true
             docker rm feedit-app || true
             echo "Running the container"
-            docker run -d --name feedit-app -p 8000:8000 $ECR_REPOSITORY_URI:latest
+            docker run -d --name feedit-app -p 8000:8000 ${{ env.ECR_REPOSITORY_URI }}:latest
