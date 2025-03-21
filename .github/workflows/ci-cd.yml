@@ -177,11 +177,11 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
+          run: |
+            echo "Pulling image: $ECR_REPOSITORY_URI:latest"
             docker pull $ECR_REPOSITORY_URI:latest
+            echo "Stopping and removing container (if any)"
             docker stop feedit-app || true
             docker rm feedit-app || true
-            docker run -d --name feedit-app -p 8000:8000 \
-              $ECR_REPOSITORY_URI:latest
-
-            docker exec feedit-app python manage.py migrate --noinput
+            echo "Running the container"
+            docker run -d --name feedit-app -p 8000:8000 $ECR_REPOSITORY_URI:latest
