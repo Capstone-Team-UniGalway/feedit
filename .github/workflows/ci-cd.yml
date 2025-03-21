@@ -182,10 +182,6 @@ jobs:
             docker stop feedit-app || true
             docker rm feedit-app || true
             docker run -d --name feedit-app -p 8000:8000 \
-              -e DJANGO_SETTINGS_MODULE=app.settings.production \
-              -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
-              -e AWS_STORAGE_BUCKET_NAME=${{ secrets.AWS_STORAGE_BUCKET_NAME }} \
               $ECR_REPOSITORY_URI:latest
 
             docker exec feedit-app python manage.py migrate --noinput
-            docker exec feedit-app python manage.py collectstatic --noinput
