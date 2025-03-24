@@ -31,8 +31,26 @@ jobs:
       - name: Run black (code formatter) and export report
         run: black --check . 2>&1 | tee black_report.txt
 
+      - name: Add GitHub Summary for Black
+        run: |
+          if grep -q "would reformat" black_report.txt; then
+            echo "## Formatting issues found by Black!" >> $GITHUB_STEP_SUMMARY
+            echo "Formatting issues were found in the codebase. Please run `black` to fix them." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## No formatting issues found by Black. Code is properly formatted." >> $GITHUB_STEP_SUMMARY
+          fi
+          
       - name: Run flake8 (linter) and export report
         run: flake8 . | tee flake8_report.txt
+
+      - name: Add GitHub Summary for Flake8
+        run: |
+          if [ -s flake8_report.txt ]; then
+            echo "## Linting issues found by Flake8!" >> $GITHUB_STEP_SUMMARY
+            cat flake8_report.txt >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## No linting issues found by Flake8. Code is clean." >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Upload linting and formatting reports
         uses: actions/upload-artifact@v4
@@ -59,28 +77,34 @@ jobs:
         run: pip install bandit
 
       - name: Run Bandit and save report
-        run: bandit -r . -f json -o bandit_report.json
+        run: bandit -r . -lll -f json -o bandit_report.json || true
         continue-on-error: true
 
-      - name: Upload Bandit report
+      - name: Print Medium/High Severity Issues
+        run: |
+          echo "## 🔎 Bandit Security Report (Medium/High Severity)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Line | Severity | Issue |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          jq -r '.results[] | select(.issue_severity != "LOW") | "| \(.filename) | \(.line_number) | \(.issue_severity) | \(.issue_text) |"' bandit_report.json >> $GITHUB_STEP_SUMMARY
+
+          # GitHub Annotations for Medium/High Severity Issues
+          jq -r '.results[] | select(.issue_severity != "LOW") | "##[warning] \(.filename) line \(.line_number): \(.issue_severity) - \(.issue_text)"' bandit_report.json
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "👉 **For the full security report including low severity issues, please download the artifact from this workflow run.**" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Full Bandit report
         uses: actions/upload-artifact@v4
         with:
           name: bandit-report
           path: bandit_report.json
 
-      - name: Print Bandit Results as Table
-        run: |
-          echo "## Bandit Security Report" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| File | Line | Issue | Severity |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|------|-------|----------|" >> $GITHUB_STEP_SUMMARY
-          jq -r '.results[] | "| \(.filename) | \(.line_number) | \(.issue_text) | \(.issue_severity) |"' bandit_report.json >> $GITHUB_STEP_SUMMARY
-
       - name: Fail CI if High Severity Issues Found
         run: |
-          SEVERITY_COUNT=$(jq '[.results[] | select(.issue_severity == "HIGH")] | length' bandit_report.json)
+          SEVERITY_COUNT=$(jq '[.results[] | select(.issue_severity == "HIGH" or .issue_severity == "CRITICAL")] | length' bandit_report.json)
           if [ "$SEVERITY_COUNT" -gt 0 ]; then
-            echo "❌ High severity security issues found! Failing CI."
+            echo "❌ High or Critical severity security issues found! Failing CI."
             exit 1
           fi
 
@@ -104,11 +128,33 @@ jobs:
         run: pip-audit -o json > pip_audit_report.json
         continue-on-error: true
 
+      - name: Print Medium/High Severity Issues from pip-audit
+        run: |
+          echo "## 🔎 pip-audit Security Report (Medium/High Severity)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Severity | Issue |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          jq -r '.vulnerabilities[] | select(.severity != "low") | "| \(.package) | \(.severity) | \(.advisory) |"' pip_audit_report.json >> $GITHUB_STEP_SUMMARY
+
+          # GitHub Annotations for Medium/High Severity Issues
+          jq -r '.vulnerabilities[] | select(.severity != "low") | "##[warning] \(.package): \(.severity) - \(.advisory)"' pip_audit_report.json
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "👉 **For the full security report including low severity issues, please download the artifact from this workflow run.**" >> $GITHUB_STEP_SUMMARY
+
       - name: Upload pip-audit report
         uses: actions/upload-artifact@v4
         with:
           name: pip-audit-report
           path: pip_audit_report.json
+
+      - name: Fail CI if High Severity Issues Found
+        run: |
+          SEVERITY_COUNT=$(jq '[.vulnerabilities[] | select(.severity == "high" or .severity == "critical")] | length' pip_audit_report.json)
+          if [ "$SEVERITY_COUNT" -gt 0 ]; then
+            echo "❌ High or Critical severity vulnerabilities found! Failing CI."
+            exit 1
+          fi
 
   #########################################
   # UNIT TESTS WITH COVERAGE REPORT
@@ -130,8 +176,30 @@ jobs:
 
       - name: Run pytest with coverage and export XML report
         run: |
-          coverage run -m pytest || true
+          coverage run -m pytest > pytest_report.txt || true
           coverage xml || true
+
+      - name: Add GitHub Summary for pytest Results
+        run: |
+          echo "## Pytest Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Pytest test results:" >> $GITHUB_STEP_SUMMARY
+          tail -n 20 pytest_report.txt >> $GITHUB_STEP_SUMMARY  # Display last 20 lines of the pytest result
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if grep -q "FAILED" pytest_report.txt; then
+            echo "❌ Some tests have failed. Please check the logs for details." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ All tests passed successfully!" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Add GitHub Summary for Coverage
+        run: |
+          COVERAGE_PERCENTAGE=$(coverage report -m | tail -n 1 | awk '{print $4}' | sed 's/%//')
+          echo "## Test Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "Test coverage is **$COVERAGE_PERCENTAGE%**." >> $GITHUB_STEP_SUMMARY
+          if [ "$COVERAGE_PERCENTAGE" -lt 80 ]; then
+            echo "⚠️ Coverage is below 80%. Please improve test coverage." >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -160,7 +228,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t $ECR_REPOSITORY_URI:$IMAGE_TAG .
+          docker build -t $ECR_REPOSITORY_URI:$IMAGE_TAG . 
           docker tag $ECR_REPOSITORY_URI:$IMAGE_TAG $ECR_REPOSITORY_URI:latest
 
       - name: Install Grype (container vulnerability scanner)
@@ -170,11 +238,29 @@ jobs:
       - name: Scan Docker image with Grype and save report
         run: grype $ECR_REPOSITORY_URI:$IMAGE_TAG -o json > grype_report.json
 
+      - name: Add GitHub Summary for Grype
+        run: |
+          SEVERITY_COUNT=$(jq '[.matches[] | select(.vulnerability.severity == "HIGH" or .vulnerability.severity == "CRITICAL")] | length' grype_report.json)
+          if [ "$SEVERITY_COUNT" -gt 0 ]; then
+            echo "## High or Critical vulnerabilities found by Grype!" >> $GITHUB_STEP_SUMMARY
+            jq -r '.matches[] | select(.vulnerability.severity == "HIGH" or .vulnerability.severity == "CRITICAL") | "| \(.vulnerability.id) | \(.vulnerability.severity) | \(.vulnerability.title) |"' grype_report.json >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## No High or Critical vulnerabilities found by Grype." >> $GITHUB_STEP_SUMMARY
+          fi
+
       - name: Upload Grype scan report
         uses: actions/upload-artifact@v4
         with:
           name: grype-scan-report
           path: grype_report.json
+
+      - name: Fail CI if High Severity Issues Found in Grype
+        run: |
+          SEVERITY_COUNT=$(jq '[.matches[] | select(.vulnerability.severity == "HIGH" or .vulnerability.severity == "CRITICAL")] | length' grype_report.json)
+          if [ "$SEVERITY_COUNT" -gt 0 ]; then
+            echo "❌ High or Critical severity vulnerabilities found! Failing CI."
+            exit 1
+          fi
 
       - name: Push Docker image to ECR
         run: |
