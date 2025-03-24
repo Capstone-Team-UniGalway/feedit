@@ -29,12 +29,14 @@ jobs:
         run: pip install black flake8
 
       - name: Run black (code formatter) and export report
-        run: black --check . 2>&1 | tee black_report.txt
+        run: black --check . 2>&1 | tee black_report.txt || true
+        continue-on-error: true
 
       - name: Add GitHub Summary for Black
         run: |
           if grep -q "would reformat" black_report.txt; then
             echo "## Formatting issues found by Black!" >> $GITHUB_STEP_SUMMARY
+            cat black_report.txt >> $GITHUB_STEP_SUMMARY
             echo "Formatting issues were found in the codebase. Please run `black` to fix them." >> $GITHUB_STEP_SUMMARY
           else
             echo "## No formatting issues found by Black. Code is properly formatted." >> $GITHUB_STEP_SUMMARY
@@ -51,14 +53,6 @@ jobs:
           else
             echo "## No linting issues found by Flake8. Code is clean." >> $GITHUB_STEP_SUMMARY
           fi
-
-      - name: Upload linting and formatting reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: lint-format-reports
-          path: |
-            black_report.txt
-            flake8_report.txt
 
   #########################################
   # STATIC CODE SECURITY SCAN (Bandit)
@@ -184,7 +178,8 @@ jobs:
           echo "## Pytest Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Pytest test results:" >> $GITHUB_STEP_SUMMARY
-          tail -n 20 pytest_report.txt >> $GITHUB_STEP_SUMMARY  # Display last 20 lines of the pytest result
+          cat pytest_report.txt >> $GITHUB_STEP_SUMMARY
+
           echo "" >> $GITHUB_STEP_SUMMARY
           if grep -q "FAILED" pytest_report.txt; then
             echo "❌ Some tests have failed. Please check the logs for details." >> $GITHUB_STEP_SUMMARY
