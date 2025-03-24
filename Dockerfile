@@ -42,6 +42,7 @@ WORKDIR /app
 
 # Copy application code
 COPY --chown=appuser:appuser feedit_app/ .
+COPY --chown=appuser:appuser entrypoint.py .
 
 # Set environment variables to optimize Python
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -56,5 +57,8 @@ RUN python manage.py collectstatic --noinput
 # Expose the application port
 EXPOSE 8000 
 
-# Start the application using Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app.wsgi:application"]
+# Run entrypoint script to load ENV variables from AWS Secrets Manager
+ENTRYPOINT ["python", "entrypoint.py"]
+
+# Migrate and start the application
+CMD ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn --bind 0.0.0.0:8000 app.wsgi:application"]
