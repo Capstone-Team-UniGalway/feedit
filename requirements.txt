@@ -1,7 +1,6 @@
 asgiref==3.8.1
 boto3==1.37.16
 botocore==1.37.16
-dj-database-url==2.3.0
 Django==5.1.7
 django-environ==0.12.0
 django-storages==1.14.5
