@@ -39,7 +39,7 @@ def main():
     # Continue running Django command or gunicorn
     cmd = sys.argv[1:]
     print(f"Running command: {' '.join(cmd)}")
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=True) # nosec
 
 if __name__ == "__main__":
     main()
