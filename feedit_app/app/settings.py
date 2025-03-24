@@ -10,7 +10,6 @@ See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 import os
 import environ
-import dj_database_url
 
 from pathlib import Path
 
@@ -27,19 +26,33 @@ ENVIRONMENT = env("DJANGO_ENV", default="development")
 if ENVIRONMENT == "development":
     environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
+
 # Security & Debug
 SECRET_KEY = env("SECRET_KEY", default="super-secret-key")
 DEBUG = env.bool("DEBUG", default=False)
-
-
 # Allowed Hosts
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost"])
 
 
 # Database Configuration
-DATABASES = {
-    "default": dj_database_url.config(default=env("DATABASE_URL", default="sqlite:///db.sqlite3"))
-}
+if ENVIRONMENT == "development":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        }
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": env("DB_NAME"),
+            "USER": env("DB_USER"),
+            "PASSWORD": env("DB_PASSWORD"),
+            "HOST": env("DB_HOST"),
+            "PORT": env("DB_PORT"),
+        }
+    }
 
 
 # Application definition

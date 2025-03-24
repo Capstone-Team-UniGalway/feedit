@@ -1,7 +1,6 @@
 asgiref==3.8.1
 boto3==1.37.16
 botocore==1.37.16
-dj-database-url==2.3.0
 Django==5.1.7
 django-environ==0.12.0
 django-storages==1.14.5
@@ -13,7 +12,6 @@ python-dateutil==2.9.0.post0
 s3transfer==0.11.4
 six==1.17.0
 sqlparse==0.5.3
-typing_extensions==4.12.2
 tzdata==2025.1
 urllib3==2.3.0
 whitenoise==6.9.0
