@@ -9,7 +9,6 @@ on:
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   ECR_REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
-  IMAGE_TAG: ${{ github.sha }}
 
 jobs:
   ###############################
@@ -223,15 +222,14 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t $ECR_REPOSITORY_URI:$IMAGE_TAG . 
-          docker tag $ECR_REPOSITORY_URI:$IMAGE_TAG $ECR_REPOSITORY_URI:latest
+          docker build -t $ECR_REPOSITORY_URI:latest
 
       - name: Install Grype (container vulnerability scanner)
         run: |
           curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
 
       - name: Scan Docker image with Grype and save report
-        run: grype $ECR_REPOSITORY_URI:$IMAGE_TAG -o json > grype_report.json
+        run: grype $ECR_REPOSITORY_URI:latest -o json > grype_report.json
 
       - name: Add GitHub Summary for Grype
         run: |
@@ -259,7 +257,6 @@ jobs:
 
       - name: Push Docker image to ECR
         run: |
-          docker push $ECR_REPOSITORY_URI:$IMAGE_TAG
           docker push $ECR_REPOSITORY_URI:latest
 
   #########################################
