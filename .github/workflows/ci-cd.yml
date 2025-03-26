@@ -222,7 +222,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t $ECR_REPOSITORY_URI:latest
+          docker build -t $ECR_REPOSITORY_URI:latest .
 
       - name: Install Grype (container vulnerability scanner)
         run: |
