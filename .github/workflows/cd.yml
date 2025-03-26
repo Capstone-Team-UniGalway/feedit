@@ -1,0 +1,114 @@
+name: DevSecOps CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
+
+jobs:
+  #########################################
+  # BUILD, SCAN IMAGE (Grype), AND PUSH TO ECR
+  #########################################
+  build-scan-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build Docker image
+        run: |
+          docker build -t $ECR_REPOSITORY_URI:latest .
+
+      - name: Install Grype (container vulnerability scanner)
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Scan Docker image with Grype and save report
+        run: grype $ECR_REPOSITORY_URI:latest -o json > grype_report.json
+
+      - name: Add GitHub Summary for Grype
+        run: |
+          SEVERITY_COUNT=$(jq '[.matches[] | select(.vulnerability.severity == "HIGH" or .vulnerability.severity == "CRITICAL")] | length' grype_report.json)
+          if [ "$SEVERITY_COUNT" -gt 0 ]; then
+            echo "## High or Critical vulnerabilities found by Grype!" >> $GITHUB_STEP_SUMMARY
+            jq -r '.matches[] | select(.vulnerability.severity == "HIGH" or .vulnerability.severity == "CRITICAL") | "| \(.vulnerability.id) | \(.vulnerability.severity) | \(.vulnerability.title) |"' grype_report.json >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## No High or Critical vulnerabilities found by Grype." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Grype scan report
+        uses: actions/upload-artifact@v4
+        with:
+          name: grype-scan-report
+          path: grype_report.json
+
+      - name: Fail CI if High Severity Issues Found in Grype
+        run: |
+          SEVERITY_COUNT=$(jq '[.matches[] | select(.vulnerability.severity == "HIGH" or .vulnerability.severity == "CRITICAL")] | length' grype_report.json)
+          if [ "$SEVERITY_COUNT" -gt 0 ]; then
+            echo "❌ High or Critical severity vulnerabilities found! Failing CI."
+            exit 1
+          fi
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push $ECR_REPOSITORY_URI:latest
+
+  #########################################
+  # DEPLOY TO EC2, RUN MIGRATIONS & COLLECTSTATIC
+  #########################################
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-scan-push
+    steps:
+      - name: Deploy and run post-deploy tasks on EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: |
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_REGION=${{ env.AWS_REGION }}
+          script: |
+            echo "AWS CLI version: $(aws --version)"
+            echo "Docker version: $(docker --version)"
+
+            echo "AWS credentials set...."
+            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+            export AWS_REGION=${AWS_REGION}
+
+            echo "Logging in to ECR...."
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REPOSITORY_URI }}
+            echo "Logged in successfuly..."
+
+            echo "Pulling image from ECR ..."
+            docker pull ${{ env.ECR_REPOSITORY_URI }}:latest
+            echo "Docker pull completed..."
+
+            echo "Stop the current running container if exist..."
+            docker stop feedit-app || true
+
+            echo "Remove the previous container..."
+            docker rm feedit-app || true
+
+            echo "Running the container"
+            docker run -d --name feedit-app -p 8000:8000 \
+              -e DJANGO_ENV=production \
+              -e AWS_REGION=${{ env.AWS_REGION }} \
+              -e DJANGO_AWS_SECRET_NAME=${{ secrets.DJANGO_AWS_SECRET_NAME }} \
+              ${{ env.ECR_REPOSITORY_URI }}:latest
