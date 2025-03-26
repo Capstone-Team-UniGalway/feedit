@@ -1,0 +1,12 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<c-partials.head />
+<body class="h-full flex flex-col">
+  <c-partials.header />
+  <main class="h-full p-10">
+    {{ slot }}
+  </main>
+  <c-partials.footer />
+</body>
+</html>
