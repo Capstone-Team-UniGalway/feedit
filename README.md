@@ -3,6 +3,19 @@
 - [Merging Strategy](#merging-strategy)
 - [Running the Project Locally](#running-the-project-locally)
 
+## IMPORTANT!
+- Always pull before starting work and before pushing!
+   ```sh
+   git pull
+   ```
+- Always install requirements after pulling
+   ```sh
+   pip install -r requirements.txt
+   ```
+- Always migrate after pulling (there could be new migrations created)
+   ```sh
+   python manage.py migrate
+   ```
 
 ## Merging Strategy
 
@@ -102,7 +115,6 @@ To run the project locally, follow these steps:
    ```
    DJANGO_ENV=development
    SECRET_KEY=your-secret-key
-   DATABASE_URL=sqlite:///db.sqlite3
    ALLOWED_HOSTS=127.0.0.1,localhost
    ```
 

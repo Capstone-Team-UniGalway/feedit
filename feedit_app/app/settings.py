@@ -64,6 +64,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # installed
+    'django_cotton',
+    # created
 ]
 
 MIDDLEWARE = [
@@ -93,6 +96,7 @@ TEMPLATES = [
         },
     },
 ]
+COTTON_DIR = 'components'
 
 WSGI_APPLICATION = 'app.wsgi.application'
 
