@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		}
+	],
+	"settings": {
+		"terminal.integrated.profiles.linux": {
+			"bash-feedit": {
+				"path": "bash",
+				"args": [
+					"--init-file",
+					"${workspaceFolder}/.bashrc"
+				]
+			}
+		},
+		"terminal.integrated.defaultProfile.linux": "bash-feedit",
+		"terminal.integrated.defaultProfile.windows": "Git Bash"
+	}
+}

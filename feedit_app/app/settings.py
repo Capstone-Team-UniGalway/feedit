@@ -7,25 +7,21 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 Quick-start development settings - unsuitable for production
 See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 """
-
 import os
+from pathlib import Path
 import environ
 
-from pathlib import Path
-
-# BASE_DIR = Path(__file__).resolve().parent.parent
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# Initialize environment variables
+# Initialize environ first
 env = environ.Env(DEBUG=(bool, False))
 
-# Load .env in development, otherwise use system environment variables
-ENVIRONMENT = env("DJANGO_ENV", default="development")
+# Build paths inside the project like this: BASE_DIR / 'subdir'
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Loads from .env file on development
-if ENVIRONMENT == "development":
-    environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+# Read .env file
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
+# Get environment
+ENVIRONMENT = env('DJANGO_ENV', default='development')
 
 # Security & Debug
 SECRET_KEY = env("SECRET_KEY", default="super-secret-key")
@@ -64,10 +60,20 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     # installed
     'django_cotton',
-    # created
+
+    # your custom apps
+    'accounts',
+    'companies',
+    'threads',
+    'reviews',
+    'requests',
+    'notifications',
+    'ckeditor',
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -149,3 +155,6 @@ if ENVIRONMENT == "production":
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'accounts.User'
+
