@@ -1,16 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
-from django.utils.timezone import now
-
-
-class BaseModel(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)  # Set only on creation
-    updated_at = models.DateTimeField(auto_now=True)      # Update on every save
-    deleted_at = models.DateTimeField(null=True, blank=True)                  # Update on every delete
-    is_deleted = models.BooleanField(default=False)
-
-    class Meta:
-        abstract = True
+from app.base_model import BaseModel
 
 
 class UserManager(BaseUserManager):
@@ -45,7 +35,7 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     last_name = models.CharField(max_length=50)
     email = models.EmailField(unique=True)
     job_title = models.CharField(max_length=100, blank=True, null=True)
-    company = models.ForeignKey("companies.Company", on_delete=models.SET_NULL, null=True, blank=True)
+    workplace = models.ForeignKey("companies.Company", on_delete=models.SET_NULL, null=True, blank=True, related_name="employees")
     profile_pic = models.ImageField(upload_to="profile/", null=True, blank=True)
     bio = models.TextField(blank=True, null=True)
     privacy = models.CharField(max_length=10, choices=PrivacyType.choices, default=PrivacyType.PUBLIC)
@@ -58,12 +48,6 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["first_name", "last_name"]
-
-    def delete(self, *args, **kwargs):
-        """Soft delete the user instead of removing it from the database."""
-        self.is_deleted = True
-        self.deleted_at = now()
-        self.save()
 
     def __str__(self):
         return self.email
