@@ -17,11 +17,12 @@ env = environ.Env(DEBUG=(bool, False))
 # Build paths inside the project like this: BASE_DIR / 'subdir'
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Read .env file
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+# Load .env in development, otherwise use system environment variables
+ENVIRONMENT = env("DJANGO_ENV", default="development")
 
-# Get environment
-ENVIRONMENT = env('DJANGO_ENV', default='development')
+# Loads from .env file on development
+if ENVIRONMENT == "development":
+    environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Security & Debug
 SECRET_KEY = env("SECRET_KEY", default="super-secret-key")
@@ -62,16 +63,19 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # installed
+    "allauth",
+    "allauth.account",
+    'allauth.mfa',
     'django_cotton',
+    'django_ckeditor_5',
 
-    # your custom apps
+    # created
     'accounts',
     'companies',
     'threads',
     'reviews',
     'requests',
     'notifications',
-    'ckeditor',
 ]
 
 
@@ -83,6 +87,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = 'app.urls'
@@ -109,6 +114,20 @@ WSGI_APPLICATION = 'app.wsgi.application'
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
+
+AUTHENTICATION_BACKENDS = [
+    # Needed to login by username in Django admin, regardless of `allauth`
+    "django.contrib.auth.backends.ModelBackend",
+    # `allauth` specific authentication methods, such as login by email
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
 
 AUTH_PASSWORD_VALIDATORS = [
     {

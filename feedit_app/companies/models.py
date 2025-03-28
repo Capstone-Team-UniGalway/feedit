@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.db import models
-from ckeditor.fields import RichTextField
 from django.contrib.auth.models import AbstractUser
 
 # Represents a company entity, either created or claimed

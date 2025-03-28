@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.db import models
-from ckeditor.fields import RichTextField
-from django.contrib.auth.models import AbstractUser
+from django_ckeditor_5.fields import CKEditor5Field
 # Requests made by employees to employers with status tracking
 class Request(models.Model):
     STATUS_CHOICES = [
@@ -15,7 +14,7 @@ class Request(models.Model):
         ("other", "Other"),
     ]
     title = models.CharField(max_length=255)
-    content = RichTextField()
+    content = CKEditor5Field()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
     type = models.CharField(max_length=10, choices=TYPE_CHOICES)
     employee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="requests_sent")
@@ -28,5 +27,5 @@ class Request(models.Model):
 class RequestReply(models.Model):
     request = models.ForeignKey(Request, on_delete=models.CASCADE, related_name="replies")
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="request_replies")
-    content = RichTextField()
+    content = CKEditor5Field()
     created_at = models.DateTimeField(auto_now_add=True)

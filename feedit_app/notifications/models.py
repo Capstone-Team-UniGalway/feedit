@@ -1,7 +1,5 @@
 from django.conf import settings
 from django.db import models
-from ckeditor.fields import RichTextField
-from django.contrib.auth.models import AbstractUser
 # Notification system for alerts and updates
 class Notification(models.Model):
     NOTIFICATION_TYPES = [

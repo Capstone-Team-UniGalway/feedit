@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-from ckeditor.fields import RichTextField
+from django_ckeditor_5.fields import CKEditor5Field
 
 # Group communication threads between employees and employers
 class Thread(models.Model):
@@ -13,7 +13,7 @@ class Thread(models.Model):
         ("announcement", "Announcement"),
     ]
     title = models.CharField(max_length=255)
-    content = RichTextField()
+    content = CKEditor5Field()
 
     # 👇 Use lazy string reference instead of importing Company
     company = models.ForeignKey("companies.Company", on_delete=models.CASCADE, related_name="threads")
@@ -31,7 +31,7 @@ class Thread(models.Model):
 class Reply(models.Model):
     thread = models.ForeignKey("threads.Thread", on_delete=models.CASCADE, related_name="replies")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="thread_replies")
-    content = RichTextField()
+    content = CKEditor5Field()
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
