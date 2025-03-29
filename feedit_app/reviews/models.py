@@ -48,3 +48,7 @@ class ReviewReply(BaseModel):
     )
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Review Reply"
+        verbose_name_plural = "Review Replies"

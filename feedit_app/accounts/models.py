@@ -5,11 +5,8 @@ from django.contrib.auth.models import (
 )
 from django.db import models
 from app.base_model import BaseModel
-from django.core.validators import (
-    EmailValidator,
-    RegexValidator,
-    validate_image_file_extension,
-)
+from django.core.validators import EmailValidator, RegexValidator
+from django.contrib.contenttypes.models import ContentType
 
 
 class UserManager(BaseUserManager):
@@ -69,12 +66,6 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         blank=True,
         related_name="employees",
     )
-    profile_pic = models.ImageField(
-        upload_to="profile/",
-        validators=[validate_image_file_extension],
-        null=True,
-        blank=True,
-    )
     bio = models.TextField(blank=True, null=True)
     privacy = models.CharField(
         max_length=10, choices=PrivacyType.choices, default=PrivacyType.PUBLIC
@@ -94,3 +85,10 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
 
     def get_full_name(self):
         return self.first_name + " " + self.last_name
+
+    @property
+    def profile_picture(self):
+        from secure_files.models import SecureFile
+
+        ct = ContentType.objects.get_for_model(self.__class__)
+        return SecureFile.objects.filter(content_type=ct, object_id=self.id).first()

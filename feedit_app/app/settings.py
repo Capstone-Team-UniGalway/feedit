@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     "reviews",
     "requests",
     "notifications",
+    "secure_files",
 ]
 
 

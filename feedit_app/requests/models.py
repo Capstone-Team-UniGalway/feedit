@@ -27,9 +27,7 @@ class Request(BaseModel):
         "companies.Company", on_delete=models.CASCADE, related_name="requests"
     )
     type = models.CharField(max_length=10, choices=TYPE_CHOICES)
-    status = models.CharField(
-        max_length=10, choices=STATUS_CHOICES, default="pending"
-    )
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
     title = models.CharField(max_length=255)
     content = CKEditor5Field()
 
@@ -47,3 +45,7 @@ class RequestReply(BaseModel):
         related_name="request_replies",
     )
     content = CKEditor5Field()
+
+    class Meta:
+        verbose_name = "Request Reply"
+        verbose_name_plural = "Request Replies"
