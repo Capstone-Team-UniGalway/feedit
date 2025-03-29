@@ -112,3 +112,16 @@ jobs:
               -e AWS_REGION=${{ env.AWS_REGION }} \
               -e DJANGO_AWS_SECRET_NAME=${{ secrets.DJANGO_AWS_SECRET_NAME }} \
               ${{ env.ECR_REPOSITORY_URI }}:latest
+
+            echo "Waiting a few seconds for container to initialize..."
+            sleep 5
+
+            echo "Checking if container is running..."
+            if ! docker ps --filter "name=feedit-app" --filter "status=running" | grep -q feedit-app; then
+              echo "❌ Container failed to start or exited early!"
+              echo "Fetching container logs..."
+              docker logs feedit-app || echo "⚠️ Could not fetch logs."
+              exit 1
+            else
+              echo "✅ Container is running successfully."
+            fi
