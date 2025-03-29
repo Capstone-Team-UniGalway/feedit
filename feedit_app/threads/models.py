@@ -1,38 +1,30 @@
 from django.conf import settings
 from django.db import models
 from django_ckeditor_5.fields import CKEditor5Field
+from app.base_model import BaseModel
 
 # Group communication threads between employees and employers
-class Thread(models.Model):
+class Thread(BaseModel):
     VISIBILITY_CHOICES = [
-        ("internal", "Internal"),
-        ("private", "Private"),
+        ("internal", "Internal"), # employees & employers can read & reply
+        ("private", "Private"), # only employees can read & reply
     ]
     TYPE_CHOICES = [
-        ("forum", "Forum"),
-        ("announcement", "Announcement"),
+        ("forum", "Forum"), # allows replies (children)
+        ("announcement", "Announcement"), # no replies allowed
     ]
-    title = models.CharField(max_length=255)
-    content = CKEditor5Field()
 
     # 👇 Use lazy string reference instead of importing Company
     company = models.ForeignKey("companies.Company", on_delete=models.CASCADE, related_name="threads")
-
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="threads_created")
-    visibility = models.CharField(max_length=10, choices=VISIBILITY_CHOICES)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="threads")
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")  # Self-referencing field
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
-    created_at = models.DateTimeField(auto_now_add=True)
+    visibility = models.CharField(max_length=10, choices=VISIBILITY_CHOICES)
+    title = models.CharField(max_length=255)
+    content = CKEditor5Field()
 
     def __str__(self):
         return self.title
-
-
-# Replies to communication threads
-class Reply(models.Model):
-    thread = models.ForeignKey("threads.Thread", on_delete=models.CASCADE, related_name="replies")
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="thread_replies")
-    content = CKEditor5Field()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f'Reply by {self.user} on {self.thread}'
+    
+    def get_author_name(self):
+        return self.user.get_full_name() if self.user else "Unknown Author"
