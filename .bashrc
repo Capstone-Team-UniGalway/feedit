@@ -1,7 +1,8 @@
-SCRIPT_PATH="./venv/Scripts/activate"
-
-if [ -f "$SCRIPT_PATH" ]; then
-    source "$SCRIPT_PATH"
-else
-    echo "Virtual environment activation script not found at $SCRIPT_PATH"
+# Auto-activate venv for Feedit project
+if [ -f ./venv/Scripts/activate ]; then
+  echo "🟢 Auto-activating venv for Feedit"
+  source ./venv/Scripts/activate
+elif [ -f ./venv/bin/activate ]; then
+  echo "🟢 Auto-activating venv for Feedit"
+  source ./venv/bin/activate
 fi

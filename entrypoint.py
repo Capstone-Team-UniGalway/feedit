@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 
+
 def fetch_secrets(secret_name, region_name="en-north-1"):
     session = boto3.session.Session()
     client = session.client(service_name="secretsmanager", region_name=region_name)
@@ -11,9 +12,11 @@ def fetch_secrets(secret_name, region_name="en-north-1"):
     secret = json.loads(get_secret_value_response["SecretString"])
     return secret
 
+
 def set_env_vars(secrets: dict):
     for key, value in secrets.items():
         os.environ[key] = value
+
 
 def main():
     django_env = os.getenv("DJANGO_ENV", "development")
@@ -39,7 +42,8 @@ def main():
     # Continue running Django command or gunicorn
     cmd = sys.argv[1:]
     print(f"Running command: {' '.join(cmd)}")
-    subprocess.run(cmd, check=True) # nosec
+    subprocess.run(cmd, check=True)  # nosec
+
 
 if __name__ == "__main__":
     main()
