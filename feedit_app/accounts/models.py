@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from app.base_model import BaseModel
+from django.core.validators import EmailValidator, RegexValidator, validate_image_file_extension
 
 
 class UserManager(BaseUserManager):
@@ -33,10 +34,10 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     type = models.CharField(max_length=10, choices=UserType.choices, default=UserType.EMPLOYEE)
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
-    email = models.EmailField(unique=True)
-    job_title = models.CharField(max_length=100, blank=True, null=True)
+    email = models.EmailField(unique=True, validators=[EmailValidator(message="Enter a valid email address.")])
+    job_title = models.CharField(max_length=100, validators=[RegexValidator(regex=r"^[a-zA-Z\s]{1,100}$", message="Job title must only contain letters and spaces (max 100 characters).")], blank=True, null=True)
     workplace = models.ForeignKey("companies.Company", on_delete=models.SET_NULL, null=True, blank=True, related_name="employees")
-    profile_pic = models.ImageField(upload_to="profile/", null=True, blank=True)
+    profile_pic = models.ImageField(upload_to="profile/", validators=[validate_image_file_extension], null=True, blank=True)
     bio = models.TextField(blank=True, null=True)
     privacy = models.CharField(max_length=10, choices=PrivacyType.choices, default=PrivacyType.PUBLIC)
     mfa_enabled = models.BooleanField(default=False)
@@ -51,3 +52,6 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
 
     def __str__(self):
         return self.email
+    
+    def get_full_name(self):
+        return self.first_name + " " + self.last_name

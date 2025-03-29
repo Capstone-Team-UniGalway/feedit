@@ -2,11 +2,18 @@ from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from app.base_model import BaseModel
+from django.core.validators import RegexValidator
 
 # Represents a company entity, either created or claimed
 class Company(BaseModel):
-    name = models.CharField(max_length=255, unique=True)
-    industry = models.CharField(max_length=100, blank=True)
+    name = models.CharField(max_length=255, unique=True, validators=[RegexValidator(
+        regex=r"^[a-zA-Z\s-]{1,100}$",
+        message="Name must only contain letters, spaces, and hyphens (max 100 characters)."
+    )])
+    industry = models.CharField(max_length=100, blank=True, validators=[RegexValidator(
+        regex=r"^[a-zA-Z\s-]{1,100}$",
+        message="Name must only contain letters, spaces, and hyphens (max 100 characters)."
+    )])
     profile_pic = models.ImageField(upload_to='company_profiles/', null=True, blank=True)
     bio = models.TextField(null=True, blank=True)
     country = models.CharField(max_length=100, blank=True)
