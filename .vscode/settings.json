@@ -1,13 +1,27 @@
 {
-    "terminal.integrated.profiles.linux": {
-        "bash-feedit": {
-            "path": "bash",
-            "args": [
-                "--init-file",
-                "${workspaceFolder}/.bashrc"
-            ]
-        }
+    "editor.formatOnSave": true,
+    "editor.rulers": [
+        88
+    ],
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": [
+        "--config=pyproject.toml"
+    ],
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.flake8Args": [
+        "--config=pyproject.toml"
+    ],
+    "terminal.integrated.env.linux": {
+        "VIRTUAL_ENV": "${workspaceFolder}/venv",
+        "PATH": "${workspaceFolder}/venv/bin:${env:PATH}"
     },
-    "terminal.integrated.defaultProfile.linux": "bash-feedit",
-    "terminal.integrated.defaultProfile.windows": "Git Bash"
+    "terminal.integrated.env.osx": {
+        "VIRTUAL_ENV": "${workspaceFolder}/venv",
+        "PATH": "${workspaceFolder}/venv/bin:${env:PATH}"
+    },
+    "terminal.integrated.env.windows": {
+        "VIRTUAL_ENV": "${workspaceFolder}\\venv",
+        "PATH": "${workspaceFolder}\\venv\\Scripts;${env:PATH}"
+    }
 }

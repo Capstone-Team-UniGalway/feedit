@@ -16,7 +16,11 @@ class Notification(BaseModel):
         ("general_request", "New Request"),
         ("general_response", "New Response"),
     ]
-    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications")
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+    )
     type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
     message = models.TextField()
     action_url = models.URLField(null=True, blank=True)

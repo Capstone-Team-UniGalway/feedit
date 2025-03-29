@@ -13,19 +13,26 @@ def validate_rating_step(value):
 
 # Anonymous or named reviews about companies
 class Review(BaseModel):
-    company = models.ForeignKey('companies.Company', on_delete=models.CASCADE, related_name="reviews")
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="reviews")
+    company = models.ForeignKey(
+        "companies.Company", on_delete=models.CASCADE, related_name="reviews"
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviews",
+    )
     rating = models.FloatField(
         validators=[
             MinValueValidator(0.0),
             MaxValueValidator(5.0),
-            validate_rating_step
+            validate_rating_step,
         ]
     )
     content = models.TextField()
     is_anonymous = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-
 
     def __str__(self):
         return f"Review by {self.user} - {self.rating}/5"
@@ -34,6 +41,10 @@ class Review(BaseModel):
 # Employer replies to reviews
 class ReviewReply(BaseModel):
     review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name="replies")
-    employer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="review_replies")
+    employer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="review_replies",
+    )
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)

@@ -16,16 +16,34 @@ class Request(BaseModel):
         ("claim", "Claim"),
         ("other", "Other"),
     ]
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="requests_sent")
-    company = models.ForeignKey('companies.Company', on_delete=models.CASCADE, related_name="requests")
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="requests_sent",
+    )
+    company = models.ForeignKey(
+        "companies.Company", on_delete=models.CASCADE, related_name="requests"
+    )
     type = models.CharField(max_length=10, choices=TYPE_CHOICES)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES, default="pending"
+    )
     title = models.CharField(max_length=255)
     content = CKEditor5Field()
 
 
 # Replies to private employee requests
 class RequestReply(BaseModel):
-    request = models.ForeignKey(Request, on_delete=models.CASCADE, related_name="replies")
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="request_replies")
+    request = models.ForeignKey(
+        Request, on_delete=models.CASCADE, related_name="replies"
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="request_replies",
+    )
     content = CKEditor5Field()
