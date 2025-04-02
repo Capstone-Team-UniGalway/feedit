@@ -163,6 +163,7 @@ jobs:
 
       - name: Run pytest with coverage and export XML report
         run: |
+          export PYTHONPATH=feedit_app
           coverage run -m pytest > pytest_report.txt || true
           coverage xml || true
 
