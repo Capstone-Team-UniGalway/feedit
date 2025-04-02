@@ -46,7 +46,7 @@ class Company(BaseModel):
         verbose_name_plural = "Companies"
 
     def __str__(self):
-        return self.name + "(" + self.country + ")"
+        return self.name + " (" + self.country + ")"
 
     @property
     def profile_picture(self):

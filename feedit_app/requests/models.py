@@ -6,16 +6,16 @@ from app.base_model import BaseModel
 
 # Requests made by employees to employers with status tracking
 class Request(BaseModel):
-    STATUS_CHOICES = [
-        ("pending", "Pending"),
-        ("approved", "Approved"),
-        ("rejected", "Rejected"),
-    ]
-    TYPE_CHOICES = [
-        ("join", "Join"),
-        ("claim", "Claim"),
-        ("other", "Other"),
-    ]
+    class RequestType(models.TextChoices):
+        JOIN = "join", "Join"
+        CLAIM = "claim", "Claim"
+        OTHER = "other", "Other"
+
+    class RequestStatus(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -26,8 +26,10 @@ class Request(BaseModel):
     company = models.ForeignKey(
         "companies.Company", on_delete=models.CASCADE, related_name="requests"
     )
-    type = models.CharField(max_length=10, choices=TYPE_CHOICES)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
+    type = models.CharField(max_length=10, choices=RequestType.choices)
+    status = models.CharField(
+        max_length=10, choices=RequestStatus.choices, default=RequestStatus.PENDING
+    )
     title = models.CharField(max_length=255)
     content = CKEditor5Field()
 

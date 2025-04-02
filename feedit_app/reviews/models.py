@@ -23,6 +23,12 @@ class Review(BaseModel):
         blank=True,
         related_name="reviews",
     )
+    guest_name = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text="Required if no user is associated and not anonymous",
+    )
     rating = models.FloatField(
         validators=[
             MinValueValidator(0.0),
@@ -34,8 +40,22 @@ class Review(BaseModel):
     is_anonymous = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def clean(self):
+        # Ensure guest name is provided when no user and not anonymous
+        if not self.user and not self.is_anonymous and not self.guest_name:
+            raise ValidationError("Guest name is required if not anonymous.")
+
     def __str__(self):
-        return f"Review by {self.user} - {self.rating}/5"
+        if self.is_anonymous:
+            name = "Anonymous"
+        elif self.user:
+            name = self.user
+        elif self.guest_name:
+            name = self.guest_name
+        else:
+            return f"Review - {self.rating}/5"
+
+        return f"Review by {name} - {self.rating}/5"
 
 
 # Employer replies to reviews
