@@ -6,16 +6,14 @@ from app.base_model import BaseModel
 
 # Group communication threads between employees and employers
 class Thread(BaseModel):
-    VISIBILITY_CHOICES = [
-        ("internal", "Internal"),  # employees & employers can read & reply
-        ("private", "Private"),  # only employees can read & reply
-    ]
-    TYPE_CHOICES = [
-        ("forum", "Forum"),  # allows replies (children)
-        ("announcement", "Announcement"),  # no replies allowed
-    ]
+    class ThreadType(models.TextChoices):
+        FORUM = "forum", "Forum"  # allows replies (children)
+        ANNOUNCEMENT = "announcement", "Announcement"  # no replies allowed
 
-    # 👇 Use lazy string reference instead of importing Company
+    class ThreadVisibility(models.TextChoices):
+        INTERNAL = "internal", "Internal"  # employees & employers can read & reply
+        PRIVATE = "private", "Private"  # only employees can read & reply
+
     company = models.ForeignKey(
         "companies.Company", on_delete=models.CASCADE, related_name="threads"
     )
@@ -29,8 +27,16 @@ class Thread(BaseModel):
     parent = models.ForeignKey(
         "self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies"
     )  # Self-referencing field
-    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
-    visibility = models.CharField(max_length=10, choices=VISIBILITY_CHOICES)
+    type = models.CharField(
+        max_length=20,
+        choices=ThreadType.choices,
+        default=ThreadType.FORUM,
+    )
+    visibility = models.CharField(
+        max_length=10,
+        choices=ThreadVisibility.choices,
+        default=ThreadVisibility.INTERNAL,
+    )
     title = models.CharField(max_length=255)
     content = CKEditor5Field()
 
