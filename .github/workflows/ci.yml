@@ -165,7 +165,7 @@ jobs:
         run: |
           export PYTHONPATH=feedit_app
           coverage run -m pytest > pytest_report.txt || true
-          coverage xml || true
+          coverage html || true
 
       - name: Add GitHub Summary for pytest Results
         run: |
@@ -193,5 +193,5 @@ jobs:
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: test-coverage-report
-          path: coverage.xml
+          name: html-coverage-report
+          path: htmlcov
