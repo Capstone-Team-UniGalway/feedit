@@ -38,4 +38,4 @@ class Thread(BaseModel):
         return self.title
 
     def get_author_name(self):
-        return self.user.get_full_name() if self.user else "Unknown Author"
+        return self.author.get_full_name() if self.author else "Unknown Author"

@@ -12,7 +12,7 @@ class Notification(BaseModel):
         ("join_request", "New Join Request"),
         ("join_response", "New Join Response"),
         ("claim_request", "New Claim Request"),
-        ("claim_request", "New Claim Response"),
+        ("claim_response", "New Claim Response"),
         ("general_request", "New Request"),
         ("general_response", "New Response"),
     ]

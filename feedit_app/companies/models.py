@@ -29,9 +29,6 @@ class Company(BaseModel):
             )
         ],
     )
-    profile_pic = models.ImageField(
-        upload_to="company_profiles/", null=True, blank=True
-    )
     bio = models.TextField(null=True, blank=True)
     country = models.CharField(max_length=100, blank=True)
     city = models.CharField(max_length=100, blank=True)
