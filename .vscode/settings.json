@@ -1,0 +1,77 @@
+{
+    "editor.formatOnSave": true,
+    "editor.rulers": [
+        88
+    ],
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": [
+        "--config=pyproject.toml"
+    ],
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.flake8Args": [
+        "--config=pyproject.toml"
+    ],
+    "terminal.integrated.shellArgs.linux": [
+        "-l"
+    ],
+    "terminal.integrated.env.linux": {
+        "VIRTUAL_ENV": "${workspaceFolder}/venv",
+        "PATH": "${workspaceFolder}/venv/bin:${env:PATH}"
+    },
+    "terminal.integrated.profiles.linux": {
+        "bash (with venv)": {
+            "path": "bash",
+            "args": [
+                "-c",
+                "cd '${workspaceFolder}' && [ -f ./venv/bin/activate ] && source ./venv/bin/activate || echo '[!] No virtual environment found.' && exec bash"
+            ]
+        }
+    },
+    "terminal.integrated.defaultProfile.linux": "bash (with venv)",
+    "terminal.integrated.env.osx": {
+        "VIRTUAL_ENV": "${workspaceFolder}/venv",
+        "PATH": "${workspaceFolder}/venv/bin:${env:PATH}"
+    },
+    "terminal.integrated.profiles.osx": {
+        "zsh (with venv)": {
+            "path": "zsh",
+            "args": [
+                "-c",
+                "cd '${workspaceFolder}' && [ -f ./venv/bin/activate ] && source ./venv/bin/activate || echo '[!] No virtual environment found.' && exec zsh"
+            ]
+        }
+    },
+    "terminal.integrated.defaultProfile.osx": "zsh (with venv)",
+    "terminal.integrated.env.windows": {
+        "VIRTUAL_ENV": "${workspaceFolder}\\venv",
+        "PATH": "${workspaceFolder}\\venv\\Scripts;${env:PATH}"
+    },
+    "terminal.integrated.profiles.windows": {
+        "PowerShell (venv)": {
+            "path": "powershell.exe",
+            "args": [
+                "-NoExit",
+                "-Command",
+                "if (Test-Path '${workspaceFolder}\\venv\\Scripts\\Activate.ps1') { & '${workspaceFolder}\\venv\\Scripts\\Activate.ps1' } else { Write-Host '[!] No virtual environment found.' }"
+            ]
+        },
+        "Command Prompt (venv)": {
+            "path": "cmd.exe",
+            "args": [
+                "/k",
+                "if exist ${workspaceFolder}\\venv\\Scripts\\activate.bat ( call ${workspaceFolder}\\venv\\Scripts\\activate.bat ) else ( echo [!] No virtual environment found. )"
+            ]
+        },
+        "Git Bash": {
+            "path": "C:\\Program Files\\Git\\bin\\bash.exe",
+            "args": [
+                "--login",
+                "-i"
+                // "-c",
+                // "cd \"${workspaceFolder}\" && cd \"$(pwd)\" && source .bashrc && exec bash"
+            ]
+        }
+    },
+    "terminal.integrated.defaultProfile.windows": "Git Bash"
+}

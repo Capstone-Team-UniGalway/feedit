@@ -1,0 +1,197 @@
+name: DevSecOps CI Pipeline
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ###############################
+  # FORMAT AND LINT REPORT ONLY
+  ###############################
+  format-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Install format & lint tools
+        run: pip install black flake8
+
+      - name: Run black (code formatter) and export report
+        run: black --check . 2>&1 | tee black_report.txt || true
+        continue-on-error: true
+
+      - name: Add GitHub Summary for Black
+        run: |
+          if grep -q "would reformat" black_report.txt; then
+            echo "## Formatting issues found by Black!" >> $GITHUB_STEP_SUMMARY
+            cat black_report.txt >> $GITHUB_STEP_SUMMARY
+            echo "Formatting issues were found in the codebase. Please run `black` to fix them." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## No formatting issues found by Black. Code is properly formatted." >> $GITHUB_STEP_SUMMARY
+          fi
+          
+      - name: Run flake8 (linter) and export report
+        run: flake8 . | tee flake8_report.txt
+
+      - name: Add GitHub Summary for Flake8
+        run: |
+          if [ -s flake8_report.txt ]; then
+            echo "## Linting issues found by Flake8!" >> $GITHUB_STEP_SUMMARY
+            cat flake8_report.txt >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## No linting issues found by Flake8. Code is clean." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  #########################################
+  # STATIC CODE SECURITY SCAN (Bandit)
+  #########################################
+  static-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Install Bandit (Python static security scanner)
+        run: pip install bandit
+
+      - name: Run Bandit and save report
+        run: bandit -r . -lll -f json -o bandit_report.json || true
+        continue-on-error: true
+
+      - name: Print Medium/High Severity Issues
+        run: |
+          echo "## 🔎 Bandit Security Report (Medium/High Severity)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Line | Severity | Issue |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          jq -r '.results[] | select(.issue_severity != "LOW") | "| \(.filename) | \(.line_number) | \(.issue_severity) | \(.issue_text) |"' bandit_report.json >> $GITHUB_STEP_SUMMARY
+
+          # GitHub Annotations for Medium/High Severity Issues
+          jq -r '.results[] | select(.issue_severity != "LOW") | "##[warning] \(.filename) line \(.line_number): \(.issue_severity) - \(.issue_text)"' bandit_report.json
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "👉 **For the full security report including low severity issues, please download the artifact from this workflow run.**" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Full Bandit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit_report.json
+
+      - name: Fail CI if High Severity Issues Found
+        run: |
+          SEVERITY_COUNT=$(jq '[.results[] | select(.issue_severity == "HIGH" or .issue_severity == "CRITICAL")] | length' bandit_report.json)
+          if [ "$SEVERITY_COUNT" -gt 0 ]; then
+            echo "❌ High or Critical severity security issues found! Failing CI."
+            exit 1
+          fi
+
+  #########################################
+  # DEPENDENCY VULNERABILITY SCAN (pip-audit)
+  #########################################
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Install pip-audit (dependency vulnerability scanner)
+        run: pip install pip-audit
+
+      - name: Run pip-audit and save report
+        run: pip-audit -o json > pip_audit_report.json
+        continue-on-error: true
+
+      - name: Print Medium/High Severity Issues from pip-audit
+        run: |
+          echo "## 🔎 pip-audit Security Report (Medium/High Severity)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Severity | Issue |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          jq -r '.vulnerabilities[] | select(.severity != "low") | "| \(.package) | \(.severity) | \(.advisory) |"' pip_audit_report.json >> $GITHUB_STEP_SUMMARY
+
+          # GitHub Annotations for Medium/High Severity Issues
+          jq -r '.vulnerabilities[] | select(.severity != "low") | "##[warning] \(.package): \(.severity) - \(.advisory)"' pip_audit_report.json
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "👉 **For the full security report including low severity issues, please download the artifact from this workflow run.**" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload pip-audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-report
+          path: pip_audit_report.json
+
+      - name: Fail CI if High Severity Issues Found
+        run: |
+          SEVERITY_COUNT=$(jq '[.vulnerabilities[] | select(.severity == "high" or .severity == "critical")] | length' pip_audit_report.json)
+          if [ "$SEVERITY_COUNT" -gt 0 ]; then
+            echo "❌ High or Critical severity vulnerabilities found! Failing CI."
+            exit 1
+          fi
+
+  #########################################
+  # UNIT TESTS WITH COVERAGE REPORT
+  #########################################
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies & test tools
+        run: |
+          pip install -r requirements.txt
+          pip install pytest coverage
+
+      - name: Run pytest with coverage and export XML report
+        run: |
+          export PYTHONPATH=feedit_app
+          coverage run -m pytest > pytest_report.txt || true
+          coverage html || true
+
+      - name: Add GitHub Summary for pytest Results
+        run: |
+          echo "## Pytest Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Pytest test results:" >> $GITHUB_STEP_SUMMARY
+          cat pytest_report.txt >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if grep -q "FAILED" pytest_report.txt; then
+            echo "❌ Some tests have failed. Please check the logs for details." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ All tests passed successfully!" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Add GitHub Summary for Coverage
+        run: |
+          COVERAGE_PERCENTAGE=$(coverage report -m | tail -n 1 | awk '{print $4}' | sed 's/%//')
+          echo "## Test Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "Test coverage is **$COVERAGE_PERCENTAGE%**." >> $GITHUB_STEP_SUMMARY
+          if [ "$COVERAGE_PERCENTAGE" -lt 80 ]; then
+            echo "⚠️ Coverage is below 80%. Please improve test coverage." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-coverage-report
+          path: htmlcov

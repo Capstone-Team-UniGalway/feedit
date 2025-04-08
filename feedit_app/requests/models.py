@@ -1,0 +1,53 @@
+from django.conf import settings
+from django.db import models
+from django_ckeditor_5.fields import CKEditor5Field
+from app.base_model import BaseModel
+
+
+# Requests made by employees to employers with status tracking
+class Request(BaseModel):
+    class RequestType(models.TextChoices):
+        JOIN = "join", "Join"
+        CLAIM = "claim", "Claim"
+        OTHER = "other", "Other"
+
+    class RequestStatus(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="requests_sent",
+    )
+    company = models.ForeignKey(
+        "companies.Company", on_delete=models.CASCADE, related_name="requests"
+    )
+    type = models.CharField(max_length=10, choices=RequestType.choices)
+    status = models.CharField(
+        max_length=10, choices=RequestStatus.choices, default=RequestStatus.PENDING
+    )
+    title = models.CharField(max_length=255)
+    content = CKEditor5Field()
+
+
+# Replies to private employee requests
+class RequestReply(BaseModel):
+    request = models.ForeignKey(
+        Request, on_delete=models.CASCADE, related_name="replies"
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="request_replies",
+    )
+    content = CKEditor5Field()
+
+    class Meta:
+        verbose_name = "Request Reply"
+        verbose_name_plural = "Request Replies"
