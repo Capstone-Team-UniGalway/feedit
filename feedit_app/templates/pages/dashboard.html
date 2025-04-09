@@ -1,67 +1,48 @@
-<!-- Navbar -->
-<div class="navbar bg-base-200 px-6">
-  <div class="flex-1">
-    <a class="text-xl font-bold">📊 FeedIT</a>
+<c-layouts.base>
+  <!-- Welcome -->
+  <div class="max-w-6xl mx-auto px-6 py-8">
+    <h1 class="text-3xl font-bold">Welcome to FeedIT</h1>
+    <p class="text-sm text-gray-500">Here’s what’s going on with your team</p>
   </div>
-  <div class="flex gap-4 items-center">
-    <a class="btn btn-ghost btn-sm">Home</a>
-    <a class="btn btn-ghost btn-sm">Companies</a>
-    <a class="btn btn-ghost btn-sm">Contact</a>
 
-    <div class="avatar">
-      <div class="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-        <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Noel" />
+  <!-- Dashboard Grid -->
+  <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 px-6 pb-10">
+
+    <!-- Threads -->
+    <div>
+      <h2 class="text-lg font-semibold mb-2 border-b pb-1">My Threads</h2>
+      <div class="card bg-base-100 shadow p-4 mb-3">
+        <p class="text-sm font-bold text-gray-400">22/02/2025</p>
+        <p>Looking to find players for our lunch time football game! Any takers?</p>
+      </div>
+      <div class="card bg-base-100 shadow p-4 mb-3">
+        <p class="text-sm font-bold text-gray-400">11/02/2025</p>
+        <p>Could we do something about the parking situation at the office please?</p>
+      </div>
+      <button class="btn btn-primary btn-block mt-2">New thread</button>
+    </div>
+
+    <!-- Requests -->
+    <div>
+      <h2 class="text-lg font-semibold mb-2 border-b pb-1">Requests</h2>
+      <div class="card bg-base-100 shadow p-6">
+        <p class="text-sm font-bold text-gray-400 mb-2">03/03/2025</p>
+        <button class="btn btn-outline btn-primary">Pending request</button>
       </div>
     </div>
 
-    <!-- Added Login button -->
-    <a href="profile.html" class="btn btn-sm btn-outline btn-primary">Login</a>
+    <!-- Company Stats -->
+    <div>
+      <h2 class="text-lg font-semibold mb-2 border-b pb-1">Company Statistics</h2>
+      <div class="card bg-base-100 shadow p-4 mb-4">
+        <p class="text-sm text-gray-400">Turnover Rate</p>
+        <div class="text-2xl font-bold">15 <span class="text-error text-sm">↓ 2%</span></div>
+      </div>
+      <div class="card bg-base-100 shadow p-4">
+        <p class="text-sm text-gray-400">Employees on platform</p>
+        <div class="text-2xl font-bold">27</div>
+      </div>
+    </div>
+
   </div>
-</div>
-
-<!-- Welcome -->
-<div class="max-w-6xl mx-auto px-6 py-8">
-  <h1 class="text-3xl font-bold">Welcome to FeedIT</h1>
-  <p class="text-sm text-gray-500">Here’s what’s going on with your team</p>
-</div>
-
-<!-- Dashboard Grid -->
-<div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 px-6 pb-10">
-
-  <!-- Threads -->
-  <div>
-    <h2 class="text-lg font-semibold mb-2 border-b pb-1">My Threads</h2>
-    <div class="card bg-base-100 shadow p-4 mb-3">
-      <p class="text-sm font-bold text-gray-400">22/02/2025</p>
-      <p>Looking to find players for our lunch time football game! Any takers?</p>
-    </div>
-    <div class="card bg-base-100 shadow p-4 mb-3">
-      <p class="text-sm font-bold text-gray-400">11/02/2025</p>
-      <p>Could we do something about the parking situation at the office please?</p>
-    </div>
-    <button class="btn btn-primary btn-block mt-2">New thread</button>
-  </div>
-
-  <!-- Requests -->
-  <div>
-    <h2 class="text-lg font-semibold mb-2 border-b pb-1">Requests</h2>
-    <div class="card bg-base-100 shadow p-6">
-      <p class="text-sm font-bold text-gray-400 mb-2">03/03/2025</p>
-      <button class="btn btn-outline btn-primary">Pending request</button>
-    </div>
-  </div>
-
-  <!-- Company Stats -->
-  <div>
-    <h2 class="text-lg font-semibold mb-2 border-b pb-1">Company Statistics</h2>
-    <div class="card bg-base-100 shadow p-4 mb-4">
-      <p class="text-sm text-gray-400">Turnover Rate</p>
-      <div class="text-2xl font-bold">15 <span class="text-error text-sm">↓ 2%</span></div>
-    </div>
-    <div class="card bg-base-100 shadow p-4">
-      <p class="text-sm text-gray-400">Employees on platform</p>
-      <div class="text-2xl font-bold">27</div>
-    </div>
-  </div>
-
-</div>
+</c-layouts.base>
