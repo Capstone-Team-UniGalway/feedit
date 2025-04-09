@@ -1,43 +1,5 @@
-<!doctype html>
-<html lang="en" data-theme="light">
-
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FeedIT - Welcome</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            plugins: [window.daisyui],
-        }
-    </script>
-</head>
-
-<body class="flex min-h-screen flex-col">
-    <!-- Navbar -->
-    <div class="navbar bg-base-100 px-8 shadow-md">
-        <div class="flex-1">
-            <a class="text-xl font-bold">FeedIT</a>
-        </div>
-        <div class="hidden lg:flex">
-            <ul class="menu menu-horizontal px-1">
-                <li><a class="text-primary border-primary border-b-2">Home</a></li>
-                <li><a>Companies</a></li>
-                <li><a>Contact</a></li>
-            </ul>
-        </div>
-        <div class="flex-none">
-            <button class="btn btn-primary btn-sm">
-                <svg class="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-                Login
-            </button>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <main class="flex flex-grow flex-col items-center justify-center px-4 py-16">
+<c-layouts.base>
+    <div class="flex flex-grow flex-col items-center justify-center px-4 py-16">
         <h1 class="mb-12 text-3xl font-semibold">Select Your Role</h1>
         <div class="mb-8 flex flex-col gap-6 md:flex-row">
             <div class="card bg-primary text-primary-content w-64 shadow-xl transition hover:scale-105">
@@ -61,37 +23,12 @@
 
         <!-- Search -->
         <div class="form-control w-full max-w-md">
-            <label class="input input-bordered flex items-center gap-2">
+            <label class="w-full input input-bordered flex items-center gap-2">
                 <svg class="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z" />
                 </svg>
                 <input type="text" class="grow" placeholder="Search" />
             </label>
         </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="footer bg-neutral text-neutral-content flex-col items-center p-10">
-        <div class="form-control w-full max-w-md">
-            <label class="label">
-                <span class="label-text mb-2 text-white">Subscribe to our newsletter</span>
-            </label>
-            <div class="join w-full">
-                <input type="text" placeholder="Input your email" class="input input-bordered join-item w-full" />
-                <button class="btn btn-primary join-item">Subscribe</button>
-            </div>
-        </div>
-
-        <div class="mt-10 flex flex-wrap justify-center gap-4 text-sm">
-            <a class="link link-hover">Pricing</a>
-            <a class="link link-hover">About us</a>
-            <a class="link link-hover">Features</a>
-            <a class="link link-hover">Help Center</a>
-            <a class="link link-hover">Contact us</a>
-            <a class="link link-hover">FAQs</a>
-            <a class="link link-hover">Careers</a>
-        </div>
-    </footer>
-</body>
-
-</html>
+    </div>
+</c-layouts.base>
