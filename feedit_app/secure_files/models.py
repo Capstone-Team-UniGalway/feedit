@@ -90,6 +90,11 @@ class SecureFile(BaseModel):
         self.full_clean()
         super().save(*args, **kwargs)
 
+    def delete(self, *args, **kwargs):
+        if self.file:
+            self.file.delete(save=False)  # Delete the actual file
+        super().delete(*args, **kwargs)  # Mark is_deleted
+
     def __str__(self):
         return f"{self.filename} attached to {self.content_type} {self.object_id}"
 
