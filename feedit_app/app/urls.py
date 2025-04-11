@@ -23,7 +23,7 @@ from django.views.generic import TemplateView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    # path('companies/', include('companies.urls')),
+    path("companies/", include("companies.urls")),
     path(
         "",
         TemplateView.as_view(template_name="pages/welcome.html"),
@@ -35,29 +35,14 @@ urlpatterns = [
         name="claim_company",
     ),
     path(
-        "company_profile",
-        TemplateView.as_view(template_name="pages/company_profile.html"),
-        name="company_profile",
-    ),
-    path(
         "company_reviews",
         TemplateView.as_view(template_name="pages/company_reviews.html"),
         name="company_reviews",
     ),
     path(
-        "company_search",
-        TemplateView.as_view(template_name="pages/company_search.html"),
-        name="company_search",
-    ),
-    path(
         "dashboard",
         TemplateView.as_view(template_name="pages/dashboard.html"),
         name="dashboard",
-    ),
-    path(
-        "edit_company",
-        TemplateView.as_view(template_name="pages/edit_company.html"),
-        name="edit_company",
     ),
     path(
         "edit_profile",
