@@ -16,7 +16,7 @@ class PublicCompanyListView(ListView):
     model = Company
     template_name = "pages/companies/company_list.html"
     context_object_name = "companies"
-    paginate_by = 12
+    paginate_by = 8
 
     def get_queryset(self):
         query = self.request.GET.get("q", "")

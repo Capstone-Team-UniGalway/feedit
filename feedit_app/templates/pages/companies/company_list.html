@@ -1,83 +1,58 @@
 <c-layouts.base>
     <!-- Filters and Search -->
     <div class="flex flex-wrap items-center justify-between mb-6 gap-4">
-        <input type="text" placeholder="Search..." class="input input-bordered w-full max-w-xs" />
+        <h1 class="mb-4 text-xl text-gray-700">
+            {% if request.GET.q %}
+                Results for: <span class="font-medium">{{ request.GET.q }}</span>
+            {% else %}
+                All companies
+            {% endif %}
+        </h1>
         <div class="flex gap-2">
             <button class="btn btn-outline">Filter</button>
             <button class="btn btn-outline">Sort by</button>
         </div>
     </div>
-
-    <!-- Grid of Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        <!-- Example Card -->
-        <div class="card bg-base-100 shadow-xl">
-            <figure><img src="https://via.placeholder.com/300x150" alt="Company logo" /></figure>
-            <div class="card-body">
-                <h2 class="card-title">Apple Inc.</h2>
-                <p>Technology company</p>
-                <p class="text-sm text-gray-500">NASDAQ: AAPL</p>
-                <div class="card-actions justify-end">
-                    <button class="btn btn-outline btn-sm">View Profile</button>
+    {% if companies %}
+        <!-- Grid of Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {% for company in companies %}
+            <!-- Example Card -->
+            <div class="card bg-base-100 shadow-xl">
+                <figure>
+                    {% if company.profile_picture %}
+                        <img src="{{ company.profile_picture.file.url }}" alt="{{ company.name }} logo" class="h-36 w-full object-cover" />
+                    {% else %}
+                        <img src="https://via.placeholder.com/300x150?text={{ company.name|urlencode }}" alt="Company placeholder logo" class="h-36 w-full object-cover" />
+                    {% endif %}
+                </figure>
+                <div class="card-body">
+                    <h2 class="card-title truncate">{{ company.name }}</h2>
+                    {% if company.industry %}
+                        <p class="text-sm text-gray-700">{{ company.industry }}</p>
+                    {% endif %}
+                    <p class="text-sm text-gray-500">{{ company.city }}, {{ company.country }}</p>
+                    <div class="card-actions justify-end">
+                        <a href="{% url 'companies:detail' company.id %}" class="btn btn-sm btn-outline">View Profile</a>
+                    </div>
                 </div>
             </div>
+            {% endfor %}
         </div>
-        <div class="card bg-base-100 shadow-xl">
-            <figure><img src="https://via.placeholder.com/300x150" alt="Company logo" /></figure>
-            <div class="card-body">
-                <h2 class="card-title">Apple Inc.</h2>
-                <p>Technology company</p>
-                <p class="text-sm text-gray-500">NASDAQ: AAPL</p>
-                <div class="card-actions justify-end">
-                    <button class="btn btn-outline btn-sm">View Profile</button>
-                </div>
-            </div>
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="join mt-10 justify-center flex">
+            {% if page_obj.has_previous %}
+            <a href="?q={{ request.GET.q }}&page={{ page_obj.previous_page_number }}" class="join-item btn">« Prev</a>
+            {% endif %}
+            <button class="join-item btn btn-disabled">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</button>
+            {% if page_obj.has_next %}
+            <a href="?q={{ request.GET.q }}&page={{ page_obj.next_page_number }}" class="join-item btn">Next »</a>
+            {% endif %}
         </div>
-        <div class="card bg-base-100 shadow-xl">
-            <figure><img src="https://via.placeholder.com/300x150" alt="Company logo" /></figure>
-            <div class="card-body">
-                <h2 class="card-title">Apple Inc.</h2>
-                <p>Technology company</p>
-                <p class="text-sm text-gray-500">NASDAQ: AAPL</p>
-                <div class="card-actions justify-end">
-                    <button class="btn btn-outline btn-sm">View Profile</button>
-                </div>
-            </div>
-        </div>
-        <div class="card bg-base-100 shadow-xl">
-            <figure><img src="https://via.placeholder.com/300x150" alt="Company logo" /></figure>
-            <div class="card-body">
-                <h2 class="card-title">Apple Inc.</h2>
-                <p>Technology company</p>
-                <p class="text-sm text-gray-500">NASDAQ: AAPL</p>
-                <div class="card-actions justify-end">
-                    <button class="btn btn-outline btn-sm">View Profile</button>
-                </div>
-            </div>
-        </div>
-        <div class="card bg-base-100 shadow-xl">
-            <figure><img src="https://via.placeholder.com/300x150" alt="Company logo" /></figure>
-            <div class="card-body">
-                <h2 class="card-title">Apple Inc.</h2>
-                <p>Technology company</p>
-                <p class="text-sm text-gray-500">NASDAQ: AAPL</p>
-                <div class="card-actions justify-end">
-                    <button class="btn btn-outline btn-sm">View Profile</button>
-                </div>
-            </div>
-        </div>
-        <div class="card bg-base-100 shadow-xl">
-            <figure><img src="https://via.placeholder.com/300x150" alt="Company logo" /></figure>
-            <div class="card-body">
-                <h2 class="card-title">Apple Inc.</h2>
-                <p>Technology company</p>
-                <p class="text-sm text-gray-500">NASDAQ: AAPL</p>
-                <div class="card-actions justify-end">
-                    <button class="btn btn-outline btn-sm">View Profile</button>
-                </div>
-            </div>
-        </div>
-
-    </div>
+        {% endif %}
+    {% else %}
+        <p class="text-gray-600">No companies found matching your search.</p>
+    {% endif %}
 
 </c-layouts.base>
