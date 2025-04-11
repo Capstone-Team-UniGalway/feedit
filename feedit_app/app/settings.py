@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     "allauth.mfa",
     "django_cotton",
     "django_ckeditor_5",
+    "widget_tweaks",
     # created
     "accounts",
     "companies",
