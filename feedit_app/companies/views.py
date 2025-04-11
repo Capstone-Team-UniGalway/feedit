@@ -1,17 +1,18 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.http import Http404
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, View
 from .models import Company
 from app.mixins import SuperuserBypassMixin
-
-# from .forms import CompanyForm
+from .forms import CompanyForm
 
 
 class PublicCompanyListView(ListView):
     """Route: /companies | Permission: all"""
+
+    http_method_names = ["get"]
 
     model = Company
     template_name = "pages/companies/company_list.html"
@@ -29,6 +30,8 @@ class PublicCompanyListView(ListView):
 class CompanyDetailView(DetailView):
     """Route: /companies/<int:pk> | Permission: all"""
 
+    http_method_names = ["get"]
+
     model = Company
     template_name = "pages/companies/company_profile.html"
     context_object_name = "company"
@@ -43,10 +46,12 @@ class CompanyDetailView(DetailView):
 class CreateCompanyView(LoginRequiredMixin, SuperuserBypassMixin, CreateView):
     """Route: /companies/create | GET/POST | Permission: employer with no company"""
 
+    http_method_names = ["get", "post"]
+
     model = Company
-    # form_class = CompanyForm
+    form_class = CompanyForm
     template_name = "pages/companies/company_form.html"
-    success_url = reverse_lazy("dashboard")  # Adjust as needed
+    success_url = reverse_lazy("dashboard")
 
     def user_test_func(self):
         user = self.request.user
@@ -63,10 +68,12 @@ class CreateCompanyView(LoginRequiredMixin, SuperuserBypassMixin, CreateView):
 class EditCompanyView(LoginRequiredMixin, SuperuserBypassMixin, UpdateView):
     """Route: /company/<int:pk>/edit | GET/PUT"""
 
+    http_method_names = ["get", "put"]
+
     model = Company
-    # form_class = CompanyForm
+    form_class = CompanyForm
     template_name = "pages/companies/company_form.html"
-    success_url = reverse_lazy("dashboard")  # Adjust as needed
+    success_url = reverse_lazy("dashboard")
 
     def user_test_func(self):
         company = self.get_object()
@@ -78,3 +85,17 @@ class EditCompanyView(LoginRequiredMixin, SuperuserBypassMixin, UpdateView):
 
     def get_queryset(self):
         return Company.objects.filter(is_deleted=False)
+
+
+class DeleteCompanyView(LoginRequiredMixin, SuperuserBypassMixin, View):
+    http_method_names = ["post"]
+
+    def user_test_func(self):
+        company = get_object_or_404(Company, pk=self.kwargs["pk"], is_deleted=False)
+        return self.request.user == company.employer
+
+    def post(self, request, *args, **kwargs):
+        success_url = reverse_lazy("dashboard")
+        company = get_object_or_404(Company, pk=self.kwargs["pk"], is_deleted=False)
+        company.delete()  # Uses soft-delete from BaseModel
+        return redirect(success_url)
