@@ -54,3 +54,11 @@ class Company(BaseModel):
 
         ct = ContentType.objects.get_for_model(self.__class__)
         return SecureFile.objects.filter(content_type=ct, object_id=self.id).first()
+
+    @property
+    def average_rating(self):
+        qs = self.reviews.filter(is_deleted=False)
+        if not qs.exists():
+            return None
+        avg = qs.aggregate(avg=models.Avg("rating"))["avg"]
+        return round(avg or 0, 1)

@@ -45,6 +45,15 @@ class Review(BaseModel):
         if not self.user and not self.is_anonymous and not self.guest_name:
             raise ValidationError("Guest name is required if not anonymous.")
 
+    def get_display_name(self):
+        if self.is_anonymous:
+            return "Anonymous"
+        if self.user:
+            return self.user
+        if self.guest_name:
+            return self.guest_name
+        return "Unknown"
+
     def __str__(self):
         if self.is_anonymous:
             name = "Anonymous"

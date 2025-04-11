@@ -1,12 +1,14 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, View
 from .models import Company
+from reviews.models import ReviewReply
 from app.mixins import SuperuserBypassMixin
 from .forms import CompanyForm
+from django.core.paginator import Paginator
 
 
 class PublicCompanyListView(ListView):
@@ -41,6 +43,36 @@ class CompanyDetailView(DetailView):
         if company.is_deleted:
             raise Http404("Company not found")
         return company
+
+    def get_context_data(self, **kwargs):
+        """
+        select_related("user") - Django fetches all the reviews and their associated
+        users in one query using SQL joins. Without it, for each review, Django will hit
+        the database to fetch the related user causing N+1 query problem
+        .prefetch_related("replies") - fetches replies within same query to avoid N+1
+        """
+        context = super().get_context_data(**kwargs)
+        reviews = (
+            self.object.reviews.filter(is_deleted=False)
+            .select_related("user")
+            .prefetch_related(
+                Prefetch(
+                    "replies",
+                    queryset=ReviewReply.objects.filter(is_deleted=False).order_by(
+                        "-created_at"
+                    ),
+                )
+            )
+            .order_by("-created_at")
+        )
+        paginator = Paginator(reviews, 5)  # 5 reviews per page
+        page_number = self.request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+
+        context["page_obj"] = page_obj
+        context["reviews"] = page_obj.object_list
+        context["is_paginated"] = page_obj.has_other_pages()
+        return context
 
 
 class CreateCompanyView(LoginRequiredMixin, SuperuserBypassMixin, CreateView):

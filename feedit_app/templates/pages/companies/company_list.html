@@ -1,3 +1,4 @@
+{% load static %}
 <c-layouts.base>
     <!-- Filters and Search -->
     <div class="flex flex-wrap items-center justify-between mb-6 gap-4">
@@ -23,7 +24,7 @@
                     {% if company.profile_picture %}
                         <img src="{{ company.profile_picture.file.url }}" alt="{{ company.name }} logo" class="h-36 w-full object-cover" />
                     {% else %}
-                        <img src="https://via.placeholder.com/300x150?text={{ company.name|urlencode }}" alt="Company placeholder logo" class="h-36 w-full object-cover" />
+                        <img src="{% static 'images/company_placeholder.png' %}" alt="{{ company.name }} logo" class="h-36 w-full object-cover" />
                     {% endif %}
                 </figure>
                 <div class="card-body">
@@ -32,6 +33,11 @@
                         <p class="text-sm text-gray-700">{{ company.industry }}</p>
                     {% endif %}
                     <p class="text-sm text-gray-500">{{ company.city }}, {{ company.country }}</p>
+                    {% if company.average_rating %}
+                        <p class="text-sm text-gray-500">
+                            Rating: {{ company.average_rating }} ★
+                        </p>
+                    {% endif %}
                     <div class="card-actions justify-end">
                         <a href="{% url 'companies:detail' company.id %}" class="btn btn-sm btn-outline">View Profile</a>
                     </div>

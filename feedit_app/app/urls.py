@@ -35,11 +35,6 @@ urlpatterns = [
         name="claim_company",
     ),
     path(
-        "company_reviews",
-        TemplateView.as_view(template_name="pages/company_reviews.html"),
-        name="company_reviews",
-    ),
-    path(
         "dashboard",
         TemplateView.as_view(template_name="pages/dashboard.html"),
         name="dashboard",
