@@ -1,0 +1,43 @@
+<c-layouts.base>
+  <!-- Form Card -->
+  <div class="max-w-2xl mx-auto py-10 px-6">
+    <div class="card bg-base-200 shadow p-6">
+      <h2 class="text-xl font-bold mb-4">Personal Information Update</h2>
+
+      <div class="form-control mb-4">
+        <label class="label">Name</label>
+        <input type="text" placeholder="Jane Doe" class="input input-bordered" />
+      </div>
+
+      <div class="form-control mb-4">
+        <label class="label">Email</label>
+        <input type="email" placeholder="jane.doe@example.com" class="input input-bordered" />
+      </div>
+
+      <div class="form-control mb-6">
+        <label class="label">Phone</label>
+        <input type="tel" placeholder="+353 87 123 4567" class="input input-bordered" />
+      </div>
+
+      <h3 class="text-lg font-semibold mb-2">Change Password</h3>
+
+      <div class="form-control mb-2">
+        <input type="password" placeholder="Current Password" class="input input-bordered" />
+      </div>
+      <div class="form-control mb-2">
+        <input type="password" placeholder="New Password" class="input input-bordered" />
+      </div>
+      <div class="form-control mb-4">
+        <input type="password" placeholder="Confirm New Password" class="input input-bordered" />
+      </div>
+
+      <button class="btn btn-primary w-full mb-4">💾 Save Changes</button>
+
+      <div class="divider">OR</div>
+
+      <h3 class="text-lg font-semibold mb-2 text-error">Danger Zone</h3>
+      <p class="text-sm mb-4">You can permanently close your account. This action cannot be undone.</p>
+      <button class="btn btn-error btn-outline w-full">❌ Close My Account</button>
+    </div>
+  </div>
+</c-layouts.base>

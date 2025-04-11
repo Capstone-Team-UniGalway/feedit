@@ -1,0 +1,48 @@
+<c-layouts.base>
+    <!-- Contact Form -->
+    <section class="container mx-auto px-4 max-w-xl">
+        <h1 class="text-3xl font-bold mb-6 text-center">Report a Bug</h1>
+
+        <form class="space-y-4">
+            <!-- Name -->
+            <div>
+                <label class="label">
+                    <span class="label-text">Name</span>
+                </label>
+                <input type="text" placeholder="Your Name" class="input input-bordered w-full" />
+            </div>
+
+            <!-- Email -->
+            <div>
+                <label class="label">
+                    <span class="label-text">Email</span>
+                </label>
+                <input type="email" placeholder="youremail@example.com" class="input input-bordered w-full" />
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label class="label">
+                    <span class="label-text">Description of the bug</span>
+                </label>
+                <textarea class="textarea textarea-bordered w-full"
+                    placeholder="Please include information about the device, OS version, browser or app version, etc."></textarea>
+            </div>
+
+            <!-- Steps -->
+            <div>
+                <label class="label">
+                    <span class="label-text">Steps to reproduce the bug (one per line)</span>
+                </label>
+                <textarea class="textarea textarea-bordered w-full"
+                    placeholder="Add the steps to reproduce the bug"></textarea>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex justify-start gap-4 pt-2">
+                <button type="submit" class="btn btn-primary">Submit</button>
+                <button type="reset" class="btn btn-neutral">Cancel</button>
+            </div>
+        </form>
+    </section>
+</c-layouts.base>

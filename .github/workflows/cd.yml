@@ -96,6 +96,15 @@ jobs:
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REPOSITORY_URI }}
             echo "Logged in successfuly..."
 
+            echo "Listing current Docker images..."
+            docker images
+
+            echo "Pruning unused Docker data (containers, images, networks, volumes)..."
+            docker system prune -af --volumes
+
+            echo "Removing ALL Docker images manually (if any left dangling)..."
+            docker rmi -f $(docker images -aq) || true
+
             echo "Pulling image from ECR ..."
             docker pull ${{ env.ECR_REPOSITORY_URI }}:latest
             echo "Docker pull completed..."

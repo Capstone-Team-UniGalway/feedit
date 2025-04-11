@@ -1,0 +1,59 @@
+<c-layouts.base>
+    <!-- Reviews Section -->
+    <section class="container mx-auto px-4 max-w-3xl mb-16">
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-4xl font-bold">Apple Reviews</h1>
+            <button class="btn btn-outline btn-sm">Sort by</button>
+        </div>
+        <p class="text-sm text-gray-500 mb-6">Job title</p>
+
+        <!-- Review 1 -->
+        <div class="card bg-white shadow-sm mb-6">
+            <div class="card-body space-y-2">
+                <div class="flex items-center gap-3">
+                    <div class="text-lg font-bold">1</div>
+                    <div>
+                        <h3 class="font-semibold">Jinny Oslin</h3>
+                        <p class="text-sm text-gray-400">📅 a day ago</p>
+                    </div>
+                    <div class="ml-auto text-yellow-400 text-sm">★★★★☆</div>
+                </div>
+                <p class="text-sm text-gray-600">Magna id sint irure in cillum esse nisi dolor laboris ullamco.
+                    Consectetur proident...</p>
+                <button class="btn btn-sm btn-outline">Reply</button>
+            </div>
+        </div>
+
+        <!-- Review 2 -->
+        <div class="card bg-white shadow-sm mb-6">
+            <div class="card-body space-y-2">
+                <div class="flex items-center gap-3">
+                    <div class="text-lg font-bold">2</div>
+                    <div>
+                        <h3 class="font-semibold">Jinny Oslin</h3>
+                        <p class="text-sm text-gray-400">📅 a day ago</p>
+                    </div>
+                    <div class="ml-auto text-yellow-400 text-sm">★★★★☆</div>
+                </div>
+                <p class="text-sm text-gray-600">Magna id sint irure in cillum esse nisi dolor laboris ullamco.
+                    Consectetur proident...</p>
+            </div>
+        </div>
+
+        <!-- Write Review -->
+        <div class="mt-12">
+            <h2 class="text-2xl font-semibold mb-4">Write a review</h2>
+            <form class="space-y-4">
+                <input type="text" placeholder="Input text" class="input input-bordered w-full" />
+                <div class="rating">
+                    <input type="radio" name="rating" class="mask mask-star bg-yellow-400" />
+                    <input type="radio" name="rating" class="mask mask-star bg-yellow-400" />
+                    <input type="radio" name="rating" class="mask mask-star bg-yellow-400" />
+                    <input type="radio" name="rating" class="mask mask-star bg-yellow-400" checked />
+                    <input type="radio" name="rating" class="mask mask-star bg-yellow-400" />
+                </div>
+                <button class="btn btn-primary w-full max-w-sm">Submit review</button>
+            </form>
+        </div>
+    </section>
+</c-layouts.base>

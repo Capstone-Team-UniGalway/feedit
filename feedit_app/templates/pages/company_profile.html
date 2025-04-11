@@ -1,0 +1,68 @@
+<c-layouts.base>
+    <!-- Profile Content -->
+    <section class="container mx-auto px-4 max-w-4xl">
+        <!-- Company Info -->
+        <div class="card bg-base-100 shadow-md mb-8 p-6">
+            <div class="flex flex-col items-center text-center">
+                <img src="https://via.placeholder.com/400x200" class="rounded-xl mb-4" />
+                <h2 class="text-xl font-bold">Apple Inc.</h2>
+                <p class="text-sm text-gray-500">Technology company</p>
+                <p class="text-sm text-gray-400">NASDAQ: AAPL</p>
+                <div class="flex gap-4 my-2 text-primary">
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-github"></i></a>
+                    <a href="#"><i class="fas fa-link"></i></a>
+                </div>
+                <div class="mt-4 flex gap-2">
+                    <button class="btn btn-sm btn-outline">Edit profile</button>
+                    <button class="btn btn-sm btn-neutral">Share profile</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <h3 class="text-lg font-bold mb-4">Activity</h3>
+
+        <div class="space-y-4">
+            <!-- Activity 1 -->
+            <div class="card bg-white shadow-sm">
+                <div class="card-body flex items-center justify-between">
+                    <div>
+                        <h4 class="font-bold">New Post</h4>
+                        <p class="text-sm text-gray-500">You shared a new photo</p>
+                        <p class="text-xs text-gray-400 mt-1">2 hours ago</p>
+                        <button class="btn btn-sm btn-outline mt-2">View</button>
+                    </div>
+                    <img src="https://source.unsplash.com/100x100/?sunset" class="rounded-xl w-24 h-24 object-cover" />
+                </div>
+            </div>
+
+            <!-- Activity 2 -->
+            <div class="card bg-white shadow-sm">
+                <div class="card-body flex items-center justify-between">
+                    <div>
+                        <h4 class="font-bold">Commented</h4>
+                        <p class="text-sm text-gray-500">You commented on Sarah’s post</p>
+                        <p class="text-xs text-gray-400 mt-1">5 hours ago</p>
+                        <button class="btn btn-sm btn-outline mt-2">Reply</button>
+                    </div>
+                    <img src="https://source.unsplash.com/100x100/?workspace"
+                        class="rounded-xl w-24 h-24 object-cover" />
+                </div>
+            </div>
+
+            <!-- Activity 3 -->
+            <div class="card bg-white shadow-sm">
+                <div class="card-body flex items-center justify-between">
+                    <div>
+                        <h4 class="font-bold">Liked a Post</h4>
+                        <p class="text-sm text-gray-500">You liked Mark’s photo</p>
+                        <p class="text-xs text-gray-400 mt-1">Yesterday</p>
+                        <button class="btn btn-sm btn-outline mt-2">See Post</button>
+                    </div>
+                    <img src="https://source.unsplash.com/100x100/?friends" class="rounded-xl w-24 h-24 object-cover" />
+                </div>
+            </div>
+        </div>
+    </section>
+</c-layouts.base>
