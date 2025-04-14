@@ -5,7 +5,10 @@ from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
 from allauth.account.utils import complete_signup
 from allauth.account import app_settings as allauth_settings
+from allauth.account.models import EmailConfirmationHMAC
+from allauth.account.views import ConfirmEmailView
 from .forms import CustomLoginForm, CustomSignupForm
+from django.http import Http404
 
 
 class AuthView(TemplateView):
@@ -43,7 +46,7 @@ class AuthView(TemplateView):
         context = {}
 
         if "login" in request.POST:
-            login_form = CustomLoginForm(data=request.POST, request=request)
+            login_form = CustomLoginForm(request=request, data=request.POST)
             signup_form = CustomSignupForm(initial_role=request.GET.get("role"))
             if login_form.is_valid():
                 auth_login(request, login_form.user)
@@ -82,3 +85,30 @@ class LogoutView(LoginRequiredMixin, TemplateView):
     def get(self, request, *args, **kwargs):
         auth_logout(request)
         return redirect(self.success_url)
+
+
+class EmailConfirmView(ConfirmEmailView):
+    template_name = "pages/account/email_confirm.html"
+
+    def get_object(self, queryset=None):
+        key = self.kwargs.get("key")
+        confirmation = EmailConfirmationHMAC.from_key(key)
+        if not confirmation:
+            raise Http404("Invalid confirmation key.")
+        if confirmation.email_address.verified:
+            return confirmation
+        return confirmation
+
+    def post(self, request, *args, **kwargs):
+        success_url = reverse_lazy("dashboard")
+        self.object = self.get_object()
+        self.object.confirm(request)
+        return redirect(success_url)
+
+
+class EmailVerificationSentView(TemplateView):
+    template_name = "pages/account/verification_sent.html"
+
+
+class ConfirmSuccessView(TemplateView):
+    template_name = "pages/account/email_confirm_success.html"

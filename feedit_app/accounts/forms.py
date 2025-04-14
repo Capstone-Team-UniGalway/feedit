@@ -9,6 +9,8 @@ User = get_user_model()
 
 
 class CustomLoginForm(AllauthLoginForm):
+    # remember = forms.BooleanField(required=False, initial=False, label="Remember Me")
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

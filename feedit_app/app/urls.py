@@ -69,7 +69,7 @@ urlpatterns = [
         TemplateView.as_view(template_name="pages/report_bug.html"),
         name="report_bug",
     ),
-    path("account/", include("accounts.urls")),
     path("accounts/", include("allauth.urls")),
+    path("account/", include("accounts.urls")),
     path("upload/", include("django_ckeditor_5.urls")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
