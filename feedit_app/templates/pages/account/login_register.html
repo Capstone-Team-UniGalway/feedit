@@ -30,7 +30,9 @@
                             {% render_field field class="input input-bordered w-full" %}
                             {% endif %}
                             {% if field.errors %}
-                            <p class="text-error text-sm mt-1">{{ field.errors.0 }}</p>
+                            {% for error in field.errors %}
+                            <p class="text-sm text-error mt-1">{{ error }}</p>
+                            {% endfor %}
                             {% endif %}
                         </div>
                         {% endfor %}
@@ -59,7 +61,9 @@
                             {% endif %}
 
                             {% if field.errors %}
-                            <p class="text-error text-sm mt-1">{{ field.errors.0 }}</p>
+                            {% for error in field.errors %}
+                            <p class="text-sm text-error mt-1">{{ error }}</p>
+                            {% endfor %}
                             {% endif %}
                         </div>
                         {% endfor %}

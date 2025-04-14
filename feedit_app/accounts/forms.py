@@ -9,10 +9,19 @@ User = get_user_model()
 
 
 class CustomLoginForm(AllauthLoginForm):
-    # remember = forms.BooleanField(required=False, initial=False, label="Remember Me")
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        user = getattr(self, "user", None)
+
+        if user and getattr(user, "is_deleted", False):
+            self.add_error("login", "This account has been closed.")
+            raise forms.ValidationError("Login blocked due to deleted status.")
+
+        return cleaned_data
 
 
 class CustomSignupForm(AllauthSignupForm):

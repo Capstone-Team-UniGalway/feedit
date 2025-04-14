@@ -26,6 +26,11 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
+class ActiveUserManager(UserManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
+
 # Custom User model with role and MFA support
 class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     class UserType(models.TextChoices):
@@ -76,7 +81,7 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     is_active = models.BooleanField(default=True)
     is_approved = models.BooleanField(default=False)
 
-    objects = UserManager()
+    objects = ActiveUserManager()
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["first_name", "last_name"]

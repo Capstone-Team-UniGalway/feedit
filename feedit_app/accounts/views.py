@@ -56,6 +56,7 @@ class AuthView(TemplateView):
             if login_form.is_valid():
                 auth_login(request, login_form.user)
                 return redirect(self.success_url)
+
             context = {
                 "login_form": login_form,
                 "signup_form": signup_form,
@@ -182,6 +183,6 @@ class CloseAccountView(LoginRequiredMixin, View):
         success_url = reverse_lazy("account_auth")
         user = request.user
         user.is_active = False
-        user.save()
+        user.delete()
         auth_logout(request)
         return redirect(success_url)
