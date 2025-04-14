@@ -1,0 +1,78 @@
+{% load widget_tweaks %}
+<c-layouts.base>
+    <div class="flex justify-center items-start min-h-screen px-4">
+        <div class="w-full max-w-6xl bg-base-100 shadow-xl rounded-xl p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold">Access your account</h1>
+                <p class="text-gray-500">Login or create a new account</p>
+            </div>
+            {% if error_message %}
+                <div class="alert alert-error shadow-lg mb-6">
+                    <span>{{ error_message }}</span>
+                </div>
+            {% endif %}
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Login Form -->
+                <div class="w-full lg:w-1/2 border border-base-300 rounded-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">Login</h2>
+                    <form method="POST" action="{% url 'account_auth' %}" class="space-y-4">
+                        {% csrf_token %}
+                        <input type="hidden" name="login" value="1">
+
+                        {% for field in login_form.visible_fields %}
+                        <div>
+                            <label class="label"><span class="label-text">{{ field.label }}</span></label>
+
+                            {% if field.name == "remember" %}
+                            <label class="flex items-center gap-4 cursor-pointer">
+                                {% render_field field class="toggle toggle-primary" %}
+                                <span class="label-text">Remember Me</span>
+                            </label>
+                            {% else %}
+                                {% render_field field class="input input-bordered w-full" %}
+                            {% endif %}
+
+                            {% if field.errors %}
+                                <p class="text-error text-sm mt-1">{{ field.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+
+                        <div class="pt-4">
+                            <button name="login" class="btn btn-primary w-full" type="submit">Sign In</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Register Form -->
+                <div class="w-full lg:w-1/2 border border-base-300 rounded-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">Register</h2>
+                    <form method="POST" action="{% url 'account_auth' %}" class="space-y-4">
+                        {% csrf_token %}
+                        <input type="hidden" name="register" value="1">
+
+                        {% for field in signup_form.visible_fields %}
+                        <div>
+                            <label class="label"><span class="label-text">{{ field.label }}</span></label>
+
+                            {% if field.name == "type" %}
+                            {% render_field field class="select select-bordered w-full" %}
+                            {% else %}
+                            {% render_field field class="input input-bordered w-full" %}
+                            {% endif %}
+
+                            {% if field.errors %}
+                            <p class="text-error text-sm mt-1">{{ field.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+
+                        <div class="pt-4">
+                            <button name="register" class="btn btn-secondary w-full" type="submit">Create Account</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</c-layouts.base>
