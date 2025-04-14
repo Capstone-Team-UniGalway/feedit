@@ -1,0 +1,19 @@
+{% load i18n %}
+<c-layouts.base>
+    <div class="flex justify-center items-center h-full">
+        <div class="bg-base-100 shadow-xl rounded-xl p-8 max-w-lg w-full">
+            <h1 class="text-2xl font-bold mb-4">{% trans "Confirm Your Email Address" %}</h1>
+
+            {% if confirmation.email_address.verified %}
+            <p class="text-success">Your email has already been verified. You can now log in.</p>
+            <a href="/account/auth" class="btn btn-primary mt-4">Go to Login</a>
+            {% else %}
+            <form method="post">
+                {% csrf_token %}
+                <p class="mb-4 text-sm">Click below to confirm your email address:</p>
+                <button type="submit" class="btn btn-primary w-full">Confirm Email</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</c-layouts.base>

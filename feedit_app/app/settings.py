@@ -40,6 +40,7 @@ if ENVIRONMENT == "development":
             "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
         }
     }
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 else:
     DATABASES = {
         "default": {
@@ -121,18 +122,34 @@ WSGI_APPLICATION = "app.wsgi.application"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
 AUTHENTICATION_BACKENDS = [
-    # Needed to login by username in Django admin, regardless of `allauth`
-    "django.contrib.auth.backends.ModelBackend",
-    # `allauth` specific authentication methods, such as login by email
-    "allauth.account.auth_backends.AuthenticationBackend",
+    # Custom soft-delete aware logic extending on allauth logic
+    "accounts.backends.SoftDeleteAwareBackend",
 ]
 
+# Use email as the sole login identifier
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+# Auth method and fields
 ACCOUNT_LOGIN_METHODS = {"email"}
-ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
+ACCOUNT_SIGNUP_FIELDS = [
+    "first_name",
+    "last_name",
+    "email*",
+    "password1*",
+    "password2*",
+    "type",
+]
+
+# Email confirmation flow
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
-LOGIN_REDIRECT_URL = "/"
-LOGOUT_REDIRECT_URL = "/"
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+ACCOUNT_EMAIL_CONFIRMATION_URL = "account_confirm_email"  # name of the path in urls.py
+ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = "/dashboard"
+ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = "/account/confirm-email/success/"
+
+# Redirect after login/logout
+LOGIN_REDIRECT_URL = "/dashboard"
+LOGOUT_REDIRECT_URL = "/account/auth"
+LOGIN_URL = "/account/auth"
 
 AUTH_PASSWORD_VALIDATORS = [
     {

@@ -70,5 +70,6 @@ urlpatterns = [
         name="report_bug",
     ),
     path("accounts/", include("allauth.urls")),
+    path("account/", include("accounts.urls")),
     path("upload/", include("django_ckeditor_5.urls")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

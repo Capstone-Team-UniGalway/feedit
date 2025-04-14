@@ -3,6 +3,7 @@ from django.contrib.auth.models import (
     BaseUserManager,
     PermissionsMixin,
 )
+from django.templatetags.static import static
 from django.db import models
 from app.base_model import BaseModel
 from django.core.validators import EmailValidator, RegexValidator
@@ -23,6 +24,11 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         return self.create_user(email, password, **extra_fields)
+
+
+class ActiveUserManager(UserManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
 
 
 # Custom User model with role and MFA support
@@ -75,7 +81,7 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     is_active = models.BooleanField(default=True)
     is_approved = models.BooleanField(default=False)
 
-    objects = UserManager()
+    objects = ActiveUserManager()
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["first_name", "last_name"]
@@ -91,4 +97,11 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         from secure_files.models import SecureFile
 
         ct = ContentType.objects.get_for_model(self.__class__)
-        return SecureFile.objects.filter(content_type=ct, object_id=self.id).first()
+        secure_file = SecureFile.objects.filter(
+            content_type=ct, object_id=self.id
+        ).first()
+
+        if secure_file and secure_file.file:
+            return secure_file.file.url
+
+        return static("images/user_placeholder.png")

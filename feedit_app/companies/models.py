@@ -3,6 +3,7 @@ from django.db import models
 from app.base_model import BaseModel
 from django.core.validators import RegexValidator
 from django.contrib.contenttypes.models import ContentType
+from django.templatetags.static import static
 
 
 # Represents a company entity, either created or claimed
@@ -53,7 +54,14 @@ class Company(BaseModel):
         from secure_files.models import SecureFile
 
         ct = ContentType.objects.get_for_model(self.__class__)
-        return SecureFile.objects.filter(content_type=ct, object_id=self.id).first()
+        secure_file = SecureFile.objects.filter(
+            content_type=ct, object_id=self.id
+        ).first()
+
+        if secure_file and secure_file.file:
+            return secure_file.file.url
+
+        return static("images/company_placeholder.png")
 
     @property
     def average_rating(self):
