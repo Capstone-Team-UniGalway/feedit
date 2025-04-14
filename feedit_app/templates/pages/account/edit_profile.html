@@ -1,0 +1,99 @@
+{% load widget_tweaks %}
+
+<c-layouts.base>
+    <!-- Profile Settings -->
+    <section class="container mx-auto px-4 max-w-2xl space-y-10">
+
+        <!-- Email Verification Notice -->
+        {% if not request.user.emailaddress_set.first.verified %}
+        <div class="card bg-warning text-warning-content shadow p-6">
+            <h2 class="text-lg font-semibold mb-2">Email Not Verified</h2>
+            <p class="text-sm mb-3">Your email is not yet verified. Please verify to enable full account functionality.
+            </p>
+            <form method="post" action="{% url 'account_email_verification_send' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline">Resend Verification Email</button>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Profile Info Form -->
+        <div class="card bg-base-100 shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Profile Info</h2>
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                {% for field in form.visible_fields %}
+                <div>
+                    <label class="label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {% render_field field class="input input-bordered w-full" %}
+                    {% if field.help_text %}
+                    <p class="text-sm text-gray-500">{{ field.help_text }}</p>
+                    {% endif %}
+                    {% for error in field.errors %}
+                    <p class="text-sm text-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+                <button type="submit" name="update_profile" class="btn btn-primary w-full mt-2">Save</button>
+            </form>
+        </div>
+
+        <!-- Security: Password Change -->
+        <div class="card bg-base-100 shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Change Password</h2>
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                {% for field in password_change_form.visible_fields %}
+                <div>
+                    <label class="label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {% render_field field class="input input-bordered w-full" %}
+                    {% for error in field.errors %}
+                    <p class="text-sm text-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+                <button type="submit" name="change_password" class="btn btn-sm btn-primary">Update Password</button>
+            </form>
+        </div>
+
+        <!-- MFA Settings -->
+        <div class="card bg-base-100 shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Multi-Factor Authentication</h2>
+            <p class="text-sm text-gray-600 mb-4">
+                Secure your account with an extra layer of authentication. You can add or remove devices here.
+            </p>
+            <a href="{% url 'mfa_index' %}" class="btn btn-sm btn-outline">Manage MFA Devices</a>
+        </div>
+
+        <!-- Close Account -->
+        <div class="card bg-base-100 shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Close Account</h2>
+            <p class="text-sm text-gray-600 mb-4">
+                Closing your account will deactivate your access. This action cannot be undone.
+            </p>
+            <button class="btn btn-error btn-outline w-full" onclick="close_account_modal.showModal()">
+                Close Account
+            </button>
+
+            <!-- Modal -->
+            <dialog id="close_account_modal" class="modal">
+                <div class="modal-box">
+                    <h3 class="font-bold text-lg">Confirm Account Closure</h3>
+                    <p class="py-4 text-sm text-gray-600">
+                        Are you absolutely sure? Your account will be deactivated permanently.
+                    </p>
+                    <div class="modal-action">
+                        <form method="post" action="{% url 'account_close' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-error">Yes, Close My Account</button>
+                        </form>
+                        <form method="dialog">
+                            <button class="btn">Cancel</button>
+                        </form>
+                    </div>
+                </div>
+            </dialog>
+        </div>
+
+    </section>
+</c-layouts.base>

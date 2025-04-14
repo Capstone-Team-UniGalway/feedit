@@ -33,3 +33,22 @@ class CustomSignupForm(AllauthSignupForm):
         user.type = self.cleaned_data["type"]
         user.save()
         return user
+
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "job_title", "bio", "privacy"]
+        widgets = {
+            "first_name": forms.TextInput(
+                attrs={"class": "input input-bordered w-full"}
+            ),
+            "last_name": forms.TextInput(
+                attrs={"class": "input input-bordered w-full"}
+            ),
+            "job_title": forms.TextInput(
+                attrs={"class": "input input-bordered w-full"}
+            ),
+            "bio": forms.Textarea(attrs={"class": "textarea textarea-bordered w-full"}),
+            "privacy": forms.Select(attrs={"class": "select select-bordered w-full"}),
+        }

@@ -5,9 +5,15 @@ from .views import (
     EmailConfirmView,
     ConfirmSuccessView,
     EmailVerificationSentView,
+    ResendEmailVerificationView,
+    ProfileView,
+    EditProfileView,
+    CloseAccountView,
 )
 
 urlpatterns = [
+    path("", ProfileView.as_view(), name="account_profile"),
+    path("edit", EditProfileView.as_view(), name="account_edit"),
     path("auth", AuthView.as_view(), name="account_auth"),
     path("logout", LogoutView.as_view(), name="account_logout"),
     path(
@@ -25,4 +31,10 @@ urlpatterns = [
         EmailVerificationSentView.as_view(),
         name="account_email_verification_sent",
     ),
+    path(
+        "resend-verification/",
+        ResendEmailVerificationView.as_view(),
+        name="account_email_verification_send",
+    ),
+    path("close", CloseAccountView.as_view(), name="account_close"),
 ]

@@ -1,13 +1,18 @@
-from django.views.generic import TemplateView
-from django.contrib.auth import login as auth_login, logout as auth_logout
+from django.views.generic import TemplateView, View
+from django.contrib.auth import (
+    login as auth_login,
+    logout as auth_logout,
+    update_session_auth_hash,
+)
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
-from allauth.account.utils import complete_signup
+from allauth.account.utils import complete_signup, send_email_confirmation
 from allauth.account import app_settings as allauth_settings
 from allauth.account.models import EmailConfirmationHMAC
 from allauth.account.views import ConfirmEmailView
-from .forms import CustomLoginForm, CustomSignupForm
+from allauth.account.forms import ChangePasswordForm
+from .forms import CustomLoginForm, CustomSignupForm, UserProfileForm
 from django.http import Http404
 
 
@@ -110,5 +115,73 @@ class EmailVerificationSentView(TemplateView):
     template_name = "pages/account/verification_sent.html"
 
 
+class ResendEmailVerificationView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        send_email_confirmation(request, request.user)
+        return redirect("account_edit")  # or wherever you want to return
+
+
 class ConfirmSuccessView(TemplateView):
     template_name = "pages/account/email_confirm_success.html"
+
+
+class ProfileView(LoginRequiredMixin, TemplateView):
+    template_name = "pages/account/user_profile.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        context["user"] = user
+        # Optional: preload recent activity later
+        return context
+
+
+class EditProfileView(LoginRequiredMixin, TemplateView):
+    template_name = "pages/account/edit_profile.html"
+    success_url = reverse_lazy("account_edit")
+
+    def get(self, request, *args, **kwargs):
+        return self.render_to_response(self.get_context_data())
+
+    def post(self, request, *args, **kwargs):
+        if "update_profile" in request.POST:
+            profile_form = UserProfileForm(request.POST, instance=request.user)
+            password_form = ChangePasswordForm(user=request.user)
+            if profile_form.is_valid():
+                profile_form.save()
+                # Optional: request.session["toast_success"] = "Profile updated."
+                return redirect(self.success_url)
+        elif "change_password" in request.POST:
+            profile_form = UserProfileForm(instance=request.user)
+            password_form = ChangePasswordForm(data=request.POST, user=request.user)
+            if password_form.is_valid():
+                request.user.set_password(password_form.cleaned_data["password1"])
+                request.user.save()
+                update_session_auth_hash(request, request.user)  # Keeps user logged in
+                return redirect(self.success_url)
+        else:
+            # fallback
+            profile_form = UserProfileForm(instance=request.user)
+            password_form = ChangePasswordForm(user=request.user)
+
+        return self.render_to_response(
+            {"form": profile_form, "password_change_form": password_form}
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.setdefault("form", UserProfileForm(instance=self.request.user))
+        context.setdefault(
+            "password_change_form", ChangePasswordForm(user=self.request.user)
+        )
+        return context
+
+
+class CloseAccountView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        success_url = reverse_lazy("account_auth")
+        user = request.user
+        user.is_active = False
+        user.save()
+        auth_logout(request)
+        return redirect(success_url)

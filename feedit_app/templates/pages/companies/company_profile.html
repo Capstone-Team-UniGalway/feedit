@@ -1,30 +1,26 @@
-{% load static %}
 <c-layouts.base>
     <!-- Profile Content -->
     <section class="container mx-auto px-4 max-w-4xl">
         <!-- Company Info -->
         <div class="card bg-base-100 shadow-md mb-8 p-6">
             <div class="flex flex-col items-center text-center">
-                {% if company.profile_picture %}
-                    <img src="{{ company.profile_picture.file.url }}" alt="{{ company.name }}" class="rounded-xl mb-4 w-full max-w-40" />
-                {% else %}
-                    <img src="{% static 'images/company_placeholder.png' %}" alt="{{ company.name }}" class="rounded-xl mb-4 w-full max-w-40" />
-                {% endif %}
+                <img src="{{ company.profile_picture }}" alt="{{ company.name }}"
+                    class="rounded-xl mb-4 w-full max-w-40" />
                 <h2 class="text-xl font-bold">{{ company.name }}</h2>
                 {% if company.industry %}
-                    <p class="text-sm text-gray-500">{{ company.industry }}</p>
+                <p class="text-sm text-gray-500">{{ company.industry }}</p>
                 {% endif %}
                 {% if company.city or company.country %}
-                    <p class="text-sm text-gray-400">{{ company.city }}, {{ company.country }}</p>
+                <p class="text-sm text-gray-400">{{ company.city }}, {{ company.country }}</p>
                 {% endif %}
                 {% if company.average_rating %}
-                    <p class="text-sm text-yellow-500 font-semibold">
-                        Rating: {{ company.average_rating }} ★
-                    </p>
+                <p class="text-sm text-yellow-500 font-semibold">
+                    Rating: {{ company.average_rating }} ★
+                </p>
                 {% endif %}
 
                 {% if company.bio %}
-                    <p class="mt-4 text-sm text-gray-600">{{ company.bio }}</p>
+                <p class="mt-4 text-sm text-gray-600">{{ company.bio }}</p>
                 {% endif %}
                 <div class="flex gap-4 my-2 text-primary">
                     <a href="#"><i class="fab fa-twitter"></i></a>
@@ -33,9 +29,9 @@
                 </div>
                 <div class="mt-4 flex gap-2">
                     {% if request.user.is_authenticated %}
-                        {% if request.user == company.employer or request.user.is_superuser %}
-                            <a href="{% url 'companies:edit' company.id %}" class="btn btn-sm btn-outline">Edit Profile</a>
-                        {% endif %}
+                    {% if request.user == company.employer or request.user.is_superuser %}
+                    <a href="{% url 'companies:edit' company.id %}" class="btn btn-sm btn-outline">Edit Profile</a>
+                    {% endif %}
                     {% endif %}
                     <button class="btn btn-sm btn-neutral">Share profile</button>
                 </div>
@@ -97,60 +93,60 @@
         <p class="text-sm text-gray-500 mb-6">Latest employee feedback</p>
 
         {% if reviews %}
-            {% for review in reviews %}
-                <div class="card bg-white shadow-sm mb-6">
-                    <div class="card-body space-y-2">
-                        <div class="flex items-center gap-3">
-                            <div class="text-lg font-bold">{{ forloop.counter }}</div>
-                            <div>
-                                <h3 class="font-semibold">{{ review.get_display_name }}</h3>
-                                <p class="text-sm text-gray-400">📅 {{ review.created_at|timesince }} ago</p>
-                            </div>
-                            <div class="ml-auto text-yellow-400 text-sm">
-                                {% for i in "12345" %}
-                                    {% if review.rating|floatformat:1 >= i|stringformat:"d" %}
-                                    ★
-                                    {% else %}
-                                    ☆
-                                    {% endif %}
-                                {% endfor %}
-                                ({{ review.rating|floatformat:1 }})
-                            </div>
-                        </div>
-                        <p class="text-sm text-gray-600">{{ review.content }}</p>
-                        {% if not review.replies.exists %}
-                            <button class="btn btn-sm btn-outline">Reply</button>
-                        {% endif %}
+        {% for review in reviews %}
+        <div class="card bg-white shadow-sm mb-6">
+            <div class="card-body space-y-2">
+                <div class="flex items-center gap-3">
+                    <div class="text-lg font-bold">{{ forloop.counter }}</div>
+                    <div>
+                        <h3 class="font-semibold">{{ review.get_display_name }}</h3>
+                        <p class="text-sm text-gray-400">📅 {{ review.created_at|timesince }} ago</p>
                     </div>
-                    {% if review.replies.exists %}
-                        <div class="mt-4 border-t pt-3 text-sm space-y-2">
-                            <p class="font-medium text-primary">Employer Response:</p>
-                            {% for reply in review.replies.all %}
-                                <div class="bg-gray-50 p-3 rounded">
-                                    <p class="text-gray-700">{{ reply.content }}</p>
-                                    <p class="text-xs text-gray-400 mt-1">{{ reply.created_at|date:"M d, Y" }}</p>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
+                    <div class="ml-auto text-yellow-400 text-sm">
+                        {% for i in "12345" %}
+                        {% if review.rating|floatformat:1 >= i|stringformat:"d" %}
+                        ★
+                        {% else %}
+                        ☆
+                        {% endif %}
+                        {% endfor %}
+                        ({{ review.rating|floatformat:1 }})
+                    </div>
                 </div>
-            {% endfor %}
-
-            {% if is_paginated %}
-                <div class="join mt-6 justify-center flex">
-                    {% if page_obj.has_previous %}
-                        <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn">« Prev</a>
-                    {% endif %}
-                    <button class="join-item btn btn-disabled">
-                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-                    </button>
-                    {% if page_obj.has_next %}
-                    <   a href="?page={{ page_obj.next_page_number }}" class="join-item btn">Next »</a>
-                    {% endif %}
+                <p class="text-sm text-gray-600">{{ review.content }}</p>
+                {% if not review.replies.exists %}
+                <button class="btn btn-sm btn-outline">Reply</button>
+                {% endif %}
+            </div>
+            {% if review.replies.exists %}
+            <div class="mt-4 border-t pt-3 text-sm space-y-2">
+                <p class="font-medium text-primary">Employer Response:</p>
+                {% for reply in review.replies.all %}
+                <div class="bg-gray-50 p-3 rounded">
+                    <p class="text-gray-700">{{ reply.content }}</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ reply.created_at|date:"M d, Y" }}</p>
                 </div>
+                {% endfor %}
+            </div>
             {% endif %}
+        </div>
+        {% endfor %}
+
+        {% if is_paginated %}
+        <div class="join mt-6 justify-center flex">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn">« Prev</a>
+            {% endif %}
+            <button class="join-item btn btn-disabled">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </button>
+            {% if page_obj.has_next %}
+            < a href="?page={{ page_obj.next_page_number }}" class="join-item btn">Next »</a>
+                {% endif %}
+        </div>
+        {% endif %}
         {% else %}
-            <p class="text-sm text-gray-500">No reviews yet for this company.</p>
+        <p class="text-sm text-gray-500">No reviews yet for this company.</p>
         {% endif %}
 
         <!-- Write Review -->
@@ -160,7 +156,7 @@
                 <input type="text" placeholder="Your review..." class="input input-bordered w-full" />
                 <div class="rating">
                     {% for i in "12345" %}
-                        <input type="radio" name="rating" value="{{ i }}" class="mask mask-star bg-yellow-400" />
+                    <input type="radio" name="rating" value="{{ i }}" class="mask mask-star bg-yellow-400" />
                     {% endfor %}
                 </div>
                 <button class="btn btn-primary w-full max-w-sm">Submit review</button>
