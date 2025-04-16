@@ -4,16 +4,42 @@ from django.contrib.auth import (
     logout as auth_logout,
     update_session_auth_hash,
 )
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.views import PasswordResetConfirmView
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.mail import EmailMessage
 from django.shortcuts import redirect
-from django.urls import reverse_lazy
+from django.template.loader import render_to_string
+from django.urls import reverse, reverse_lazy
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
 from django.contrib.auth.mixins import LoginRequiredMixin
-from allauth.account.utils import complete_signup, send_email_confirmation
+from allauth.account.utils import (
+    complete_signup,
+    send_email_confirmation,
+    get_user_model,
+)
 from allauth.account import app_settings as allauth_settings
 from allauth.account.models import EmailConfirmationHMAC
-from allauth.account.views import ConfirmEmailView
+from allauth.account.views import (
+    ConfirmEmailView,
+    PasswordResetView,
+)
 from allauth.account.forms import ChangePasswordForm
-from .forms import CustomLoginForm, CustomSignupForm, UserProfileForm
+from .forms import (
+    CustomLoginForm,
+    CustomSignupForm,
+    UserProfileForm,
+    CustomResetPasswordForm,
+)
 from django.http import Http404
+
+User = get_user_model()
+
+
+class AuthRedirectView(View):
+    def get(self, request):
+        return redirect("account_auth")
 
 
 class AuthView(TemplateView):
@@ -186,3 +212,56 @@ class CloseAccountView(LoginRequiredMixin, View):
         user.delete()
         auth_logout(request)
         return redirect(success_url)
+
+
+class AuthPasswordResetDonePartial(TemplateView):
+    template_name = "components/account/password_reset_done.html"
+
+
+class CustomPasswordResetFromKeyView(PasswordResetConfirmView):
+    template_name = "pages/account/password_reset_from_key.html"
+    success_url = "/account/auth"
+
+    def form_valid(self, form):
+        user = self.user
+        if user and getattr(user, "is_deleted", False):
+            return redirect("/account/auth")  # or show token expired message
+        return super().form_valid(form)
+
+
+class CustomPasswordResetView(PasswordResetView):
+    form_class = CustomResetPasswordForm
+    template_name = "components/account/password_reset_form.html"
+    success_url = "/account/password/reset/done/"
+
+    def form_valid(self, form):
+        email = form.cleaned_data["email"]
+        users = User.objects.filter(
+            email__iexact=email, is_active=True, is_deleted=False
+        )
+
+        for user in users:
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            reset_url = self.request.build_absolute_uri(
+                reverse(
+                    "account_reset_password_from_key",
+                    kwargs={"uidb64": uid, "token": token},
+                )
+            )
+            site = get_current_site(self.request)
+
+            context = {
+                "user": user,
+                "password_reset_url": reset_url,
+                "site": {"name": site.name, "domain": site.domain},
+            }
+
+            subject = "Reset your password"
+            body = render_to_string(
+                "emails/account/password_reset_key_message.txt", context
+            )
+            msg = EmailMessage(subject, body, to=[user.email])
+            msg.send()
+
+        return redirect(self.success_url)

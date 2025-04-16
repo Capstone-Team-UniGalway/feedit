@@ -59,7 +59,7 @@ else:
 
 
 # Application definition
-
+SITE_ID = 1
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
     # installed
     "allauth",
     "allauth.account",
@@ -101,7 +102,7 @@ ROOT_URLCONF = "app.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -145,6 +146,10 @@ ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 ACCOUNT_EMAIL_CONFIRMATION_URL = "account_confirm_email"  # name of the path in urls.py
 ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = "/dashboard"
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = "/account/confirm-email/success/"
+
+# Password reset
+ACCOUNT_PASSWORD_RESET_REDIRECT_URL = "/account/auth"
+ACCOUNT_ADAPTER = "accounts.adapter.CustomAccountAdapter"
 
 # Redirect after login/logout
 LOGIN_REDIRECT_URL = "/dashboard"
