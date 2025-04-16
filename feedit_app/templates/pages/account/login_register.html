@@ -42,6 +42,15 @@
                                 In</button>
                         </div>
                     </form>
+                    <p class="text-sm text-right mt-2">
+                        <a href="#" hx-get="{% url 'account_reset_password' %}" hx-target="#auth-dynamic"
+                            hx-swap="innerHTML">
+                            Forgot password?
+                        </a>
+                    </p>
+
+                    <!-- Dynamic content container -->
+                    <div id="auth-dynamic" class="mt-6"></div>
                 </div>
 
                 <!-- Register Form -->

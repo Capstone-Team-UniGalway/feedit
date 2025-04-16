@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from allauth.account.forms import (
     LoginForm as AllauthLoginForm,
     SignupForm as AllauthSignupForm,
+    ResetPasswordForm,
 )
 
 User = get_user_model()
@@ -61,3 +62,17 @@ class UserProfileForm(forms.ModelForm):
             "bio": forms.Textarea(attrs={"class": "textarea textarea-bordered w-full"}),
             "privacy": forms.Select(attrs={"class": "select select-bordered w-full"}),
         }
+
+
+class CustomResetPasswordForm(ResetPasswordForm):
+    def clean_email(self):
+        email = (
+            super().clean_email()
+        )  # ✅ Important: preserve Allauth behavior (sets self.users)
+
+        # Run soft-delete check against each resolved user
+        for user in getattr(self, "users", []):
+            if user.is_deleted:
+                raise forms.ValidationError("This account has been closed.")
+
+        return email
