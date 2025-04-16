@@ -1,0 +1,12 @@
+<c-layouts.base>
+    <section class="container max-w-md mx-auto px-4 py-10">
+        <div class="card bg-base-100 shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Deactivate TOTP</h2>
+            <p class="text-sm text-gray-600 mb-6">Are you sure you want to disable your TOTP device?</p>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-error w-full">Deactivate</button>
+            </form>
+        </div>
+    </section>
+</c-layouts.base>

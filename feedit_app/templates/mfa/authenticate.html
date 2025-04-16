@@ -1,0 +1,21 @@
+{% load widget_tweaks %}
+<c-layouts.base>
+    <section class="container max-w-md mx-auto px-4 py-10">
+        <div class="card bg-base-100 shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Two-Factor Authentication</h2>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="mb-4">
+                    <label class="label">{{ field.label }}</label>
+                    {% render_field field class="input input-bordered w-full" %}
+                    {% if field.errors %}
+                    <p class="text-error text-sm mt-1">{{ field.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary w-full">Verify</button>
+            </form>
+        </div>
+    </section>
+</c-layouts.base>

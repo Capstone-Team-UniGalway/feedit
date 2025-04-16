@@ -1,0 +1,32 @@
+{% load widget_tweaks %}
+<c-layouts.base>
+    <section class="container max-w-md mx-auto px-4 py-10">
+        <div class="card bg-base-100 shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Activate TOTP</h2>
+            <p class="text-sm text-gray-600 mb-4">Scan the QR code with your authenticator app and enter the code below.
+            </p>
+            <div class="mb-4 text-center">
+                <img src="{{ totp_svg_data_uri }}" alt="TOTP QR Code" class="mx-auto border rounded" />
+            </div>
+            <div class="mt-4">
+                <label class="label font-semibold">Manual Setup Code</label>
+                <input type="text" value="{{ form.secret }}" readonly
+                    class="input input-bordered w-full font-mono text-sm" />
+                <p class="text-xs text-gray-500 mt-1">Use this if you cannot scan the QR code.</p>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="mb-4">
+                    <label class="label">{{ field.label }}</label>
+                    {% render_field field class="input input-bordered w-full" %}
+                    {% if field.errors %}
+                    <p class="text-error text-sm mt-1">{{ field.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary w-full">Activate</button>
+            </form>
+        </div>
+    </section>
+</c-layouts.base>

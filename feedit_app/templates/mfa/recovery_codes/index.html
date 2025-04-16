@@ -1,0 +1,17 @@
+<c-layouts.base>
+    <section class="container max-w-xl mx-auto px-4 py-10">
+        <div class="card bg-base-100 shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Your Recovery Codes</h2>
+            <p class="text-sm text-gray-600 mb-4">Save these codes in a secure place. Each code can be used once.</p>
+            <ul class="grid grid-cols-2 gap-2 mb-6">
+                {% for code in unused_codes %}
+                <li class="bg-base-200 p-2 text-center rounded font-mono text-sm">{{ code }}</li>
+                {% endfor %}
+            </ul>
+            <div class="flex flex-col gap-2">
+                <a href="{% url 'mfa_download_recovery_codes' %}" class="btn btn-outline">Download Codes</a>
+                <a href="{% url 'mfa_generate_recovery_codes' %}" class="btn btn-warning">Regenerate Codes</a>
+            </div>
+        </div>
+    </section>
+</c-layouts.base>
