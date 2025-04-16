@@ -1,6 +1,6 @@
+from enum import Enum
 from django.views.generic import TemplateView, View
 from django.contrib.auth import (
-    login as auth_login,
     logout as auth_logout,
     update_session_auth_hash,
 )
@@ -18,6 +18,7 @@ from allauth.account.utils import (
     complete_signup,
     send_email_confirmation,
     get_user_model,
+    perform_login,
 )
 from allauth.account import app_settings as allauth_settings
 from allauth.account.models import EmailConfirmationHMAC
@@ -80,8 +81,16 @@ class AuthView(TemplateView):
             login_form = CustomLoginForm(request=request, data=request.POST)
             signup_form = CustomSignupForm(initial_role=request.GET.get("role"))
             if login_form.is_valid():
-                auth_login(request, login_form.user)
-                return redirect(self.success_url)
+                user = login_form.user
+                session_data = request.session.get("account_login", {})
+                if session_data and isinstance(
+                    session_data.get("email_verification"), Enum
+                ):
+                    session_data["email_verification"] = str(
+                        session_data["email_verification"]
+                    )
+                    request.session["account_login"] = session_data
+                return perform_login(request, user, redirect_url=self.success_url)
 
             context = {
                 "login_form": login_form,

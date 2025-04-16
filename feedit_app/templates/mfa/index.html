@@ -1,0 +1,59 @@
+<c-layouts.base>
+    <section class="container max-w-xl mx-auto px-4 py-10">
+        <div class="card bg-base-100 shadow p-6 space-y-6">
+            <h2 class="text-2xl font-semibold">Multi-Factor Authentication</h2>
+
+            {% if "totp" in MFA_SUPPORTED_TYPES %}
+            <div class="card bg-base-200 p-4 rounded shadow">
+                <h3 class="text-lg font-semibold mb-2">Authenticator App (TOTP)</h3>
+                {% if authenticators.totp %}
+                <p class="text-sm text-success mb-2">TOTP is active on your account.</p>
+                <form method="post" action="{% url 'mfa_deactivate_totp' %}">
+                    {% csrf_token %}
+                    <button class="btn btn-error btn-sm">Deactivate</button>
+                </form>
+                {% else %}
+                <p class="text-sm text-warning mb-2">No TOTP device is active.</p>
+                <a href="{% url 'mfa_activate_totp' %}" class="btn btn-primary btn-sm">Activate</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if "webauthn" in MFA_SUPPORTED_TYPES %}
+            <div class="card bg-base-200 p-4 rounded shadow">
+                <h3 class="text-lg font-semibold mb-2">Security Keys (WebAuthn)</h3>
+                {% if authenticators.webauthn|length > 0 %}
+                <p class="text-sm mb-2">You have {{ authenticators.webauthn|length }} security key(s) registered.</p>
+                <a href="{% url 'mfa_list_webauthn' %}" class="btn btn-outline btn-sm">Manage Keys</a>
+                {% else %}
+                <p class="text-sm text-warning mb-2">No security keys have been added yet.</p>
+                <a href="{% url 'mfa_add_webauthn' %}" class="btn btn-primary btn-sm">Add Security Key</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if "recovery_codes" in MFA_SUPPORTED_TYPES and authenticators.totp %}
+            <div class="card bg-base-200 p-4 rounded shadow">
+                <h3 class="text-lg font-semibold mb-2">Recovery Codes</h3>
+                {% with total=authenticators.recovery_codes.generate_codes|length unused=authenticators.recovery_codes.get_unused_codes|length %}
+                {% if authenticators.recovery_codes %}
+                <p class="text-sm mb-2">
+                    You have {{ unused }} out of {{ total }} codes remaining.
+                </p>
+                {% if unused > 0 %}
+                <div class="flex flex-col sm:flex-row gap-2 mb-2">
+                    <a href="{% url 'mfa_view_recovery_codes' %}" class="btn btn-outline btn-sm">View</a>
+                    <a href="{% url 'mfa_download_recovery_codes' %}" class="btn btn-outline btn-sm">Download</a>
+                </div>
+                {% endif %}
+                {% else %}
+                <p class="text-sm text-warning mb-2">No recovery codes are set up.</p>
+                {% endif %}
+                <a href="{% url 'mfa_generate_recovery_codes' %}" class="btn btn-warning btn-sm">Generate New
+                    Codes</a>
+                {% endwith %}
+            </div>
+            {% endif %}
+        </div>
+    </section>
+</c-layouts.base>

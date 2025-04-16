@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.sites",
     # installed
+    "django_extensions",
     "allauth",
     "allauth.account",
     "allauth.mfa",
@@ -119,6 +120,8 @@ COTTON_DIR = "components"
 WSGI_APPLICATION = "app.wsgi.application"
 
 
+SESSION_SERIALIZER = "app.serializers.SafeEnumJSONSerializer"
+
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -150,6 +153,11 @@ ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = "/account/confirm-email/succ
 # Password reset
 ACCOUNT_PASSWORD_RESET_REDIRECT_URL = "/account/auth"
 ACCOUNT_ADAPTER = "accounts.adapter.CustomAccountAdapter"
+
+# MFA
+ACCOUNT_MFA_ENABLED = True
+ACCOUNT_MFA_ENFORCE_AFTER_LOGIN = True
+MFA_ADAPTER = "allauth.mfa.adapter.DefaultMFAAdapter"
 
 # Redirect after login/logout
 LOGIN_REDIRECT_URL = "/dashboard"

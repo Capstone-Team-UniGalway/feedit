@@ -1,4 +1,7 @@
-from django.urls import path
+from django.urls import path, include
+from allauth.mfa import urls as allauth_mfa_urls
+from allauth.account.views import ReauthenticateView
+from allauth.mfa.base.views import AuthenticateView
 from .views import (
     AuthView,
     AuthRedirectView,
@@ -67,6 +70,12 @@ urlpatterns = [
     path(
         "password/reset/key/<uidb36>/<key>/",
         CustomPasswordResetFromKeyView.as_view(),
-        # name="account_reset_password_from_key",
     ),
+    path("mfa/", include(allauth_mfa_urls)),
+    path(
+        "reauthenticate/",
+        ReauthenticateView.as_view(),
+        name="account_reauthenticate",
+    ),
+    path("mfa/authenticate/", AuthenticateView.as_view(), name="mfa_authenticate"),
 ]
