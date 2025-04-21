@@ -1,3 +1,15 @@
-<li><a href="{% url 'account_profile' %}">Profile</a></li>
-<li><a>Settings</a></li>
-<li><a href="{% url 'account_logout' %}">Logout</a></li>
+{% if user.is_authenticated %}
+<li><a href="{% url 'dashboard' %}"
+        class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <i class="fas fa-home"></i> Dashboard
+    </a></li>
+<li><a href="#" class="nav-link">
+        <i class="fas fa-building"></i> Companies
+    </a></li>
+<li><a href="#" class="nav-link">
+        <i class="fas fa-comment-dots"></i> Threads
+    </a></li>
+<li><a href="#" class="nav-link">
+        <i class="fas fa-star"></i> Reviews
+    </a></li>
+{% endif %}

@@ -1,74 +1,97 @@
 {% load static %}
-<header class="sticky top-0 z-50">
+<header class="sticky top-0 z-50 bg-base-100 shadow-md">
     <div class="drawer">
         <input id="my-drawer-3" type="checkbox" class="drawer-toggle" />
         <div class="drawer-content flex flex-col">
             <!-- Navbar -->
             <div class="navbar bg-base-100 shadow-sm">
                 <div class="navbar-start">
-                    <label for="my-drawer-3" aria-label="open sidebar" class="btn btn-square btn-ghost">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                            class="inline-block h-6 w-6 stroke-current">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
+                    <label for="my-drawer-3" aria-label="open sidebar" class="btn btn-square btn-ghost lg:hidden">
+                        <i class="fas fa-bars"></i>
                     </label>
-                    <a class="btn text-xl btn-ghost">FeedIT</a>
+                    <a href="/" class="btn btn-ghost text-xl normal-case">
+                        <i class="fas fa-comments text-primary mr-2"></i>
+                        <span class="font-bold">Feed<span class="text-primary">IT</span></span>
+                    </a>
                 </div>
                 <div class="navbar-center hidden lg:flex">
-                    <ul class="menu menu-horizontal px-1">
-                        <li><a>Item 1</a></li>
-                        <li>
-                            <details>
-                                <summary>Parent</summary>
-                                <ul class="p-2">
-                                    <li><a>Submenu 1</a></li>
-                                    <li><a>Submenu 2</a></li>
-                                </ul>
-                            </details>
-                        </li>
-                        <li><a>Item 3</a></li>
+                    <ul class="menu menu-horizontal px-1 gap-1">
+                        <c-partials.nav />
                     </ul>
                 </div>
-                <div class="navbar-end">
-                    <form class="input border-none p-0">
-                        <label class="input">
-                            <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                <g stroke-linejoin="round" stroke-linecap="round" stroke-width="2.5" fill="none"
-                                    stroke="currentColor">
-                                    <circle cx="11" cy="11" r="8"></circle>
-                                    <path d="m21 21-4.3-4.3"></path>
-                                </g>
-                            </svg>
-                            <input type="search" class="grow" name="q" value="{{ request.GET.q|default_if_none:'' }}"
-                                placeholder="Search" />
-                        </label>
-                    </form>
-                    {% if user.is_authenticated %}
-                    <button class="btn btn-circle btn-ghost">
-                        <div class="indicator">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                            </svg>
-                            <span class="indicator-item badge badge-xs badge-primary"></span>
+                <div class="navbar-end gap-2">
+                    <div class="form-control hidden md:block">
+                        <div class="input-group">
+                            <input type="text" placeholder="Search..."
+                                class="input input-bordered input-sm w-32 md:w-auto" />
+                            <button class="btn btn-square btn-sm">
+                                <i class="fas fa-search"></i>
+                            </button>
                         </div>
-                    </button>
+                    </div>
+                    {% if user.is_authenticated %}
+                    <!-- Notifications -->
                     <div class="dropdown dropdown-end">
-                        <div tabindex="0" role="button" class="btn avatar btn-circle btn-ghost">
-                            <div class="w-10 rounded-full">
-                                <img src="{{ user.profile_picture }}" alt="{{ user.get_full_name }}" />
+                        <label tabindex="0" class="btn btn-ghost btn-circle">
+                            <div class="indicator">
+                                <i class="fas fa-bell text-lg"></i>
+                                <span class="badge badge-xs badge-primary indicator-item"></span>
+                            </div>
+                        </label>
+                        <div tabindex="0"
+                            class="dropdown-menu dropdown-content mt-3 z-[1] card card-compact rounded-box w-80 shadow bg-base-100">
+                            <div class="card-body">
+                                <h3 class="font-bold text-lg">Notifications</h3>
+                                <div class="divider my-0"></div>
+                                <p class="text-sm text-gray-500">You have no new notifications</p>
+                                <div class="card-actions justify-end mt-2">
+                                    <button class="btn btn-primary btn-sm">View all</button>
+                                </div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- User Profile -->
+                    <div class="dropdown dropdown-end">
+                        <label tabindex="0" class="btn btn-ghost btn-circle avatar">
+                            <div class="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+                                {% if user.profile_picture %}
+                                <img alt="{{ user.get_full_name }}" src="{{ user.profile_picture }}" />
+                                {% else %}
+                                <div
+                                    class="bg-primary text-primary-content w-10 h-10 flex items-center justify-center text-lg font-bold">
+                                    {{ user.get_initials|default:user.email.0|upper }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </label>
                         <ul tabindex="0"
-                            class="dropdown-content menu z-1 mt-3 w-52 menu-sm rounded-box bg-base-100 p-2 shadow">
-                            <c-partials.nav />
+                            class="dropdown-menu menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+                            <li class="menu-title px-4 py-2">
+                                <span class="font-semibold">{{ user.get_full_name }}</span>
+                                <span class="block text-xs text-gray-500">{{ user.email }}</span>
+                            </li>
+                            <div class="divider my-0"></div>
+                            <li><a href="{% url 'account_profile' %}">
+                                    <i class="fas fa-user mr-2"></i> View Profile
+                                </a></li>
+                            <li><a href="{% url 'account_edit' %}">
+                                    <i class="fas fa-cog mr-2"></i> Account Settings
+                                </a></li>
+                            <div class="divider my-0"></div>
+                            <li><a href="{% url 'account_logout' %}" class="text-error">
+                                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                                </a></li>
                         </ul>
                     </div>
+
+
+
                     {% else %}
-                    {% comment %} *** SHOW LOGIN/REGISTER LINK IF NOT LOGGED IN *** {% endcomment %}
-                    <a href="{% url 'account_auth' %}" class="btn btn-primary">Login / Register</a>
+                    <!-- Login/Register Button -->
+                    <a href="{% url 'account_auth' %}" class="btn btn-primary btn-sm md:btn-md">
+                        <i class="fas fa-sign-in-alt mr-2"></i> Login / Register
+                    </a>
                     {% endif %}
                     <label class="swap swap-rotate">
                         <!-- this hidden checkbox controls the state -->

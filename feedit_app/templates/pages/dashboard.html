@@ -1,48 +1,65 @@
 <c-layouts.base>
   <!-- Welcome -->
-  <div class="max-w-6xl mx-auto px-6 py-8">
-    <h1 class="text-3xl font-bold">Welcome to FeedIT</h1>
-    <p class="text-sm text-gray-500">Here’s what’s going on with your team</p>
+  <div class="mb-8">
+    <div class="flex items-center gap-3 mb-2">
+      <h1 class="text-3xl font-bold">Welcome to FeedIT</h1>
+      <div class="badge badge-primary">New Account</div>
+    </div>
+    <p class="text-sm text-gray-500">Get started by joining a company or creating threads to connect with your team</p>
   </div>
 
   <!-- Dashboard Grid -->
-  <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 px-6 pb-10">
-
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
     <!-- Threads -->
     <div>
       <h2 class="text-lg font-semibold mb-2 border-b pb-1">My Threads</h2>
-      <div class="card bg-base-100 shadow p-4 mb-3">
-        <p class="text-sm font-bold text-gray-400">22/02/2025</p>
-        <p>Looking to find players for our lunch time football game! Any takers?</p>
+      <div class="card bg-base-100 shadow-md">
+        <div class="card-body text-center py-8">
+          <div class="text-5xl text-gray-300 mb-3">
+            <i class="fas fa-comment-dots"></i>
+          </div>
+          <h3 class="text-lg font-medium mb-2">No threads yet</h3>
+          <p class="text-sm text-gray-500 mb-4">Start a conversation with your team or company</p>
+          <button class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i> New Thread
+          </button>
+        </div>
       </div>
-      <div class="card bg-base-100 shadow p-4 mb-3">
-        <p class="text-sm font-bold text-gray-400">11/02/2025</p>
-        <p>Could we do something about the parking situation at the office please?</p>
-      </div>
-      <button class="btn btn-primary btn-block mt-2">New thread</button>
     </div>
 
     <!-- Requests -->
     <div>
       <h2 class="text-lg font-semibold mb-2 border-b pb-1">Requests</h2>
-      <div class="card bg-base-100 shadow p-6">
-        <p class="text-sm font-bold text-gray-400 mb-2">03/03/2025</p>
-        <button class="btn btn-outline btn-primary">Pending request</button>
+      <div class="card bg-base-100 shadow-md">
+        <div class="card-body text-center py-8">
+          <div class="text-5xl text-gray-300 mb-3">
+            <i class="fas fa-inbox"></i>
+          </div>
+          <h3 class="text-lg font-medium mb-2">No pending requests</h3>
+          <p class="text-sm text-gray-500">You'll see requests from your team here</p>
+        </div>
       </div>
     </div>
 
     <!-- Company Stats -->
     <div>
       <h2 class="text-lg font-semibold mb-2 border-b pb-1">Company Statistics</h2>
-      <div class="card bg-base-100 shadow p-4 mb-4">
-        <p class="text-sm text-gray-400">Turnover Rate</p>
-        <div class="text-2xl font-bold">15 <span class="text-error text-sm">↓ 2%</span></div>
-      </div>
-      <div class="card bg-base-100 shadow p-4">
-        <p class="text-sm text-gray-400">Employees on platform</p>
-        <div class="text-2xl font-bold">27</div>
+      <div class="card bg-base-100 shadow-md">
+        <div class="card-body text-center py-8">
+          <div class="text-5xl text-gray-300 mb-3">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <h3 class="text-lg font-medium mb-2">No company data yet</h3>
+          <p class="text-sm text-gray-500 mb-4">Join or create a company to see statistics</p>
+          <div class="flex justify-center gap-2">
+            <button class="btn btn-outline btn-sm">
+              <i class="fas fa-building mr-1"></i> Join Company
+            </button>
+            <button class="btn btn-outline btn-sm">
+              <i class="fas fa-plus mr-1"></i> Create Company
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-
-  </div>
 </c-layouts.base>
