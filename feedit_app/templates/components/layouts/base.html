@@ -1,93 +1,212 @@
 {% load static %}
 
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="light">
 
 <head>
-  <title>Feedit</title>
-  {# Links to CSS, etc. #}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FeedIT</title>
+
+  <!-- DaisyUI and Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- HTMX for dynamic content -->
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+
+  <style>
+    .nav-link {
+      @apply flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-base-200 transition-colors;
+    }
+
+    .nav-link.active {
+      @apply bg-primary text-primary-content;
+    }
+
+    .dropdown-menu {
+      @apply invisible opacity-0 transition-all duration-300;
+    }
+
+    .dropdown:hover .dropdown-menu {
+      @apply visible opacity-100;
+    }
+  </style>
 </head>
 
-<body>
-  <div class="flex h-screen"> {# Example overall structure #}
-
-    {% comment %} *** CONDITIONALLY RENDER SIDEBAR *** {% endcomment %}
-    {% if user.is_authenticated %}
-    <aside class="w-64 bg-gray-100 p-4"> {# Or whatever your sidebar element is #}
-      {# Your sidebar content like: #}
-      <ul>
-        <li>Item 1</li>
-        <li>Parent
-          <ul>
-            <li>Submenu 1</li>
-            <li>Submenu 2</li>
-          </ul>
-        </li>
-        <li>Item 3</li>
-      </ul>
-    </aside>
-    {% endif %}
-
-    <div class="flex flex-col flex-grow">
-      <nav class="navbar bg-base-100 shadow-md"> {# Example top navbar #}
+<body class="min-h-screen bg-base-100">
+  <div class="flex flex-col h-screen">
+    <!-- Top Navigation Bar -->
+    <header class="bg-base-100 shadow-md">
+      <div class="navbar container mx-auto">
+        <!-- Logo and Brand -->
         <div class="navbar-start">
-          <a href="/" class="btn btn-ghost text-xl">Feedit</a> {# Site Title/Logo - maybe always visible #}
+          <a href="/" class="btn btn-ghost text-xl normal-case">
+            <i class="fas fa-comments text-primary mr-2"></i>
+            <span class="font-bold">Feed<span class="text-primary">IT</span></span>
+          </a>
         </div>
-        <div class="navbar-center">
-          {# Maybe navigation links that are always visible? #}
-        </div>
-        <div class="navbar-end space-x-2">
 
-          {# Search Bar - Decide if this should always be visible #}
-          <div class="form-control">
-            <input type="text" placeholder="Search" class="input input-bordered w-24 md:w-auto" />
-          </div>
-
-          {% comment %} *** CONDITIONALLY RENDER USER-SPECIFIC NAV ITEMS *** {% endcomment %}
+        <!-- Main Navigation (center) -->
+        <div class="navbar-center hidden lg:flex">
           {% if user.is_authenticated %}
-          {# Notifications Bell #}
-          <button class="btn btn-ghost btn-circle">
-            <div class="indicator">
-              <svg>...</svg> {# Bell Icon #}
-              <span class="badge badge-xs badge-primary indicator-item"></span>
-            </div>
-          </button>
-          {# User Profile Dropdown/Icon #}
-          <div class="dropdown dropdown-end">
-            <label tabindex="0" class="btn btn-ghost btn-circle avatar">
-              <div class="w-10 rounded-full">
-                {# Ideally use user.profile_picture or similar here later #}
-                <img alt="User Avatar" src="{% static 'images/user_placeholder.png' %}" />
-              </div>
-            </label>
-            <ul tabindex="0" class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
-              <li><a href="{% url 'account_profile' %}">Profile</a></li>
-              <li><a>Settings</a></li>
-              <li><a href="{% url 'account_logout' %}">Logout</a></li>
-            </ul>
-          </div>
-          {# Theme Toggle #}
-          <button class="btn btn-ghost btn-circle">...</button> {# Sun/Moon Icon #}
-
-          {% else %}
-          {% comment %} *** SHOW LOGIN/REGISTER LINK IF NOT LOGGED IN *** {% endcomment %}
-          <a href="{% url 'account_auth' %}" class="btn btn-primary">Login / Register</a>
+          <ul class="menu menu-horizontal px-1 gap-1">
+            <li><a href="{% url 'dashboard' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="fas fa-home"></i> Dashboard
+              </a></li>
+            <li><a href="#" class="nav-link">
+                <i class="fas fa-building"></i> Companies
+              </a></li>
+            <li><a href="#" class="nav-link">
+                <i class="fas fa-comment-dots"></i> Threads
+              </a></li>
+            <li><a href="#" class="nav-link">
+                <i class="fas fa-star"></i> Reviews
+              </a></li>
+          </ul>
           {% endif %}
         </div>
-      </nav>
 
-      <main class="flex-grow p-6 bg-gray-50"> {# Main content area #}
+        <!-- Right Side Actions -->
+        <div class="navbar-end gap-2">
+          <!-- Search Bar -->
+          <div class="form-control hidden md:block">
+            <div class="input-group">
+              <input type="text" placeholder="Search..." class="input input-bordered input-sm w-32 md:w-auto" />
+              <button class="btn btn-square btn-sm">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+
+          {% if user.is_authenticated %}
+          <!-- Notifications -->
+          <div class="dropdown dropdown-end">
+            <label tabindex="0" class="btn btn-ghost btn-circle">
+              <div class="indicator">
+                <i class="fas fa-bell text-lg"></i>
+                <span class="badge badge-xs badge-primary indicator-item"></span>
+              </div>
+            </label>
+            <div tabindex="0" class="dropdown-menu mt-3 z-[1] card card-compact w-80 shadow bg-base-100">
+              <div class="card-body">
+                <h3 class="font-bold text-lg">Notifications</h3>
+                <div class="divider my-0"></div>
+                <p class="text-sm text-gray-500">You have no new notifications</p>
+                <div class="card-actions justify-end mt-2">
+                  <button class="btn btn-primary btn-sm">View all</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- User Profile -->
+          <div class="dropdown dropdown-end">
+            <label tabindex="0" class="btn btn-ghost btn-circle avatar">
+              <div class="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+                {% if user.profile_picture %}
+                <img alt="{{ user.get_full_name }}" src="{{ user.profile_picture }}" />
+                {% else %}
+                <div
+                  class="bg-primary text-primary-content w-10 h-10 flex items-center justify-center text-lg font-bold">
+                  {{ user.get_initials|default:user.email.0|upper }}
+                </div>
+                {% endif %}
+              </div>
+            </label>
+            <ul tabindex="0"
+              class="dropdown-menu menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+              <li class="menu-title px-4 py-2">
+                <span class="font-semibold">{{ user.get_full_name }}</span>
+                <span class="block text-xs text-gray-500">{{ user.email }}</span>
+              </li>
+              <div class="divider my-0"></div>
+              <li><a href="{% url 'account_profile' %}">
+                  <i class="fas fa-user mr-2"></i> View Profile
+                </a></li>
+              <li><a href="{% url 'account_edit' %}">
+                  <i class="fas fa-cog mr-2"></i> Account Settings
+                </a></li>
+              <div class="divider my-0"></div>
+              <li><a href="{% url 'account_logout' %}" class="text-error">
+                  <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                </a></li>
+            </ul>
+          </div>
+
+          {% else %}
+          <!-- Login/Register Button -->
+          <a href="{% url 'account_auth' %}" class="btn btn-primary btn-sm md:btn-md">
+            <i class="fas fa-sign-in-alt mr-2"></i> Login / Register
+          </a>
+          {% endif %}
+
+          <!-- Mobile Menu Toggle -->
+          <div class="dropdown dropdown-end lg:hidden">
+            <label tabindex="0" class="btn btn-ghost btn-circle">
+              <i class="fas fa-bars"></i>
+            </label>
+            <ul tabindex="0"
+              class="dropdown-menu menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+              {% if user.is_authenticated %}
+              <li><a href="{% url 'dashboard' %}">
+                  <i class="fas fa-home"></i> Dashboard
+                </a></li>
+              <li><a href="#">
+                  <i class="fas fa-building"></i> Companies
+                </a></li>
+              <li><a href="#">
+                  <i class="fas fa-comment-dots"></i> Threads
+                </a></li>
+              <li><a href="#">
+                  <i class="fas fa-star"></i> Reviews
+                </a></li>
+              <div class="divider my-0"></div>
+              {% endif %}
+              <li><a href="#">
+                  <i class="fas fa-search"></i> Search
+                </a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow p-4 md:p-6 bg-base-200">
+      <div class="container mx-auto">
         {% block content %}
-        {# Content from extending templates like welcome.html goes here #}
+        <!-- Content from extending templates goes here -->
         {% endblock %}
-      </main>
+      </div>
+    </main>
 
-      <footer class="bg-gray-800 text-white p-4">
-        {# Footer content #}
-      </footer>
-    </div>
+    <!-- Footer -->
+    <footer class="bg-neutral text-neutral-content p-4">
+      <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+        <div class="text-center md:text-left mb-4 md:mb-0">
+          <p>&copy; 2025 FeedIT. All rights reserved.</p>
+        </div>
+        <div class="flex gap-4">
+          <a href="#" class="link link-hover">Privacy Policy</a>
+          <a href="#" class="link link-hover">Terms of Service</a>
+          <a href="#" class="link link-hover">Contact Us</a>
+        </div>
+      </div>
+    </footer>
   </div>
-  {# Links to JS, etc. #}
+
+  <!-- Additional Scripts -->
+  <script>
+    // Any additional JavaScript can go here
+    document.addEventListener('DOMContentLoaded', function () {
+      // Initialize any components that need JavaScript
+    });
+  </script>
 </body>
 
 </html>
