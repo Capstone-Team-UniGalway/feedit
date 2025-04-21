@@ -27,9 +27,16 @@ if ENVIRONMENT == "development":
 
 # Security & Debug
 SECRET_KEY = env("SECRET_KEY", default="super-secret-key")
+# settings.py
+# ... other settings above ...
+
 DEBUG = env.bool("DEBUG", default=False)
+print(f"DJANGO DEBUG STATUS IS: {DEBUG}") # <-- ADD THIS LINE
+
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+# ... rest of settings ...
 # Allowed Hosts
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost"])
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
 
 # Database Configuration

@@ -1,5 +1,6 @@
 from enum import Enum
-from django.views.generic import TemplateView, View
+from django.views.generic import TemplateView, View  # Add TemplateView to imports
+from django.shortcuts import render  # Keep render import
 from django.contrib.auth import (
     logout as auth_logout,
     update_session_auth_hash,
@@ -82,14 +83,16 @@ class AuthView(TemplateView):
             signup_form = CustomSignupForm(initial_role=request.GET.get("role"))
             if login_form.is_valid():
                 user = login_form.user
-                session_data = request.session.get("account_login", {})
-                if session_data and isinstance(
-                    session_data.get("email_verification"), Enum
-                ):
-                    session_data["email_verification"] = str(
-                        session_data["email_verification"]
-                    )
-                    request.session["account_login"] = session_data
+                try:
+                    session_data = request.session.get("account_login", {})
+                    if not isinstance(session_data, dict):
+                        raise ValueError("Session data corrupted")
+                    if session_data and isinstance(session_data.get("email_verification"), Enum):
+                        session_data["email_verification"] = str(session_data["email_verification"])
+                        request.session["account_login"] = session_data
+                except Exception:
+                    # Reset corrupted session data
+                    request.session["account_login"] = {}
                 return perform_login(request, user, redirect_url=self.success_url)
 
             context = {
@@ -100,11 +103,41 @@ class AuthView(TemplateView):
         elif "register" in request.POST:
             signup_form = CustomSignupForm(request.POST)
             login_form = CustomLoginForm(request=request)
-            if signup_form.is_valid():
-                user = signup_form.save(request)
-                return complete_signup(
-                    request, user, allauth_settings.EMAIL_VERIFICATION, "/dashboard"
-                )
+            try:
+                if signup_form.is_valid():
+                    try:
+                        user = signup_form.save(request)
+                    except ValueError as ve:
+                        # Handle duplicate email or similar allauth errors
+                        context = {
+                            "login_form": login_form,
+                            "signup_form": signup_form,
+                            "error_message": f"Registration failed: {ve}. If you already have an account, please log in.",
+                        }
+                        return self.render_to_response(context)
+                    # Clear any potentially corrupted login session data after registration
+                    if "account_login" in request.session:
+                        del request.session["account_login"]
+                    if allauth_settings.EMAIL_VERIFICATION != "none":
+                        # Redirect to a dedicated verification sent page
+                        return redirect("account_email_verification_sent")
+                    return complete_signup(
+                        request, user, allauth_settings.EMAIL_VERIFICATION, reverse_lazy("account_edit")
+                    )
+                else:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Registration failed: {signup_form.errors.as_json()}")
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Registration exception: {str(e)}", exc_info=True)
+                context = {
+                    "login_form": login_form,
+                    "signup_form": signup_form,
+                    "error_message": "An unexpected error occurred during registration. Please try again.",
+                }
+                return self.render_to_response(context)
             context = {
                 "login_form": login_form,
                 "signup_form": signup_form,
@@ -141,7 +174,7 @@ class EmailConfirmView(ConfirmEmailView):
         return confirmation
 
     def post(self, request, *args, **kwargs):
-        success_url = reverse_lazy("dashboard")
+        success_url = reverse_lazy("account_edit")  # Redirect to profile edit after email confirmation
         self.object = self.get_object()
         self.object.confirm(request)
         return redirect(success_url)
@@ -274,3 +307,46 @@ class CustomPasswordResetView(PasswordResetView):
             msg.send()
 
         return redirect(self.success_url)
+
+
+# --- NEW CLASS-BASED DASHBOARD VIEW ---
+class DashboardView(LoginRequiredMixin, View):
+    """
+    Handles the main dashboard view after login.
+
+    Checks if the user's profile is considered complete. If not,
+    redirects to the profile editing page. Otherwise, renders the
+    main dashboard template.
+    """
+    template_name = 'pages/dashboard.html'  # Template for the actual dashboard
+    profile_edit_url = reverse_lazy('account_edit')  # URL to redirect to if profile is incomplete
+
+    def get(self, request, *args, **kwargs):
+        """Handles GET requests to the dashboard."""
+        user = self.request.user
+
+        # --- Determine if profile is incomplete ---
+        # This example checks if 'job_title' on the User model is empty.
+        profile_incomplete = not user.job_title
+        # You can add more checks as needed, e.g.:
+        # profile_incomplete = profile_incomplete or not user.bio
+
+        # --- Redirect or Render ---
+        if profile_incomplete:
+            # Profile details are missing, redirect to the edit profile page
+            return redirect(self.profile_edit_url)
+        else:
+            # Profile is complete, render the actual dashboard template
+            context = self.get_context_data(**kwargs)
+            return render(request, self.template_name, context)
+
+    def get_context_data(self, **kwargs):
+        """
+        Prepares context data for rendering the dashboard template.
+        This method is called only when the profile is considered complete.
+        """
+        context = {
+            'user': self.request.user,
+            # Add any other context needed for the REAL dashboard here
+        }
+        return context

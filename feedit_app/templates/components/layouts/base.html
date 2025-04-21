@@ -1,11 +1,93 @@
+{% load static %}
+
 <!DOCTYPE html>
-<html lang="en" class="h-full">
-<c-partials.head />
-<body class="h-full flex flex-col">
-  <c-partials.header />
-  <main class="h-full min-h-max p-10">
-    {{ slot }}
-  </main>
-  <c-partials.footer />
+<html>
+
+<head>
+  <title>Feedit</title>
+  {# Links to CSS, etc. #}
+</head>
+
+<body>
+  <div class="flex h-screen"> {# Example overall structure #}
+
+    {% comment %} *** CONDITIONALLY RENDER SIDEBAR *** {% endcomment %}
+    {% if user.is_authenticated %}
+    <aside class="w-64 bg-gray-100 p-4"> {# Or whatever your sidebar element is #}
+      {# Your sidebar content like: #}
+      <ul>
+        <li>Item 1</li>
+        <li>Parent
+          <ul>
+            <li>Submenu 1</li>
+            <li>Submenu 2</li>
+          </ul>
+        </li>
+        <li>Item 3</li>
+      </ul>
+    </aside>
+    {% endif %}
+
+    <div class="flex flex-col flex-grow">
+      <nav class="navbar bg-base-100 shadow-md"> {# Example top navbar #}
+        <div class="navbar-start">
+          <a href="/" class="btn btn-ghost text-xl">Feedit</a> {# Site Title/Logo - maybe always visible #}
+        </div>
+        <div class="navbar-center">
+          {# Maybe navigation links that are always visible? #}
+        </div>
+        <div class="navbar-end space-x-2">
+
+          {# Search Bar - Decide if this should always be visible #}
+          <div class="form-control">
+            <input type="text" placeholder="Search" class="input input-bordered w-24 md:w-auto" />
+          </div>
+
+          {% comment %} *** CONDITIONALLY RENDER USER-SPECIFIC NAV ITEMS *** {% endcomment %}
+          {% if user.is_authenticated %}
+          {# Notifications Bell #}
+          <button class="btn btn-ghost btn-circle">
+            <div class="indicator">
+              <svg>...</svg> {# Bell Icon #}
+              <span class="badge badge-xs badge-primary indicator-item"></span>
+            </div>
+          </button>
+          {# User Profile Dropdown/Icon #}
+          <div class="dropdown dropdown-end">
+            <label tabindex="0" class="btn btn-ghost btn-circle avatar">
+              <div class="w-10 rounded-full">
+                {# Ideally use user.profile_picture or similar here later #}
+                <img alt="User Avatar" src="{% static 'images/user_placeholder.png' %}" />
+              </div>
+            </label>
+            <ul tabindex="0" class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
+              <li><a href="{% url 'account_profile' %}">Profile</a></li>
+              <li><a>Settings</a></li>
+              <li><a href="{% url 'account_logout' %}">Logout</a></li>
+            </ul>
+          </div>
+          {# Theme Toggle #}
+          <button class="btn btn-ghost btn-circle">...</button> {# Sun/Moon Icon #}
+
+          {% else %}
+          {% comment %} *** SHOW LOGIN/REGISTER LINK IF NOT LOGGED IN *** {% endcomment %}
+          <a href="{% url 'account_auth' %}" class="btn btn-primary">Login / Register</a>
+          {% endif %}
+        </div>
+      </nav>
+
+      <main class="flex-grow p-6 bg-gray-50"> {# Main content area #}
+        {% block content %}
+        {# Content from extending templates like welcome.html goes here #}
+        {% endblock %}
+      </main>
+
+      <footer class="bg-gray-800 text-white p-4">
+        {# Footer content #}
+      </footer>
+    </div>
+  </div>
+  {# Links to JS, etc. #}
 </body>
+
 </html>
