@@ -34,11 +34,12 @@ urlpatterns = [
         TemplateView.as_view(template_name="pages/claim_company.html"),
         name="claim_company",
     ),
-    path(
-        "dashboard",
-        TemplateView.as_view(template_name="pages/dashboard.html"),
-        name="dashboard",
-    ),
+    # Remove the old dashboard route so it doesn't conflict with the new one in accounts.urls
+    # path(
+    #     "dashboard",
+    #     TemplateView.as_view(template_name="pages/dashboard.html"),
+    #     name="dashboard",
+    # ),
     path(
         "edit_profile",
         TemplateView.as_view(template_name="pages/edit_profile.html"),

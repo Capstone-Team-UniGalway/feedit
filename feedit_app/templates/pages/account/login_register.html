@@ -1,14 +1,18 @@
 {% load widget_tweaks %}
 <c-layouts.base>
-    <div class="flex justify-center items-start min-h-screen px-4">
+    <div class="flex justify-center items-start min-h-screen px-4 py-4">
         <div class="w-full max-w-6xl bg-base-100 shadow-xl rounded-xl p-8">
             <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold">Access your account</h1>
-                <p class="text-gray-500">Login or create a new account</p>
+                <h1 class="mb-8 text-2xl font-medium">{{ request.GET.role|title }} Login or Register</h1>
             </div>
             {% if error_message %}
             <div class="alert alert-error shadow-lg mb-6">
                 <span>{{ error_message }}</span>
+            </div>
+            {% endif %}
+            {% if success_message %}
+            <div class="alert alert-success shadow-lg mb-4">
+                <span>{{ success_message }}</span>
             </div>
             {% endif %}
             <div class="flex flex-col lg:flex-row gap-8">
@@ -58,7 +62,7 @@
                     <h2 class="text-xl font-semibold mb-4">Register</h2>
                     <form method="POST" action="{% url 'account_auth' %}" class="space-y-4">
                         {% csrf_token %}
-
+                        {{ signup_form.non_field_errors }}
                         {% for field in signup_form.visible_fields %}
                         <div>
                             <label class="label"><span class="label-text">{{ field.label }}</span></label>

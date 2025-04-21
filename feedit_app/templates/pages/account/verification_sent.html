@@ -1,11 +1,21 @@
 <c-layouts.base>
-    <div class="flex justify-center items-center h-full">
-        <div class="bg-base-100 shadow-xl rounded-xl p-8 max-w-lg w-full text-center">
-            <h1 class="text-2xl font-bold text-primary mb-4">Check Your Email</h1>
-            <p class="text-sm text-gray-500">
-                We’ve sent you a confirmation email. Please check your inbox and click the link to verify your account.
+    <div class="flex flex-grow flex-col items-center justify-center px-4 py-16 text-center">
+        <h1 class="text-2xl font-semibold mb-4">Verify Your E-mail Address</h1>
+        <div class="prose max-w-md"> {# Using prose for nice text formatting if using DaisyUI/Tailwind typography #}
+            <p>
+                Thank you for registering! We have sent an e-mail to you for verification.
             </p>
-            <a href="/" class="btn btn-primary mt-6">Back to Home</a>
+            <p>
+                Please follow the link provided in the email to finalize the signup process and activate your account.
+            </p>
+            <p class="text-sm text-gray-600 mt-4">
+                If you do not see the verification e-mail in your main inbox, please check your spam or junk mail
+                folder.
+            </p>
+            <p class="mt-6">
+                <a href="{% url 'welcome' %}" class="btn btn-outline">Return to Home</a>
+                {# Optionally add a resend verification link later #}
+            </p>
         </div>
     </div>
 </c-layouts.base>
