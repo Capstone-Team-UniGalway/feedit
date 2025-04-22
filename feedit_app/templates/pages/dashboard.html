@@ -157,6 +157,51 @@
             <p class="text-sm text-gray-500">You'll see requests from your team here</p>
           </div>
         </div>
+
+        <div class="divider"></div>
+        {% if user.type == 'employer' or user.is_superuser or user.workplace %}
+        <div class="text-center space-y-4">
+          {# {% if user.type == 'employer' and pending_join_requests_count > 0 %} #}
+          {% if user.type == 'employer' %}
+          <a href="#" class="btn btn-primary btn-sm">
+            <i class="fas fa-user-plus mr-1"></i> Manage Join Requests
+            <div class="badge badge-secondary ml-1">{# {{ pending_join_requests_count }} #} 0</div>
+          </a>
+          {% endif %}
+
+          {# {% if user.is_superuser and pending_claim_requests_count > 0 %} #}
+          {% if user.is_superuser %}
+          <a href="{% url 'companies:manage_claims' %}" class="btn btn-info btn-sm">
+            <i class="fas fa-building mr-1"></i> Manage Company Claims
+            <div class="badge badge-secondary ml-1">{# {{ pending_claim_requests_count }} #} 0</div>
+          </a>
+          {% endif %}
+
+          <form method="post" action="{% url 'companies:leave' %}"
+            onsubmit="return confirm('Are you sure you want to leave {{ user.workplace.name }}? This action cannot be undone.')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline btn-error btn-sm">
+              <i class="fas fa-sign-out-alt mr-1"></i> Leave Company
+            </button>
+          </form>
+        </div>
+        {% else %}
+        <div class="text-center py-6">
+          <div class="text-5xl text-gray-300 mb-3">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <h3 class="text-lg font-medium mb-2">No company data yet</h3>
+          <p class="text-sm text-gray-500 mb-4">Join or create a company to see statistics</p>
+          <div class="flex justify-center gap-2">
+            <a href="{% url 'join_company' %}" class="btn btn-outline btn-sm">
+              <i class="fas fa-building mr-1"></i> Join Company
+            </a>
+            <a href="{% url 'claim_company' %}" class="btn btn-outline btn-sm">
+              <i class="fas fa-plus mr-1"></i> Create Company
+            </a>
+          </div>
+        </div>
+        {% endif %}
       </div>
 
       <!-- Company Stats -->
