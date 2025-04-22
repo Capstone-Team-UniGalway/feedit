@@ -28,21 +28,22 @@
         </div>
 
         {% if object and object.pk %}
-            <!-- Delete Company -->
-            <div class="card bg-base-100 shadow p-6">
-                <h2 class="text-xl font-semibold mb-4">Delete Company</h2>
-                <p class="text-sm text-gray-600 mb-4">
-                    Deleting this company will soft-delete it and hide it from public view. This action can only be undone by an administrator.
-                </p>
+        <!-- Delete Company -->
+        <div class="card bg-base-100 shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Delete Company</h2>
+            <p class="text-sm text-gray-600 mb-4">
+                Deleting this company will soft-delete it and hide it from public view. This action can only be undone
+                by an administrator.
+            </p>
 
-                <!-- Trigger Button -->
-                <button class="btn btn-error btn-outline w-full" onclick="delete_modal.showModal()">
-                    Delete Company
-                </button>
+            <!-- Trigger Button -->
+            <button class="btn btn-error btn-outline w-full" onclick="delete_modal.showModal()">
+                Delete Company
+            </button>
 
-                <!-- DaisyUI Modal -->
-                <dialog id="delete_modal" class="modal">
-                    <div class="modal-box">
+            <!-- DaisyUI Modal -->
+            <dialog id="delete_modal" class="modal">
+                <div class="modal-box">
                     <h3 class="font-bold text-lg">Are you sure?</h3>
                     <p class="py-4 text-sm text-gray-600">
                         This action cannot be undone. The company will be hidden from all users.
@@ -50,16 +51,16 @@
 
                     <div class="modal-action">
                         <form method="post" action="{% url 'companies:delete' object.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-error">Confirm Delete</button>
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-error">Confirm Delete</button>
                         </form>
                         <form method="dialog">
-                        <button class="btn btn-outline">Cancel</button>
+                            <button class="btn btn-outline">Cancel</button>
                         </form>
                     </div>
-                    </div>
-                </dialog>
-            </div>
+                </div>
+            </dialog>
+        </div>
         {% endif %}
 
     </section>

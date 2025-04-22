@@ -73,8 +73,8 @@ urlpatterns = [
     ),
     path("account/", include("accounts.urls")),
     path("threads/", include("threads.urls")),
+    path("reviews/", include("reviews.urls")),
     path("upload/", include("django_ckeditor_5.urls")),
-
     # Serve media files in development
-    path('media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT}),
+    path("media/<path:path>", serve, {"document_root": settings.MEDIA_ROOT}),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
