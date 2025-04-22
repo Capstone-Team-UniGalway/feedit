@@ -122,19 +122,13 @@ class ThreadCreateView(LoginRequiredMixin, CreateView):
         # Set the company if the user is associated with one
         if hasattr(self.request.user, 'workplace') and self.request.user.workplace:
             form.instance.company = self.request.user.workplace
+            messages.success(self.request, 'Thread created successfully!')
+            return super().form_valid(form)
         else:
-            # Create a default company if the user doesn't have one
-            from companies.models import Company
-            company = Company.objects.first()
-            if not company:
-                company = Company.objects.create(name='FeedIT Company', country='US')
-            self.request.user.workplace = company
-            self.request.user.save()
-            form.instance.company = company
-            messages.info(self.request, 'You have been associated with the default company.')
+            # Redirect to company selection if user doesn't have a company
+            messages.info(self.request, 'Please join or create a company before creating a thread.')
+            return redirect('companies:list')
 
-        messages.success(self.request, 'Thread created successfully!')
-        return super().form_valid(form)
 
     def get_success_url(self):
         return reverse('thread_detail', kwargs={'pk': self.object.pk})

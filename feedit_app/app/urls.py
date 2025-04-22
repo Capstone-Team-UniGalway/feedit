@@ -21,6 +21,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
 from django.views.static import serve
+from companies.views import JoinCompanyListView, JoinCompanyRequestView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -48,8 +49,13 @@ urlpatterns = [
     ),
     path(
         "join_company",
-        TemplateView.as_view(template_name="pages/join_company.html"),
+        JoinCompanyListView.as_view(),
         name="join_company",
+    ),
+    path(
+        "join_company_request/<int:pk>/",
+        JoinCompanyRequestView.as_view(),
+        name="join_company_request",
     ),
     path(
         "privacy",
@@ -73,6 +79,7 @@ urlpatterns = [
     ),
     path("account/", include("accounts.urls")),
     path("threads/", include("threads.urls")),
+    path("reviews/", include("reviews.urls")),
     path("upload/", include("django_ckeditor_5.urls")),
 
     # Serve media files in development

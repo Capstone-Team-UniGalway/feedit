@@ -71,7 +71,8 @@
                 class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                 <i class="fas fa-home"></i> Dashboard
               </a></li>
-            <li><a href="#" class="nav-link">
+            <li><a href="{% url 'companies:list' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'companies' %}active{% endif %}">
                 <i class="fas fa-building"></i> Companies
               </a></li>
             <li><a href="{% url 'thread_list' %}"
@@ -170,7 +171,7 @@
               <li><a href="{% url 'dashboard' %}">
                   <i class="fas fa-home"></i> Dashboard
                 </a></li>
-              <li><a href="#">
+              <li><a href="{% url 'companies:list' %}">
                   <i class="fas fa-building"></i> Companies
                 </a></li>
               <li><a href="{% url 'thread_list' %}">

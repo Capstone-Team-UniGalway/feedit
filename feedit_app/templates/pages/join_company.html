@@ -1,69 +1,103 @@
-<c-layouts.base>
+{% extends "components/layouts/base.html" %}
+
+{% block content %}
     <!-- Company Join Section -->
-    <section class="container mx-auto px-4 py-8">
-        <div class="grid md:grid-cols-2 gap-10 items-start">
-            <!-- Left: Company Info & Join Button -->
-            <div class="space-y-6">
-                <h1 class="text-5xl font-bold">Apple</h1>
-                <p class="text-gray-500">Innovative technology company based in California.</p>
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-2">Join a Company</h1>
+        <p class="text-gray-500">Browse available companies and request to join one</p>
+    </div>
 
-                <div class="space-y-2">
-                    <button class="btn btn-primary w-full md:w-auto">
-                        🤝 Request to Join Company
+    <!-- Search and Filter -->
+    <div class="flex flex-wrap items-center justify-between mb-6 gap-4">
+        <form method="get" class="flex gap-2">
+            <div class="form-control">
+                <div class="input-group">
+                    <input type="text" name="q" placeholder="Search companies..." 
+                           class="input input-bordered" value="{{ request.GET.q }}" />
+                    <button type="submit" class="btn btn-square">
+                        <i class="fas fa-search"></i>
                     </button>
-                    <p class="text-sm text-gray-500">
-                        Your request will be sent to the company’s admin for approval.
-                    </p>
                 </div>
             </div>
+        </form>
+    </div>
 
-            <!-- Right: Company Image -->
-            <div>
-                <img src="https://via.placeholder.com/500x300" alt="Apple HQ" class="rounded-xl shadow-md" />
-            </div>
-        </div>
-    </section>
-
-    <!-- Reviews Section -->
-    <section class="container mx-auto px-4 py-8 space-y-6">
-        <!-- Review 1 -->
-        <div class="card bg-white shadow-sm">
-            <div class="card-body flex flex-row items-start gap-4">
-                <div class="text-lg font-semibold text-gray-400">1</div>
-                <div class="w-full">
-                    <div class="flex items-center gap-3">
-                        <img src="https://i.pravatar.cc/40?img=1" class="w-10 h-10 rounded-full" />
-                        <div class="flex flex-col">
-                            <span class="font-semibold">Jinny Oslin</span>
-                            <span class="text-sm text-gray-400">📅 a day ago</span>
-                        </div>
-                        <div class="ml-auto text-yellow-400 text-sm">★★★★★</div>
-                    </div>
-                    <p class="mt-2 text-sm text-gray-600">
-                        Magna id sint irure in cillum esse nisi dolor laboris ullamco. Consectetur proident...
-                    </p>
+    <!-- Companies Grid -->
+    {% if companies %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {% for company in companies %}
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all">
+            <figure>
+                <img src="{{ company.profile_picture }}" alt="{{ company.name }} logo"
+                    class="h-36 w-full object-cover" />
+            </figure>
+            <div class="card-body">
+                <h2 class="card-title">{{ company.name }}</h2>
+                {% if company.industry %}
+                <p class="text-sm text-gray-700">{{ company.industry }}</p>
+                {% endif %}
+                <p class="text-sm text-gray-500">{{ company.city }}{% if company.city and company.country %}, {% endif %}{{ company.country }}</p>
+                {% if company.average_rating %}
+                <div class="flex items-center text-yellow-400">
+                    <span class="mr-1">{{ company.average_rating }}</span>
+                    <i class="fas fa-star text-sm"></i>
                 </div>
-            </div>
-        </div>
-
-        <!-- Review 2 -->
-        <div class="card bg-white shadow-sm">
-            <div class="card-body flex flex-row items-start gap-4">
-                <div class="text-lg font-semibold text-gray-400">2</div>
-                <div class="w-full">
-                    <div class="flex items-center gap-3">
-                        <img src="https://i.pravatar.cc/40?img=2" class="w-10 h-10 rounded-full" />
-                        <div class="flex flex-col">
-                            <span class="font-semibold">Jinny Oslin</span>
-                            <span class="text-sm text-gray-400">📅 a day ago</span>
-                        </div>
-                        <div class="ml-auto text-yellow-400 text-sm">★★★★★</div>
-                    </div>
-                    <p class="mt-2 text-sm text-gray-600">
-                        Magna id sint irure in cillum esse nisi dolor laboris ullamco. Consectetur proident...
-                    </p>
+                {% endif %}
+                <div class="card-actions justify-end mt-2">
+                    <a href="{% url 'companies:detail' company.id %}" class="btn btn-sm btn-outline">View Profile</a>
+                    <form method="post" action="{% url 'join_company_request' company.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus mr-1"></i> Join
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
-    </section>
-</c-layouts.base>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="join mt-10 justify-center flex">
+        {% if page_obj.has_previous %}
+        <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="join-item btn">
+            <i class="fas fa-angles-left"></i>
+        </a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="join-item btn">
+            <i class="fas fa-angle-left"></i>
+        </a>
+        {% endif %}
+        
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <a href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="join-item btn btn-active">{{ num }}</a>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <a href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="join-item btn">{{ num }}</a>
+        {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="join-item btn">
+            <i class="fas fa-angle-right"></i>
+        </a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="join-item btn">
+            <i class="fas fa-angles-right"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="text-center py-12">
+        <div class="text-5xl text-gray-300 mb-4">
+            <i class="fas fa-building"></i>
+        </div>
+        <h3 class="text-xl font-medium mb-2">No companies found</h3>
+        <p class="text-gray-500 mb-6">There are no companies available to join at this time</p>
+        <a href="{% url 'companies:create' %}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i> Create a Company
+        </a>
+    </div>
+    {% endif %}
+{% endblock %}

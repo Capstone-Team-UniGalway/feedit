@@ -1,66 +1,68 @@
+{% extends "components/layouts/base.html" %}
 {% load widget_tweaks %}
 
-<c-layouts.base>
-    <!-- Company Settings -->
-    <section class="container mx-auto px-4 max-w-2xl space-y-10">
+{% block content %}
+<!-- Company Settings -->
+<section class="container mx-auto px-4 max-w-2xl space-y-10">
 
-        <!-- Company Info Form -->
-        <div class="card bg-base-100 shadow p-6">
-            <h2 class="text-xl font-semibold mb-4">Company Info</h2>
-            <form method="post" class="space-y-4">
-                {% csrf_token %}
+    <!-- Company Info Form -->
+    <div class="card bg-base-100 shadow p-6">
+        <h2 class="text-xl font-semibold mb-4">Company Info</h2>
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
 
-                {% for field in form.visible_fields %}
-                <div>
-                    <label class="label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {% render_field field class="input input-bordered w-full" %}
-                    {% if field.help_text %}
-                    <p class="text-sm text-gray-500">{{ field.help_text }}</p>
-                    {% endif %}
-                    {% for error in field.errors %}
-                    <p class="text-sm text-error">{{ error }}</p>
-                    {% endfor %}
-                </div>
+            {% for field in form.visible_fields %}
+            <div>
+                <label class="label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {% render_field field class="input input-bordered w-full" %}
+                {% if field.help_text %}
+                <p class="text-sm text-gray-500">{{ field.help_text }}</p>
+                {% endif %}
+                {% for error in field.errors %}
+                <p class="text-sm text-error">{{ error }}</p>
                 {% endfor %}
+            </div>
+            {% endfor %}
 
-                <button type="submit" class="btn btn-primary w-full mt-2">Save</button>
-            </form>
-        </div>
+            <button type="submit" class="btn btn-primary w-full mt-2">Save</button>
+        </form>
+    </div>
 
-        {% if object and object.pk %}
-            <!-- Delete Company -->
-            <div class="card bg-base-100 shadow p-6">
-                <h2 class="text-xl font-semibold mb-4">Delete Company</h2>
-                <p class="text-sm text-gray-600 mb-4">
-                    Deleting this company will soft-delete it and hide it from public view. This action can only be undone by an administrator.
+    {% if object and object.pk %}
+    <!-- Delete Company -->
+    <div class="card bg-base-100 shadow p-6">
+        <h2 class="text-xl font-semibold mb-4">Delete Company</h2>
+        <p class="text-sm text-gray-600 mb-4">
+            Deleting this company will soft-delete it and hide it from public view. This action can only be undone by an
+            administrator.
+        </p>
+
+        <!-- Trigger Button -->
+        <button class="btn btn-error btn-outline w-full" onclick="delete_modal.showModal()">
+            Delete Company
+        </button>
+
+        <!-- DaisyUI Modal -->
+        <dialog id="delete_modal" class="modal">
+            <div class="modal-box">
+                <h3 class="font-bold text-lg">Are you sure?</h3>
+                <p class="py-4 text-sm text-gray-600">
+                    This action cannot be undone. The company will be hidden from all users.
                 </p>
 
-                <!-- Trigger Button -->
-                <button class="btn btn-error btn-outline w-full" onclick="delete_modal.showModal()">
-                    Delete Company
-                </button>
-
-                <!-- DaisyUI Modal -->
-                <dialog id="delete_modal" class="modal">
-                    <div class="modal-box">
-                    <h3 class="font-bold text-lg">Are you sure?</h3>
-                    <p class="py-4 text-sm text-gray-600">
-                        This action cannot be undone. The company will be hidden from all users.
-                    </p>
-
-                    <div class="modal-action">
-                        <form method="post" action="{% url 'companies:delete' object.id %}">
+                <div class="modal-action">
+                    <form method="post" action="{% url 'companies:delete' object.id %}">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-error">Confirm Delete</button>
-                        </form>
-                        <form method="dialog">
+                    </form>
+                    <form method="dialog">
                         <button class="btn btn-outline">Cancel</button>
-                        </form>
-                    </div>
-                    </div>
-                </dialog>
+                    </form>
+                </div>
             </div>
-        {% endif %}
+        </dialog>
+    </div>
+    {% endif %}
 
-    </section>
-</c-layouts.base>
+</section>
+{% endblock %}

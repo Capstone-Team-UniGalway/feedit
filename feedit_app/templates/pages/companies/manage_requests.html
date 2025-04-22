@@ -1,0 +1,119 @@
+{% extends "components/layouts/base.html" %}
+
+{% block content %}
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-2">Manage Join Requests</h1>
+        <p class="text-gray-500">Review and process requests to join your company</p>
+    </div>
+
+    {% if requests %}
+    <div class="overflow-x-auto">
+        <table class="table w-full">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Date Requested</th>
+                    <th>Message</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in requests %}
+                <tr>
+                    <td>
+                        <div class="flex items-center gap-3">
+                            <div class="avatar">
+                                <div class="w-12 rounded-full">
+                                    {% if request.user.profile_picture %}
+                                    <img src="{{ request.user.profile_picture }}" alt="{{ request.user.get_full_name }}" />
+                                    {% else %}
+                                    <div class="bg-primary text-primary-content w-12 h-12 flex items-center justify-center text-lg font-bold">
+                                        {{ request.user.get_initials|default:request.user.email.0|upper }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div>
+                                <div class="font-bold">{{ request.user.get_full_name }}</div>
+                                <div class="text-sm opacity-50">{{ request.user.job_title|default:"No job title" }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ request.user.email }}</td>
+                    <td>{{ request.created_at|date:"M d, Y" }}</td>
+                    <td>
+                        {% if request.message %}
+                        {{ request.message|truncatechars:50 }}
+                        {% else %}
+                        <span class="text-gray-400">No message</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="flex gap-2">
+                            <form method="post" action="{% url 'companies:process_request' request.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="approve">
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="fas fa-check mr-1"></i> Approve
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'companies:process_request' request.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="reject">
+                                <button type="submit" class="btn btn-sm btn-error">
+                                    <i class="fas fa-times mr-1"></i> Reject
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="join mt-10 justify-center flex">
+        {% if page_obj.has_previous %}
+        <a href="?page=1" class="join-item btn">
+            <i class="fas fa-angles-left"></i>
+        </a>
+        <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn">
+            <i class="fas fa-angle-left"></i>
+        </a>
+        {% endif %}
+        
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <a href="?page={{ num }}" class="join-item btn btn-active">{{ num }}</a>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <a href="?page={{ num }}" class="join-item btn">{{ num }}</a>
+        {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="join-item btn">
+            <i class="fas fa-angle-right"></i>
+        </a>
+        <a href="?page={{ page_obj.paginator.num_pages }}" class="join-item btn">
+            <i class="fas fa-angles-right"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="text-center py-12">
+        <div class="text-5xl text-gray-300 mb-4">
+            <i class="fas fa-user-plus"></i>
+        </div>
+        <h3 class="text-xl font-medium mb-2">No pending requests</h3>
+        <p class="text-gray-500 mb-6">There are no pending requests to join your company</p>
+        <a href="{% url 'dashboard' %}" class="btn btn-primary">
+            <i class="fas fa-home mr-2"></i> Back to Dashboard
+        </a>
+    </div>
+    {% endif %}
+{% endblock %}
