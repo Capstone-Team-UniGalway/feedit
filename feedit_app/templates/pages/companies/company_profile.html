@@ -1,100 +1,112 @@
-<c-layouts.base>
-    <!-- Profile Content -->
-    <section class="container mx-auto px-4 max-w-4xl">
-        <!-- Company Info -->
-        <div class="card bg-base-100 shadow-md mb-8 p-6">
-            <div class="flex flex-col items-center text-center">
-                <img src="{{ company.profile_picture }}" alt="{{ company.name }}"
-                    class="rounded-xl mb-4 w-full max-w-40" />
-                <h2 class="text-xl font-bold">{{ company.name }}</h2>
-                {% if company.industry %}
-                <p class="text-sm text-gray-500">{{ company.industry }}</p>
-                {% endif %}
-                {% if company.city or company.country %}
-                <p class="text-sm text-gray-400">{{ company.city }}, {{ company.country }}</p>
-                {% endif %}
-                {% if company.average_rating %}
-                <p class="text-sm text-yellow-500 font-semibold">
-                    Rating: {{ company.average_rating }} ★
-                </p>
+{% extends "components/layouts/base.html" %}
+
+{% block content %}
+<!-- Profile Content -->
+<section class="container mx-auto px-4 max-w-4xl">
+    <!-- Company Info -->
+    <div class="card bg-base-100 shadow-md mb-8 p-6">
+        <div class="flex flex-col items-center text-center">
+            <img src="{{ company.profile_picture }}" alt="{{ company.name }}" class="rounded-xl mb-4 w-full max-w-40" />
+            <h2 class="text-xl font-bold">{{ company.name }}</h2>
+            {% if company.industry %}
+            <p class="text-sm text-gray-500">{{ company.industry }}</p>
+            {% endif %}
+            {% if company.city or company.country %}
+            <p class="text-sm text-gray-400">{{ company.city }}{% if company.city and company.country %}, {% endif %}{{
+                company.country }}</p>
+            {% endif %}
+            {% if company.average_rating %}
+            <p class="text-sm text-yellow-500 font-semibold">
+                Rating: {{ company.average_rating }} ★
+            </p>
+            {% endif %}
+
+            {% if company.bio %}
+            <p class="mt-4 text-sm text-gray-600">{{ company.bio }}</p>
+            {% endif %}
+
+            <!-- Company Status Badge -->
+            <div class="mt-2 flex justify-center">
+                {% if company.employer %}
+                <div class="badge badge-success gap-2">
+                    <i class="fas fa-check-circle"></i> Claimed
+                </div>
+                {% else %}
+                <div class="badge badge-warning gap-2">
+                    <i class="fas fa-exclamation-circle"></i> Unclaimed
+                </div>
                 {% endif %}
 
-                {% if company.bio %}
-                <p class="mt-4 text-sm text-gray-600">{{ company.bio }}</p>
+                {% if company.verification_status == 'verified' %}
+                <div class="badge badge-info gap-2 ml-2">
+                    <i class="fas fa-shield-alt"></i> Verified
+                </div>
                 {% endif %}
-                <div class="flex gap-4 my-2 text-primary">
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-github"></i></a>
-                    <a href="#"><i class="fas fa-link"></i></a>
-                </div>
-                <div class="mt-4 flex gap-2">
-                    {% if request.user.is_authenticated %}
-                    {% if request.user == company.employer or request.user.is_superuser %}
-                    <a href="{% url 'companies:edit' company.id %}" class="btn btn-sm btn-outline">Edit Profile</a>
-                    {% endif %}
-                    {% endif %}
-                    <button class="btn btn-sm btn-neutral">Share profile</button>
-                </div>
+            </div>
+
+            <div class="mt-4 flex flex-wrap gap-2 justify-center">
+                {% if request.user.is_authenticated %}
+                {% if request.user == company.employer or request.user.is_superuser %}
+                <!-- Company Owner or Admin -->
+                <a href="{% url 'companies:edit' company.id %}" class="btn btn-sm btn-outline">
+                    <i class="fas fa-edit mr-1"></i> Edit Profile
+                </a>
+                <a href="{% url 'companies:manage_requests' %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-users mr-1"></i> Manage Members
+                </a>
+                {% elif not request.user.workplace %}
+                {% if company.employer %}
+                <!-- Company is claimed, show join request option -->
+                {% if company.id in pending_requests %}
+                <button class="btn btn-sm btn-disabled">
+                    <i class="fas fa-clock mr-1"></i> Join Request Pending
+                </button>
+                {% else %}
+                <form method="post" action="{% url 'join_company_request' company.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="fas fa-building mr-1"></i> Request to Join
+                    </button>
+                </form>
+                {% endif %}
+
+                <!-- Option to dispute ownership -->
+                <button class="btn btn-sm btn-outline"
+                    onclick="document.getElementById('claim_dispute_modal').showModal()">
+                    <i class="fas fa-flag mr-1"></i> Dispute Ownership
+                </button>
+                {% else %}
+                <!-- Company is unclaimed, show claim option -->
+                {% if company.id in pending_claim_requests %}
+                <button class="btn btn-sm btn-disabled">
+                    <i class="fas fa-clock mr-1"></i> Claim Request Pending
+                </button>
+                {% else %}
+                <button class="btn btn-sm btn-success"
+                    onclick="document.getElementById('claim_company_modal').showModal()">
+                    <i class="fas fa-flag mr-1"></i> Claim This Company
+                </button>
+                {% endif %}
+                {% endif %}
+                {% endif %}
+                {% endif %}
+                <button class="btn btn-sm btn-neutral" onclick="document.getElementById('share_modal').showModal()">
+                    <i class="fas fa-share-alt mr-1"></i> Share Profile
+                </button>
             </div>
         </div>
+    </div>
 
-        <!-- Activity Feed -->
-        <h3 class="text-lg font-bold mb-4">Activity</h3>
-
-        <div class="space-y-4">
-            <!-- Activity 1 -->
-            <div class="card bg-white shadow-sm">
-                <div class="card-body flex items-center justify-between">
-                    <div>
-                        <h4 class="font-bold">New Post</h4>
-                        <p class="text-sm text-gray-500">You shared a new photo</p>
-                        <p class="text-xs text-gray-400 mt-1">2 hours ago</p>
-                        <button class="btn btn-sm btn-outline mt-2">View</button>
-                    </div>
-                    <img src="https://source.unsplash.com/100x100/?sunset" class="rounded-xl w-24 h-24 object-cover" />
-                </div>
-            </div>
-
-            <!-- Activity 2 -->
-            <div class="card bg-white shadow-sm">
-                <div class="card-body flex items-center justify-between">
-                    <div>
-                        <h4 class="font-bold">Commented</h4>
-                        <p class="text-sm text-gray-500">You commented on Sarah’s post</p>
-                        <p class="text-xs text-gray-400 mt-1">5 hours ago</p>
-                        <button class="btn btn-sm btn-outline mt-2">Reply</button>
-                    </div>
-                    <img src="https://source.unsplash.com/100x100/?workspace"
-                        class="rounded-xl w-24 h-24 object-cover" />
-                </div>
-            </div>
-
-            <!-- Activity 3 -->
-            <div class="card bg-white shadow-sm">
-                <div class="card-body flex items-center justify-between">
-                    <div>
-                        <h4 class="font-bold">Liked a Post</h4>
-                        <p class="text-sm text-gray-500">You liked Mark’s photo</p>
-                        <p class="text-xs text-gray-400 mt-1">Yesterday</p>
-                        <button class="btn btn-sm btn-outline mt-2">See Post</button>
-                    </div>
-                    <img src="https://source.unsplash.com/100x100/?friends" class="rounded-xl w-24 h-24 object-cover" />
-                </div>
-            </div>
-        </div>
-    </section>
     <!-- Reviews Section -->
-    <section class="container mx-auto px-4 max-w-4xl">
+    <div class="mb-8">
         <div class="flex items-center justify-between mb-4">
-            <h1 class="text-4xl font-bold">{{ company.name }} Reviews</h1>
+            <h3 class="text-lg font-bold">Reviews</h3>
             <button class="btn btn-outline btn-sm">Sort by</button>
         </div>
 
-        <p class="text-sm text-gray-500 mb-6">Latest employee feedback</p>
-
         {% if reviews %}
         {% for review in reviews %}
-        <div class="card bg-white shadow-sm mb-6">
+        <div class="card bg-base-100 shadow-sm mb-6">
             <div class="card-body space-y-2">
                 <div class="flex items-center gap-3">
                     <div class="text-lg font-bold">{{ forloop.counter }}</div>
@@ -104,18 +116,20 @@
                     </div>
                     <div class="ml-auto text-yellow-400 text-sm">
                         {% for i in "12345" %}
-                        {% if review.rating|floatformat:1 >= i|stringformat:"d" %}
+                        {% if review.rating >= forloop.counter %}
                         ★
                         {% else %}
                         ☆
                         {% endif %}
                         {% endfor %}
-                        ({{ review.rating|floatformat:1 }})
+                        ({{ review.rating }})
                     </div>
                 </div>
                 <p class="text-sm text-gray-600">{{ review.content }}</p>
-                {% if not review.replies.exists %}
-                <button class="btn btn-sm btn-outline">Reply</button>
+                {% if user.is_authenticated and user == company.employer and not review.replies.exists %}
+                <a href="{% url 'reviews:create_review_reply' review.id %}" class="btn btn-sm btn-outline">
+                    <i class="fas fa-reply mr-1"></i> Reply
+                </a>
                 {% endif %}
             </div>
             {% if review.replies.exists %}
@@ -141,8 +155,8 @@
                 Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
             </button>
             {% if page_obj.has_next %}
-            < a href="?page={{ page_obj.next_page_number }}" class="join-item btn">Next »</a>
-                {% endif %}
+            <a href="?page={{ page_obj.next_page_number }}" class="join-item btn">Next »</a>
+            {% endif %}
         </div>
         {% endif %}
         {% else %}
@@ -152,15 +166,138 @@
         <!-- Write Review -->
         <div class="mt-12">
             <h2 class="text-2xl font-semibold mb-4">Write a review</h2>
-            <form class="space-y-4">
-                <input type="text" placeholder="Your review..." class="input input-bordered w-full" />
-                <div class="rating">
-                    {% for i in "12345" %}
-                    <input type="radio" name="rating" value="{{ i }}" class="mask mask-star bg-yellow-400" />
-                    {% endfor %}
-                </div>
-                <button class="btn btn-primary w-full max-w-sm">Submit review</button>
+            {% if user.is_authenticated %}
+            <div class="flex justify-center">
+                <a href="{% url 'reviews:create_review' company.id %}" class="btn btn-primary">
+                    <i class="fas fa-star mr-2"></i> Write a Review
+                </a>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <p class="text-gray-500 mb-2">You need to be logged in to write a review</p>
+                <a href="{% url 'account_auth' %}" class="btn btn-outline btn-sm">
+                    <i class="fas fa-sign-in-alt mr-1"></i> Log In
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Share Modal -->
+<dialog id="share_modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">Share {{ company.name }}'s Profile</h3>
+        <p class="mb-4">Copy the link below to share this company profile:</p>
+
+        <div class="form-control mb-4">
+            <div class="input-group">
+                <input type="text" id="company-url"
+                    value="{{ request.scheme }}://{{ request.get_host }}{% url 'companies:detail' company.id %}"
+                    class="input input-bordered w-full" readonly />
+                <button class="btn btn-square" onclick="copyProfileUrl()">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex justify-center gap-3 mt-6">
+            <a href="https://twitter.com/intent/tweet?url={{ request.scheme }}://{{ request.get_host }}{% url 'companies:detail' company.id %}&text=Check out {{ company.name }} on FeedIT!"
+                target="_blank" class="btn btn-outline">
+                <i class="fab fa-twitter mr-2"></i> Twitter
+            </a>
+            <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.scheme }}://{{ request.get_host }}{% url 'companies:detail' company.id %}"
+                target="_blank" class="btn btn-outline">
+                <i class="fab fa-linkedin mr-2"></i> LinkedIn
+            </a>
+        </div>
+
+        <div class="modal-action">
+            <form method="dialog">
+                <button class="btn">Close</button>
             </form>
         </div>
-    </section>
-</c-layouts.base>
+    </div>
+</dialog>
+
+<!-- Claim Company Modal -->
+<dialog id="claim_company_modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">Claim {{ company.name }}</h3>
+        <p class="mb-4">By claiming this company, you'll become its administrator and be able to manage its profile and
+            members.</p>
+
+        <form method="post" action="{% url 'companies:claim_request' company.id %}" enctype="multipart/form-data"
+            class="space-y-4">
+            {% csrf_token %}
+
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Why should you be the owner of this company?</span>
+                </label>
+                <textarea name="message" class="textarea textarea-bordered" rows="3" required></textarea>
+            </div>
+
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Verification Document (optional)</span>
+                    <span class="label-text-alt">Upload proof of your association with this company</span>
+                </label>
+                <input type="file" name="verification_document" class="file-input file-input-bordered w-full" />
+            </div>
+
+            <div class="modal-action">
+                <button type="submit" class="btn btn-primary">Submit Claim</button>
+                <button type="button" class="btn" onclick="claim_company_modal.close()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<!-- Dispute Ownership Modal -->
+<dialog id="claim_dispute_modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">Dispute Ownership of {{ company.name }}</h3>
+        <p class="mb-4">If you believe you should be the rightful owner of this company, you can submit a dispute.</p>
+
+        <form method="post" action="{% url 'companies:dispute_claim' company.id %}" enctype="multipart/form-data"
+            class="space-y-4">
+            {% csrf_token %}
+
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Why should you be the owner instead of the current owner?</span>
+                </label>
+                <textarea name="message" class="textarea textarea-bordered" rows="3" required></textarea>
+            </div>
+
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Verification Document</span>
+                    <span class="label-text-alt">Upload proof of your association with this company</span>
+                </label>
+                <input type="file" name="verification_document" class="file-input file-input-bordered w-full"
+                    required />
+            </div>
+
+            <div class="modal-action">
+                <button type="submit" class="btn btn-primary">Submit Dispute</button>
+                <button type="button" class="btn" onclick="claim_dispute_modal.close()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<!-- JavaScript for Share Profile Functionality -->
+<script>
+    // Function to copy profile URL to clipboard
+    function copyProfileUrl() {
+        const profileUrl = document.getElementById('company-url');
+        profileUrl.select();
+        document.execCommand('copy');
+
+        // Show a toast or some feedback
+        alert('Link copied to clipboard!');
+    }
+</script>
+{% endblock %}

@@ -2,7 +2,7 @@
 
 import django.core.validators
 import django.db.models.deletion
-import reviews.models
+# import reviews.models
 from django.conf import settings
 from django.db import migrations, models
 
@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='review',
             name='rating',
-            field=models.FloatField(default=0.0, validators=[django.core.validators.MinValueValidator(0.0), django.core.validators.MaxValueValidator(5.0), reviews.models.validate_rating_step]),
+            field=models.IntegerField(default=5, validators=[django.core.validators.MinValueValidator(1), django.core.validators.MaxValueValidator(5)]),
             preserve_default=False,
         ),
         migrations.AddField(

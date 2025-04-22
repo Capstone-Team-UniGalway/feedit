@@ -5,10 +5,12 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 
 
-def validate_rating_step(value):
-    """Custom validator to enforce step size of 0.5"""
-    if (value * 10) % 5 != 0:  # Ensures values like 0.5, 1.0, 1.5, ..., 5.0
-        raise ValidationError("Rating must be in 0.5 increments.")
+def validate_rating_whole(value):
+    """Custom validator to enforce whole numbers between 1 and 5"""
+    if not isinstance(value, int) and not value.is_integer():
+        raise ValidationError("Rating must be a whole number.")
+    if value < 1 or value > 5:
+        raise ValidationError("Rating must be between 1 and 5.")
 
 
 # Anonymous or named reviews about companies
@@ -29,11 +31,10 @@ class Review(BaseModel):
         blank=True,
         help_text="Required if no user is associated and not anonymous",
     )
-    rating = models.FloatField(
+    rating = models.IntegerField(
         validators=[
-            MinValueValidator(0.0),
-            MaxValueValidator(5.0),
-            validate_rating_step,
+            MinValueValidator(1),
+            MaxValueValidator(5),
         ]
     )
     content = models.TextField()
