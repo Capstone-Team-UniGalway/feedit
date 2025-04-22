@@ -1,63 +1,91 @@
-<c-layouts.base>
-    <!-- Company Detail Section -->
-    <div class="container mx-auto px-4 py-8">
-        <div class="grid md:grid-cols-2 gap-8 items-center">
-            <!-- Left Info -->
-            <div>
-                <h1 class="text-4xl font-bold">Apple</h1>
-                <p class="text-gray-500 mb-6">Job title</p>
-                <button class="btn btn-outline btn-primary">Claim Company (requires proof)</button>
-            </div>
+{% extends "components/layouts/base.html" %}
 
-            <!-- Company Image -->
-            <div>
-                <img src="https://via.placeholder.com/500x300" alt="Company banner" class="rounded-xl shadow-lg" />
-            </div>
+{% block content %}
+<!-- Create Company Section -->
+<div class="max-w-2xl mx-auto">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold mb-2">Create a Company</h1>
+        <p class="text-gray-500">Set up your company profile on FeedIT</p>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <form method="post" action="{% url 'companies:create' %}" class="space-y-4">
+                {% if messages %}
+                <div class="alert alert-info">
+                    {% for message in messages %}
+                    <div>{{ message }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% csrf_token %}
+
+                <!-- Company Name -->
+                <div>
+                    <label class="label">
+                        <span class="label-text">Company Name*</span>
+                    </label>
+                    <input type="text" name="name" placeholder="Enter company name" class="input input-bordered w-full"
+                        value="{{ request.GET.name }}" required />
+                </div>
+
+                <!-- Industry -->
+                <div>
+                    <label class="label">
+                        <span class="label-text">Industry</span>
+                    </label>
+                    <input type="text" name="industry" placeholder="e.g. Technology, Healthcare, Education"
+                        class="input input-bordered w-full" />
+                </div>
+
+                <!-- Location -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="label">
+                            <span class="label-text">City</span>
+                        </label>
+                        <input type="text" name="city" placeholder="City" class="input input-bordered w-full" />
+                    </div>
+                    <div>
+                        <label class="label">
+                            <span class="label-text">Country</span>
+                        </label>
+                        <input type="text" name="country" placeholder="Country" class="input input-bordered w-full" />
+                    </div>
+                </div>
+
+                <!-- Founded Date -->
+                <div>
+                    <label class="label">
+                        <span class="label-text">Date Founded</span>
+                    </label>
+                    <input type="date" name="date_founded" class="input input-bordered w-full" />
+                </div>
+
+                <!-- Bio -->
+                <div>
+                    <label class="label">
+                        <span class="label-text">Company Description</span>
+                    </label>
+                    <textarea name="bio" placeholder="Tell us about your company"
+                        class="textarea textarea-bordered w-full" rows="4"></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-4">
+                    <button type="submit" class="btn btn-primary w-full">
+                        <i class="fas fa-building mr-2"></i> Create Company
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- Reviews -->
-    <div class="container mx-auto px-4 py-4 space-y-4">
-        <!-- Review 1 -->
-        <div class="card bg-base-100 shadow-md">
-            <div class="card-body flex-row items-start">
-                <div class="text-xl mr-4">1</div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <img src="https://i.pravatar.cc/40?img=1" class="w-10 h-10 rounded-full" />
-                        <div>
-                            <h3 class="font-bold">Jinny Oslin</h3>
-                            <p class="text-sm text-gray-500">A day ago</p>
-                        </div>
-                        <div class="ml-auto flex gap-1 text-yellow-400">
-                            ★★★★★
-                        </div>
-                    </div>
-                    <p class="mt-2">Magna id sint irure in cillum esse nisi dolor laboris ullamco. Consectetur
-                        proident...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Review 2 -->
-        <div class="card bg-base-100 shadow-md">
-            <div class="card-body flex-row items-start">
-                <div class="text-xl mr-4">2</div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <img src="https://i.pravatar.cc/40?img=2" class="w-10 h-10 rounded-full" />
-                        <div>
-                            <h3 class="font-bold">Jinny Oslin</h3>
-                            <p class="text-sm text-gray-500">A day ago</p>
-                        </div>
-                        <div class="ml-auto flex gap-1 text-yellow-400">
-                            ★★★★★
-                        </div>
-                    </div>
-                    <p class="mt-2">Magna id sint irure in cillum esse nisi dolor laboris ullamco. Consectetur
-                        proident...</p>
-                </div>
-            </div>
-        </div>
+    <div class="mt-6 text-center">
+        <p class="text-sm text-gray-500 mb-2">Already have a company?</p>
+        <a href="{% url 'join_company' %}" class="btn btn-outline btn-sm">
+            <i class="fas fa-search mr-1"></i> Find a Company to Join
+        </a>
     </div>
-</c-layouts.base>
+</div>
+{% endblock %}
