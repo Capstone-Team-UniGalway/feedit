@@ -5,6 +5,7 @@ from .views import (
     CreateCompanyView,
     EditCompanyView,
     DeleteCompanyView,
+    LeaveCompanyView,
 )
 
 app_name = "companies"
@@ -19,4 +20,5 @@ urlpatterns = [
     path(
         "<int:pk>/delete/", DeleteCompanyView.as_view(), name="delete"
     ),  # /companies/5/delete/
+    path("leave/", LeaveCompanyView.as_view(), name="leave"),  # /companies/leave/
 ]

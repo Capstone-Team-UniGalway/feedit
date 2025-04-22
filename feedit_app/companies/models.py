@@ -70,3 +70,8 @@ class Company(BaseModel):
             return None
         avg = qs.aggregate(avg=models.Avg("rating"))["avg"]
         return round(avg or 0, 1)
+
+    @property
+    def is_claimed(self):
+        """Check if the company has an employer assigned."""
+        return self.employer is not None
