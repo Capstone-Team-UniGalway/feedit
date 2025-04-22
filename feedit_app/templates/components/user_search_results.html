@@ -1,0 +1,33 @@
+{% if users %}
+<ul class="menu bg-base-200 w-full rounded-md shadow-lg">
+  {% for user in users %}
+  <li class="mention-item" 
+      hx-get="{% url 'api_search_users' %}" 
+      hx-trigger="click" 
+      hx-vals='{"selected_user": "{{ user.id }}", "selected_name": "{{ user.get_full_name }}"}' 
+      hx-target="#mention-results" 
+      hx-swap="outerHTML">
+    <div class="flex items-center gap-2 p-2">
+      <!-- User avatar/initials -->
+      {% if user.profile_picture %}
+      <img src="{{ user.profile_picture }}" alt="{{ user.get_full_name }}" class="w-8 h-8 rounded-full">
+      {% else %}
+      <div class="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-sm font-bold">
+        {{ user.get_initials|default:user.email.0|upper }}
+      </div>
+      {% endif %}
+      
+      <!-- User info -->
+      <div class="flex flex-col">
+        <span class="font-medium">{{ user.get_full_name }}</span>
+        <span class="text-xs text-gray-500">{{ user.email }}</span>
+      </div>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% elif query and query|length >= 2 %}
+<div class="p-4 text-center text-gray-500">No users found matching "{{ query }}"</div>
+{% else %}
+<div class="p-4 text-center text-gray-500">Type at least 2 characters to search users</div>
+{% endif %}

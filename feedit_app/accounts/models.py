@@ -93,6 +93,10 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         return self.first_name + " " + self.last_name
 
     @property
+    def profile_incomplete(self):
+        return not self.job_title or not self.bio
+
+    @property
     def profile_picture(self):
         from secure_files.models import SecureFile
 

@@ -80,10 +80,11 @@ class AuthView(TemplateView):
 
     def post(self, request, *args, **kwargs):
         context = {}
+        role = request.GET.get("role")
 
         if "login" in request.POST:
             login_form = CustomLoginForm(request=request, data=request.POST)
-            signup_form = CustomSignupForm(initial_role=request.GET.get("role"))
+            signup_form = CustomSignupForm(initial_role=role)
             if login_form.is_valid():
                 user = login_form.user
                 try:
@@ -226,17 +227,6 @@ class EditProfileView(LoginRequiredMixin, TemplateView):
     complete_profile_template = "pages/account/complete_profile.html"
     success_url = reverse_lazy("dashboard")
 
-    def get(self, request, *args, **kwargs):
-        # Check if this is a new user who needs to complete their profile
-        user = request.user
-        is_profile_incomplete = not user.job_title or not user.bio
-
-        # If profile is incomplete, show the simplified completion form
-        if is_profile_incomplete:
-            self.template_name = self.complete_profile_template
-
-        return self.render_to_response(self.get_context_data())
-
     def post(self, request, *args, **kwargs):
         if "update_profile" in request.POST:
             profile_form = UserProfileForm(request.POST, instance=request.user)
@@ -354,11 +344,8 @@ class DashboardView(LoginRequiredMixin, View):
         """Handles GET requests to the dashboard."""
         user = self.request.user
 
-        # --- Determine if profile is incomplete ---
-        profile_incomplete = not user.job_title or not user.bio
-
         # --- Redirect or Render ---
-        if profile_incomplete:
+        if user.profile_incomplete:
             # Profile details are missing, redirect to the edit profile page
             return redirect(self.profile_edit_url)
         else:
@@ -371,9 +358,36 @@ class DashboardView(LoginRequiredMixin, View):
         Prepares context data for rendering the dashboard template.
         This method is called only when the profile is considered complete.
         """
+        user = self.request.user
+
+        # Get user's threads (excluding replies and deleted threads)
+        from threads.models import Thread
+
+        user_threads = Thread.objects.filter(
+            author=user,
+            parent__isnull=True,  # Only parent threads, not replies
+            is_deleted=False,  # Only non-deleted threads
+        ).order_by("-created_at")[
+            :5
+        ]  # Get the 5 most recent threads
+
+        # Get threads where the user is mentioned
+        from threads.models import Mention
+
+        mentions = Mention.objects.filter(
+            mentioned_user=user,
+            is_read=False,  # Only unread mentions
+            thread__is_deleted=False,  # Only mentions in non-deleted threads
+        ).order_by("-created_at")[
+            :5
+        ]  # Get the 5 most recent mentions
+
         context = {
-            "user": self.request.user,
-            # Add any other context needed for the REAL dashboard here
+            "user": user,
+            "user_threads": user_threads,
+            "mentions": mentions,
+            "thread_count": user_threads.count(),
+            "mention_count": mentions.count(),
         }
         return context
 

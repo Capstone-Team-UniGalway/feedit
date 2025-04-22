@@ -19,11 +19,19 @@
                 <!-- Login Form -->
                 <div class="w-full lg:w-1/2 border border-base-300 rounded-lg p-6">
                     <h2 class="text-xl font-semibold mb-4">Login</h2>
-                    <form method="POST" action="{% url 'account_auth' %}" class="space-y-4">
+                    <form method="POST"
+                        action="{% url 'account_auth' %}{% if request.GET.role %}?role={{ request.GET.role }}{% endif %}"
+                        class="space-y-4">
                         {% csrf_token %}
-
+                        {% if login_form.non_field_errors %}
+                        <div class="alert alert-error mb-4">
+                            {% for error in login_form.non_field_errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                         {% for field in login_form.visible_fields %}
-                        <div>
+                        <div class="form-control mb-4">
                             {% if field.name == "remember" %}
                             <label class="flex items-center gap-4 cursor-pointer">
                                 {% render_field field class="toggle toggle-primary" %}
@@ -62,9 +70,15 @@
                     <h2 class="text-xl font-semibold mb-4">Register</h2>
                     <form method="POST" action="{% url 'account_auth' %}" class="space-y-4">
                         {% csrf_token %}
-                        {{ signup_form.non_field_errors }}
+                        {% if signup_form.non_field_errors %}
+                        <div class="alert alert-error mb-4">
+                            {% for error in signup_form.non_field_errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                         {% for field in signup_form.visible_fields %}
-                        <div>
+                        <div class="form-control mb-4">
                             <label class="label"><span class="label-text">{{ field.label }}</span></label>
 
                             {% if field.name == "type" %}

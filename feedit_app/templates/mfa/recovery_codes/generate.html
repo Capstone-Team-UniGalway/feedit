@@ -1,12 +1,58 @@
 <c-layouts.base>
-    <section class="container max-w-xl mx-auto px-4 py-10">
-        <div class="card bg-base-100 shadow p-6">
-            <h2 class="text-xl font-semibold mb-4">Generate New Recovery Codes</h2>
-            <p class="text-sm text-warning mb-6">Generating new codes will invalidate the current ones.</p>
-            <form method="post">
-                {% csrf_token %}
-                <button class="btn btn-warning w-full">Generate New Codes</button>
-            </form>
+    <section class="max-w-xl mx-auto space-y-6">
+        <!-- Page Header -->
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold mb-2">Generate New Recovery Codes</h1>
+            <p class="text-gray-600">Create backup codes to access your account if you lose your authenticator device
+            </p>
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex mb-6">
+            <a href="{% url 'mfa_index' %}" class="btn btn-ghost btn-sm">
+                <i class="fas fa-arrow-left mr-2"></i> Back to MFA Settings
+            </a>
+        </div>
+
+        <!-- Generate Card -->
+        <div class="card bg-base-100 shadow-md">
+            <div class="card-body">
+                <div class="alert alert-warning mb-6">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Warning: Generating new codes will invalidate any existing recovery codes.</span>
+                </div>
+
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-full bg-warning/20 flex items-center justify-center">
+                        <i class="fas fa-key text-2xl text-warning"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-medium">Recovery Codes</h3>
+                        <p class="text-sm text-gray-600">These one-time use codes allow you to sign in if you lose
+                            access to
+                            your authenticator app.</p>
+                    </div>
+                </div>
+
+                <div class="bg-base-200 p-4 rounded-lg mb-6">
+                    <h4 class="font-medium mb-2">Important:</h4>
+                    <ul class="text-sm space-y-2 list-disc list-inside">
+                        <li>Each code can only be used once</li>
+                        <li>Store these codes in a secure location</li>
+                        <li>Consider printing them or saving them in a password manager</li>
+                        <li>Don't store them in the same place as your authenticator app</li>
+                    </ul>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="card-actions justify-end">
+                        <button class="btn btn-warning">
+                            <i class="fas fa-sync-alt mr-2"></i> Generate New Codes
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </section>
 </c-layouts.base>

@@ -1,32 +1,105 @@
 {% load widget_tweaks %}
 <c-layouts.base>
-    <section class="container max-w-md mx-auto px-4 py-10">
-        <div class="card bg-base-100 shadow p-6">
-            <h2 class="text-xl font-semibold mb-4">Activate TOTP</h2>
-            <p class="text-sm text-gray-600 mb-4">Scan the QR code with your authenticator app and enter the code below.
-            </p>
-            <div class="mb-4 text-center">
-                <img src="{{ totp_svg_data_uri }}" alt="TOTP QR Code" class="mx-auto border rounded" />
-            </div>
-            <div class="mt-4">
-                <label class="label font-semibold">Manual Setup Code</label>
-                <input type="text" value="{{ form.secret }}" readonly
-                    class="input input-bordered w-full font-mono text-sm" />
-                <p class="text-xs text-gray-500 mt-1">Use this if you cannot scan the QR code.</p>
-            </div>
-            <form method="post">
-                {% csrf_token %}
-                {% for field in form %}
-                <div class="mb-4">
-                    <label class="label">{{ field.label }}</label>
-                    {% render_field field class="input input-bordered w-full" %}
-                    {% if field.errors %}
-                    <p class="text-error text-sm mt-1">{{ field.errors.0 }}</p>
-                    {% endif %}
+    <section class="max-w-2xl mx-auto space-y-6">
+        <!-- Page Header -->
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold mb-2">Set Up Authenticator App</h1>
+            <p class="text-gray-600">Add an extra layer of security to your account</p>
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex mb-6">
+            <a href="{% url 'mfa_index' %}" class="btn btn-ghost btn-sm">
+                <i class="fas fa-arrow-left mr-2"></i> Back to MFA Settings
+            </a>
+        </div>
+
+        <!-- Setup Card -->
+        <div class="card bg-base-100 shadow-md">
+            <div class="card-body">
+                <h2 class="card-title">Scan QR Code</h2>
+                <p class="text-sm text-gray-600 mb-4">Use your authenticator app to scan this QR code.</p>
+
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <span class="font-medium">Supported Apps:</span>
+                        <ul class="text-sm list-disc list-inside ml-2">
+                            <li>Google Authenticator</li>
+                            <li>Microsoft Authenticator</li>
+                            <li>Authy</li>
+                            <li>1Password</li>
+                            <li>LastPass Authenticator</li>
+                        </ul>
+                    </div>
                 </div>
-                {% endfor %}
-                <button type="submit" class="btn btn-primary w-full">Activate</button>
-            </form>
+
+                <div class="flex flex-col md:flex-row gap-6 items-center">
+                    <!-- QR Code -->
+                    <div class="flex-1 flex justify-center">
+                        <div class="border-4 border-base-200 rounded-lg p-2 bg-white">
+                            <img src="{{ totp_svg_data_uri }}" alt="TOTP QR Code" class="mx-auto" />
+                        </div>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div class="flex-1">
+                        <h3 class="font-medium text-lg mb-2">How to set up:</h3>
+                        <ol class="text-sm space-y-2 list-decimal list-inside">
+                            <li>Open your authenticator app</li>
+                            <li>Add a new account (usually a + icon)</li>
+                            <li>Choose to scan a QR code</li>
+                            <li>Point your camera at the QR code</li>
+                            <li>Enter the 6-digit code below</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Manual Entry -->
+                <div class="mt-6 p-4 bg-base-200 rounded-lg">
+                    <h3 class="font-medium mb-2">Manual Setup Code</h3>
+                    <div class="flex gap-2 items-center">
+                        <input type="text" value="{{ form.secret }}" readonly
+                            class="input input-bordered w-full font-mono text-sm" />
+                        <button class="btn btn-square btn-sm" onclick="copyToClipboard('{{ form.secret }}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Use this code if you cannot scan the QR code.</p>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="divider">Verify Setup</div>
+
+                    {% for field in form %}
+                    <div class="mb-4">
+                        <label class="label font-medium">{{ field.label }}</label>
+                        {% render_field field class="input input-bordered w-full text-center text-xl tracking-widest"
+                    placeholder="000000" %}
+                        {% if field.errors %}
+                        <p class="text-error text-sm mt-1">{{ field.errors.0 }}</p>
+                        {% endif %}
+                        <p class="text-sm text-gray-500 mt-1">Enter the 6-digit code from your authenticator app</p>
+                    </div>
+                    {% endfor %}
+
+                    <div class="card-actions justify-end mt-6">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check-circle mr-2"></i> Activate Authenticator
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </section>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function () {
+                alert('Secret code copied to clipboard!');
+            }, function () {
+                alert('Failed to copy text');
+            });
+        }
+    </script>
 </c-layouts.base>
