@@ -504,12 +504,31 @@ class DashboardView(LoginRequiredMixin, View):
             thread__is_deleted=False  # Only mentions in non-deleted threads
         ).order_by('-created_at')[:5]  # Get the 5 most recent mentions
 
+        # Get pending join requests count for employers
+        pending_join_requests_count = 0
+        if user.type == 'employer' and hasattr(user, 'company'):
+            from companies.models import CompanyJoinRequest
+            pending_join_requests_count = CompanyJoinRequest.objects.filter(
+                company=user.company,
+                status=CompanyJoinRequest.RequestStatus.PENDING
+            ).count()
+
+        # Get pending claim requests count for admins
+        pending_claim_requests_count = 0
+        if user.is_superuser:
+            from companies.models import CompanyClaimRequest
+            pending_claim_requests_count = CompanyClaimRequest.objects.filter(
+                status=CompanyClaimRequest.RequestStatus.PENDING
+            ).count()
+
         context = {
             'user': user,
             'user_threads': user_threads,
             'mentions': mentions,
             'thread_count': user_threads.count(),
             'mention_count': mentions.count(),
+            'pending_join_requests_count': pending_join_requests_count,
+            'pending_claim_requests_count': pending_claim_requests_count,
         }
         return context
 
@@ -559,6 +578,13 @@ class DirectLoginView(View):
                 return render(request, 'pages/account/direct_login.html', {
                     'error': 'Invalid email or password'
                 })
+
+        except User.DoesNotExist:
+            print(f"User not found: {email}")
+            return render(request, 'pages/account/direct_login.html', {
+                'error': 'No user found with this email address'
+            })
+
 
         except User.DoesNotExist:
             print(f"User not found: {email}")
