@@ -82,10 +82,11 @@ class AuthView(TemplateView):
 
     def post(self, request, *args, **kwargs):
         context = {}
+        role = request.GET.get("role")
 
         if "login" in request.POST:
             login_form = CustomLoginForm(request=request, data=request.POST)
-            signup_form = CustomSignupForm(initial_role=request.GET.get("role"))
+            signup_form = CustomSignupForm(initial_role=role)
             if login_form.is_valid():
                 user = login_form.user
                 try:
@@ -98,6 +99,9 @@ class AuthView(TemplateView):
                 except Exception:
                     # Reset corrupted session data
                     request.session["account_login"] = {}
+                # Store the user's role in the session
+                if role:
+                    request.session["user_role"] = role
                 return perform_login(request, user, redirect_url=self.success_url)
 
             context = {
@@ -106,6 +110,7 @@ class AuthView(TemplateView):
             }
 
         elif "register" in request.POST:
+            role = request.GET.get("role")
             signup_form = CustomSignupForm(request.POST)
             login_form = CustomLoginForm(request=request)
             try:
@@ -481,11 +486,85 @@ class DashboardView(LoginRequiredMixin, View):
         Prepares context data for rendering the dashboard template.
         This method is called only when the profile is considered complete.
         """
+        user = self.request.user
+
+        # Get user's threads (excluding replies and deleted threads)
+        from threads.models import Thread
+        user_threads = Thread.objects.filter(
+            author=user,
+            parent__isnull=True,  # Only parent threads, not replies
+            is_deleted=False      # Only non-deleted threads
+        ).order_by('-created_at')[:5]  # Get the 5 most recent threads
+
+        # Get threads where the user is mentioned
+        from threads.models import Mention
+        mentions = Mention.objects.filter(
+            mentioned_user=user,
+            is_read=False,         # Only unread mentions
+            thread__is_deleted=False  # Only mentions in non-deleted threads
+        ).order_by('-created_at')[:5]  # Get the 5 most recent mentions
+
         context = {
-            'user': self.request.user,
-            # Add any other context needed for the REAL dashboard here
+            'user': user,
+            'user_threads': user_threads,
+            'mentions': mentions,
+            'thread_count': user_threads.count(),
+            'mention_count': mentions.count(),
         }
         return context
+
+
+class DirectLoginView(View):
+    """A simple direct login view for debugging purposes."""
+    def get(self, request):
+        return render(request, 'pages/account/direct_login.html')
+
+    def post(self, request):
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+
+        if not email or not password:
+            return render(request, 'pages/account/direct_login.html', {
+                'error': 'Please provide both email and password'
+            })
+
+        # Get the user model
+        User = get_user_model()
+
+        try:
+            # Try to get the user by email
+            user = User.objects.get(email=email)
+
+            # Print user details for debugging
+            print(f"Found user: {user.email}, Active: {user.is_active}, Deleted: {getattr(user, 'is_deleted', False)}")
+
+            # Check if the password is correct
+            from django.contrib.auth import authenticate, login
+            auth_user = authenticate(request, username=email, password=password)
+
+            if auth_user is not None:
+                # Log the user in
+                login(request, auth_user)
+                print(f"User authenticated successfully: {auth_user.email}")
+
+                # Check if profile is complete
+                if not auth_user.job_title or not auth_user.bio:
+                    print(f"Profile incomplete, redirecting to edit profile")
+                    return redirect('account_edit')
+                else:
+                    print(f"Profile complete, redirecting to dashboard")
+                    return redirect('dashboard')
+            else:
+                print(f"Authentication failed for user: {email}")
+                return render(request, 'pages/account/direct_login.html', {
+                    'error': 'Invalid email or password'
+                })
+
+        except User.DoesNotExist:
+            print(f"User not found: {email}")
+            return render(request, 'pages/account/direct_login.html', {
+                'error': 'No user found with this email address'
+            })
 
 
 class UserSearchView(LoginRequiredMixin, View):

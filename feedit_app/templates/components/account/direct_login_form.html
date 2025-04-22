@@ -1,0 +1,54 @@
+{% load i18n %}
+{% load account %}
+
+<form class="login" method="POST" action="{% url 'account_auth' %}{% if request.GET.role %}?role={{ request.GET.role }}{% endif %}">
+  {% csrf_token %}
+  
+  {% if form.non_field_errors %}
+  <div class="alert alert-error mb-4">
+    {% for error in form.non_field_errors %}
+      {{ error }}
+    {% endfor %}
+  </div>
+  {% endif %}
+  
+  <div class="form-control mb-4">
+    <label class="label" for="id_login">
+      <span class="label-text">Email</span>
+    </label>
+    <input type="email" name="login" placeholder="Email address" class="input input-bordered w-full" id="id_login" required>
+    {% if form.login.errors %}
+    <div class="text-error text-sm mt-1">
+      {% for error in form.login.errors %}
+        {{ error }}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="form-control mb-4">
+    <label class="label" for="id_password">
+      <span class="label-text">Password</span>
+      <a href="{% url 'account_reset_password' %}" class="label-text-alt link link-hover">
+        {% trans "Forgot your password?" %}
+      </a>
+    </label>
+    <input type="password" name="password" placeholder="Password" class="input input-bordered w-full" id="id_password" required>
+    {% if form.password.errors %}
+    <div class="text-error text-sm mt-1">
+      {% for error in form.password.errors %}
+        {{ error }}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="form-control mb-6">
+    <label class="label cursor-pointer justify-start gap-2">
+      <input type="checkbox" name="remember" class="checkbox" id="id_remember">
+      <span class="label-text">Remember Me</span>
+    </label>
+  </div>
+
+  <button class="btn btn-primary w-full" type="submit" name="login" value="1">{% trans "Sign In" %}</button>
+</form>

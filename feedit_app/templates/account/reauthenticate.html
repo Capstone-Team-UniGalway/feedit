@@ -1,25 +1,54 @@
+{% extends "components/layouts/base.html" %}
 {% load widget_tweaks %}
-<c-layouts.base>
-    <section class="container max-w-md mx-auto px-4 py-10">
-        <div class="card bg-base-100 shadow p-6">
-            <h2 class="text-xl font-semibold mb-4">Re-authenticate</h2>
-            <p class="text-sm text-gray-600 mb-4">
-                Please confirm your password to continue this secure action.
-            </p>
+
+{% block content %}
+<section class="max-w-md mx-auto space-y-6">
+    <!-- Page Header -->
+    <div class="mb-6 text-center">
+        <h1 class="text-2xl font-bold mb-2">Security Verification</h1>
+        <p class="text-gray-600">Please confirm your password to continue</p>
+    </div>
+
+    <!-- Reauthentication Card -->
+    <div class="card bg-base-100 shadow-md">
+        <div class="card-body">
+            <div class="flex justify-center mb-6">
+                <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <i class="fas fa-lock text-3xl text-primary"></i>
+                </div>
+            </div>
+
+            <div class="alert alert-info mb-6">
+                <i class="fas fa-info-circle"></i>
+                <span>For your security, we need to verify your identity before proceeding with this sensitive
+                    action.</span>
+            </div>
 
             <form method="post">
                 {% csrf_token %}
                 {% for field in form %}
-                <div class="mb-4">
-                    <label class="label">{{ field.label }}</label>
-                    {% render_field field class="input input-bordered w-full" %}
+                <div class="mb-6">
+                    <label class="label font-medium">{{ field.label }}</label>
+                    {% render_field field class="input input-bordered w-full" type="password" %}
                     {% if field.errors %}
-                    <p class="text-error text-sm mt-1">{{ field.errors.0 }}</p>
+                    <div class="alert alert-error mt-2">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>{{ field.errors.0 }}</span>
+                    </div>
                     {% endif %}
                 </div>
                 {% endfor %}
-                <button type="submit" class="btn btn-primary w-full">Continue</button>
+
+                <button type="submit" class="btn btn-primary w-full">
+                    <i class="fas fa-check-circle mr-2"></i> Verify and Continue
+                </button>
             </form>
         </div>
-    </section>
-</c-layouts.base>
+    </div>
+
+    <!-- Help Text -->
+    <div class="text-center text-sm text-gray-500">
+        <p>This verification helps protect your account from unauthorized access.</p>
+    </div>
+</section>
+{% endblock %}

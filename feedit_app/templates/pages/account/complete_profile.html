@@ -1,0 +1,128 @@
+{% extends "components/layouts/base.html" %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="text-center mb-10">
+        <h1 class="text-3xl font-bold mb-2">Complete Your Profile</h1>
+        <p class="text-gray-600">Tell us a bit more about yourself to get started with FeedIT</p>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="flex justify-center mb-8">
+        <ul class="steps steps-horizontal w-full">
+            <li class="step step-primary">Register</li>
+            <li class="step step-primary">Verify Email</li>
+            <li class="step step-primary">Complete Profile</li>
+            <li class="step">Dashboard</li>
+        </ul>
+    </div>
+
+    <!-- Profile Form Card -->
+    <div class="card bg-base-100 shadow-lg">
+        <div class="card-body p-8">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+
+                <!-- Introduction -->
+                <div class="mb-6">
+                    <h2 class="text-xl font-semibold mb-2">Welcome to FeedIT!</h2>
+                    <p class="text-gray-600">Please fill in these details to complete your profile. This information
+                        helps us personalize your experience.</p>
+                </div>
+
+                <!-- Personal Information Section -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-medium border-b pb-2">Personal Information</h3>
+
+                    <!-- Name Fields (First Name & Last Name) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="label font-medium" for="{{ form.first_name.id_for_label }}">
+                                First Name <span class="text-error">*</span>
+                            </label>
+                            {% render_field form.first_name class="input input-bordered w-full" placeholder="Your first
+                            name" %}
+                            {% for error in form.first_name.errors %}
+                            <p class="text-error text-sm mt-1">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+
+                        <div>
+                            <label class="label font-medium" for="{{ form.last_name.id_for_label }}">
+                                Last Name <span class="text-error">*</span>
+                            </label>
+                            {% render_field form.last_name class="input input-bordered w-full" placeholder="Your last
+                            name" %}
+                            {% for error in form.last_name.errors %}
+                            <p class="text-error text-sm mt-1">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Job Title -->
+                    <div>
+                        <label class="label font-medium" for="{{ form.job_title.id_for_label }}">
+                            Job Title <span class="text-error">*</span>
+                        </label>
+                        {% render_field form.job_title class="input input-bordered w-full" placeholder="e.g. Software
+                        Engineer, Marketing Manager, etc." %}
+                        <p class="text-sm text-gray-500 mt-1">Your current role or position</p>
+                        {% for error in form.job_title.errors %}
+                        <p class="text-error text-sm mt-1">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Bio -->
+                    <div>
+                        <label class="label font-medium" for="{{ form.bio.id_for_label }}">
+                            Bio <span class="text-error">*</span>
+                        </label>
+                        {% render_field form.bio class="textarea textarea-bordered w-full h-32" placeholder="Tell us a
+                        bit about yourself, your experience, and your interests..." %}
+                        <p class="text-sm text-gray-500 mt-1">A brief description about yourself (minimum 20 characters)
+                        </p>
+                        {% for error in form.bio.errors %}
+                        <p class="text-error text-sm mt-1">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Privacy Settings -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-medium border-b pb-2">Privacy Settings</h3>
+
+                    <div>
+                        <label class="label font-medium" for="{{ form.privacy.id_for_label }}">
+                            Profile Visibility
+                        </label>
+                        {% render_field form.privacy class="select select-bordered w-full" %}
+                        <p class="text-sm text-gray-500 mt-1">
+                            <strong>Public:</strong> Anyone can view your profile<br>
+                            <strong>Internal:</strong> Only people in your company can view your profile<br>
+                            <strong>Private:</strong> Only you can view your profile
+                        </p>
+                        {% for error in form.privacy.errors %}
+                        <p class="text-error text-sm mt-1">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-4">
+                    <button type="submit" name="update_profile" class="btn btn-primary w-full">
+                        <i class="fas fa-check-circle mr-2"></i> Complete Profile & Continue to Dashboard
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Help Text -->
+    <div class="mt-6 text-center text-sm text-gray-500">
+        <p>Need help? Contact support at <a href="mailto:support@feedit.online"
+                class="text-primary">support@feedit.online</a></p>
+    </div>
+</div>
+{% endblock %}

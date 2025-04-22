@@ -15,7 +15,18 @@
         </p>
         <p class="mt-6">
             <a href="{% url 'welcome' %}" class="btn btn-outline">Return to Home</a>
-            {# Optionally add a resend verification link later #}
+            {% if is_development %}
+        <div class="mt-4 p-4 border border-warning rounded-lg">
+            <h3 class="text-warning font-semibold mb-2">Development Mode Options</h3>
+            <p class="text-sm mb-3">These options are only available in development mode:</p>
+            <a href="{% url 'account_bypass_verification' %}{% if email %}?email={{ email }}{% endif %}"
+                class="btn btn-warning btn-sm">
+                Skip Email Verification & Complete Profile
+            </a>
+            <p class="text-xs mt-2 text-gray-500">This will mark your email as verified and take you to the profile
+                completion page.</p>
+        </div>
+        {% endif %}
         </p>
     </div>
 </div>

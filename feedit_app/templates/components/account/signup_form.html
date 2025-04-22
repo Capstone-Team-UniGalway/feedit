@@ -1,0 +1,112 @@
+{% load i18n %}
+{% load account %}
+
+<form class="signup" method="POST"
+  action="{% url 'account_auth' %}{% if request.GET.role %}?role={{ request.GET.role }}{% endif %}">
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+  <div class="alert alert-error mb-4">
+    {% for error in form.non_field_errors %}
+    {{ error }}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="form-control mb-4">
+    <label class="label" for="id_email">
+      <span class="label-text">{{ form.email.label }}</span>
+    </label>
+    {{ form.email }}
+    {% if form.email.errors %}
+    <div class="text-error text-sm mt-1">
+      {% for error in form.email.errors %}
+      {{ error }}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div class="form-control">
+      <label class="label" for="id_first_name">
+        <span class="label-text">{{ form.first_name.label }}</span>
+      </label>
+      {{ form.first_name }}
+      {% if form.first_name.errors %}
+      <div class="text-error text-sm mt-1">
+        {% for error in form.first_name.errors %}
+        {{ error }}
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="form-control">
+      <label class="label" for="id_last_name">
+        <span class="label-text">{{ form.last_name.label }}</span>
+      </label>
+      {{ form.last_name }}
+      {% if form.last_name.errors %}
+      <div class="text-error text-sm mt-1">
+        {% for error in form.last_name.errors %}
+        {{ error }}
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="form-control mb-4">
+    <label class="label" for="id_type">
+      <span class="label-text">{{ form.type.label }}</span>
+    </label>
+    {{ form.type }}
+    {% if form.type.errors %}
+    <div class="text-error text-sm mt-1">
+      {% for error in form.type.errors %}
+      {{ error }}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="form-control mb-4">
+    <label class="label" for="id_password1">
+      <span class="label-text">{{ form.password1.label }}</span>
+    </label>
+    {{ form.password1 }}
+    {% if form.password1.errors %}
+    <div class="text-error text-sm mt-1">
+      {% for error in form.password1.errors %}
+      {{ error }}
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if form.password1.help_text %}
+    <div class="text-sm text-gray-500 mt-1">
+      {{ form.password1.help_text }}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="form-control mb-6">
+    <label class="label" for="id_password2">
+      <span class="label-text">{{ form.password2.label }}</span>
+    </label>
+    {{ form.password2 }}
+    {% if form.password2.errors %}
+    <div class="text-error text-sm mt-1">
+      {% for error in form.password2.errors %}
+      {{ error }}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  {% if redirect_field_value %}
+  <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+  {% endif %}
+
+  <button class="btn btn-secondary w-full" type="submit" name="register">{% trans "Register" %}</button>
+</form>

@@ -1,79 +1,168 @@
+{% extends "components/layouts/base.html" %}
 {% load widget_tweaks %}
 
-<c-layouts.base>
-    <!-- Profile Settings -->
-    <section class="container mx-auto px-4 max-w-2xl space-y-10">
+{% block content %}
+<!-- Profile Settings -->
+<section class="max-w-3xl mx-auto space-y-8">
+    <!-- Page Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold mb-2">Edit Your Profile</h1>
+        <p class="text-gray-600">Update your personal information and account settings</p>
+    </div>
 
-        <!-- Email Verification Notice -->
-        {% if not request.user.emailaddress_set.first.verified %}
-        <div class="card bg-warning text-warning-content shadow p-6">
-            <h2 class="text-lg font-semibold mb-2">Email Not Verified</h2>
-            <p class="text-sm mb-3">Your email is not yet verified. Please verify to enable full account functionality.
-            </p>
-            <form method="post" action="{% url 'account_email_verification_send' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-outline">Resend Verification Email</button>
-            </form>
+    <!-- Email Verification Notice -->
+    {% if not request.user.emailaddress_set.first.verified %}
+    <div class="alert alert-warning shadow-md">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div>
+            <h3 class="font-bold">Email Not Verified</h3>
+            <p class="text-sm">Your email is not yet verified. Please verify to enable full account functionality.</p>
         </div>
-        {% endif %}
+        <form method="post" action="{% url 'account_email_verification_send' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline">Resend Email</button>
+        </form>
+    </div>
+    {% endif %}
 
-        <!-- Profile Info Form -->
-        <div class="card bg-base-100 shadow p-6">
-            <h2 class="text-xl font-semibold mb-4">Profile Info</h2>
+    <!-- Profile Info Form -->
+    <div class="card bg-base-100 shadow-md">
+        <div class="card-body">
+            <h2 class="card-title">Personal Information</h2>
             <form method="post" class="space-y-4">
                 {% csrf_token %}
-                {% for field in form.visible_fields %}
+
+                <!-- Name Fields (First Name & Last Name) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="label font-medium" for="{{ form.first_name.id_for_label }}">
+                            First Name <span class="text-error">*</span>
+                        </label>
+                        {% render_field form.first_name class="input input-bordered w-full" placeholder="Your first
+                        name" %}
+                        {% for error in form.first_name.errors %}
+                        <p class="text-error text-sm mt-1">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <div>
+                        <label class="label font-medium" for="{{ form.last_name.id_for_label }}">
+                            Last Name <span class="text-error">*</span>
+                        </label>
+                        {% render_field form.last_name class="input input-bordered w-full" placeholder="Your last name"
+                        %}
+                        {% for error in form.last_name.errors %}
+                        <p class="text-error text-sm mt-1">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Job Title -->
                 <div>
-                    <label class="label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {% render_field field class="input input-bordered w-full" %}
-                    {% if field.help_text %}
-                    <p class="text-sm text-gray-500">{{ field.help_text }}</p>
-                    {% endif %}
-                    {% for error in field.errors %}
-                    <p class="text-sm text-error">{{ error }}</p>
+                    <label class="label font-medium" for="{{ form.job_title.id_for_label }}">
+                        Job Title <span class="text-error">*</span>
+                    </label>
+                    {% render_field form.job_title class="input input-bordered w-full" placeholder="e.g. Software
+                    Engineer, Marketing Manager, etc." %}
+                    <p class="text-sm text-gray-500 mt-1">Your current role or position</p>
+                    {% for error in form.job_title.errors %}
+                    <p class="text-error text-sm mt-1">{{ error }}</p>
                     {% endfor %}
                 </div>
-                {% endfor %}
-                <button type="submit" name="update_profile" class="btn btn-primary w-full mt-2">Save</button>
-            </form>
-        </div>
 
-        <!-- Security: Password Change -->
-        <div class="card bg-base-100 shadow p-6">
-            <h2 class="text-xl font-semibold mb-4">Change Password</h2>
-            <form method="post" class="space-y-4">
-                {% csrf_token %}
-                {% for field in password_change_form.visible_fields %}
+                <!-- Bio -->
                 <div>
-                    <label class="label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {% render_field field class="input input-bordered w-full" %}
-                    {% for error in field.errors %}
-                    <p class="text-sm text-error">{{ error }}</p>
+                    <label class="label font-medium" for="{{ form.bio.id_for_label }}">
+                        Bio <span class="text-error">*</span>
+                    </label>
+                    {% render_field form.bio class="textarea textarea-bordered w-full h-32" placeholder="Tell us a bit
+                    about yourself, your experience, and your interests..." %}
+                    <p class="text-sm text-gray-500 mt-1">A brief description about yourself (minimum 20 characters)</p>
+                    {% for error in form.bio.errors %}
+                    <p class="text-error text-sm mt-1">{{ error }}</p>
                     {% endfor %}
                 </div>
-                {% endfor %}
-                <button type="submit" name="change_password" class="btn btn-sm btn-primary">Update Password</button>
+
+                <!-- Privacy Settings -->
+                <div>
+                    <label class="label font-medium" for="{{ form.privacy.id_for_label }}">
+                        Profile Visibility
+                    </label>
+                    {% render_field form.privacy class="select select-bordered w-full" %}
+                    <p class="text-sm text-gray-500 mt-1">
+                        <strong>Public:</strong> Anyone can view your profile<br>
+                        <strong>Internal:</strong> Only people in your company can view your profile<br>
+                        <strong>Private:</strong> Only you can view your profile
+                    </p>
+                    {% for error in form.privacy.errors %}
+                    <p class="text-error text-sm mt-1">{{ error }}</p>
+                    {% endfor %}
+                </div>
+
+                <div class="card-actions justify-end pt-4">
+                    <button type="submit" name="update_profile" class="btn btn-primary">
+                        <i class="fas fa-save mr-2"></i> Save Changes
+                    </button>
+                </div>
             </form>
         </div>
+    </div>
 
-        <!-- MFA Settings -->
-        <div class="card bg-base-100 shadow p-6">
-            <h2 class="text-xl font-semibold mb-4">Multi-Factor Authentication</h2>
-            <p class="text-sm text-gray-600 mb-4">
-                Secure your account with an extra layer of authentication. You can add or remove devices here.
-            </p>
-            <a href="{% url 'mfa_index' %}" class="btn btn-sm btn-outline">Manage MFA Devices</a>
+    <!-- Security: Password Change -->
+    <div class="card bg-base-100 shadow-md">
+        <div class="card-body">
+            <h2 class="card-title">Security Settings</h2>
+
+            <!-- Password Change Form -->
+            <div class="mt-4">
+                <h3 class="font-medium text-lg mb-2">Change Password</h3>
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    {% for field in password_change_form.visible_fields %}
+                    <div>
+                        <label class="label font-medium" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {% render_field field class="input input-bordered w-full" %}
+                        {% for error in field.errors %}
+                        <p class="text-sm text-error mt-1">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                    <div class="card-actions justify-end">
+                        <button type="submit" name="change_password" class="btn btn-outline">
+                            <i class="fas fa-key mr-2"></i> Update Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- MFA Settings -->
+            <div class="divider"></div>
+            <div>
+                <h3 class="font-medium text-lg mb-2">Multi-Factor Authentication</h3>
+                <p class="text-sm text-gray-600 mb-4">
+                    Secure your account with an extra layer of authentication. You can add or remove devices here.
+                </p>
+                <div class="card-actions">
+                    <a href="{% url 'mfa_index' %}" class="btn btn-outline">
+                        <i class="fas fa-shield-alt mr-2"></i> Manage MFA Devices
+                    </a>
+                </div>
+            </div>
         </div>
+    </div>
 
-        <!-- Close Account -->
-        <div class="card bg-base-100 shadow p-6">
-            <h2 class="text-xl font-semibold mb-4">Close Account</h2>
+    <!-- Close Account -->
+    <div class="card bg-base-100 shadow-md">
+        <div class="card-body">
+            <h2 class="card-title text-error">Danger Zone</h2>
             <p class="text-sm text-gray-600 mb-4">
                 Closing your account will deactivate your access. This action cannot be undone.
             </p>
-            <button class="btn btn-error btn-outline w-full" onclick="close_account_modal.showModal()">
-                Close Account
-            </button>
+            <div class="card-actions justify-end">
+                <button class="btn btn-error btn-outline" onclick="close_account_modal.showModal()">
+                    <i class="fas fa-trash-alt mr-2"></i> Close Account
+                </button>
+            </div>
 
             <!-- Modal -->
             <dialog id="close_account_modal" class="modal">
@@ -85,7 +174,9 @@
                     <div class="modal-action">
                         <form method="post" action="{% url 'account_close' %}">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-error">Yes, Close My Account</button>
+                            <button type="submit" class="btn btn-error">
+                                <i class="fas fa-exclamation-triangle mr-2"></i> Yes, Close My Account
+                            </button>
                         </form>
                         <form method="dialog">
                             <button class="btn">Cancel</button>
@@ -94,6 +185,6 @@
                 </div>
             </dialog>
         </div>
-
-    </section>
-</c-layouts.base>
+    </div>
+</section>
+{% endblock %}

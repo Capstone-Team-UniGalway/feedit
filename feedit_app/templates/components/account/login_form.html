@@ -1,0 +1,59 @@
+{% load i18n %}
+{% load account %}
+
+<form class="login" method="POST"
+  action="{% url 'account_auth' %}{% if request.GET.role %}?role={{ request.GET.role }}{% endif %}">
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+  <div class="alert alert-error mb-4">
+    {% for error in form.non_field_errors %}
+    {{ error }}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="form-control mb-4">
+    <label class="label" for="id_login">
+      <span class="label-text">{{ form.login.label }}</span>
+    </label>
+    {{ form.login }}
+    {% if form.login.errors %}
+    <div class="text-error text-sm mt-1">
+      {% for error in form.login.errors %}
+      {{ error }}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="form-control mb-4">
+    <label class="label" for="id_password">
+      <span class="label-text">{{ form.password.label }}</span>
+      <a href="{% url 'account_reset_password' %}" class="label-text-alt link link-hover">
+        {% trans "Forgot your password?" %}
+      </a>
+    </label>
+    {{ form.password }}
+    {% if form.password.errors %}
+    <div class="text-error text-sm mt-1">
+      {% for error in form.password.errors %}
+      {{ error }}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="form-control mb-6">
+    <label class="label cursor-pointer justify-start gap-2">
+      {{ form.remember }}
+      <span class="label-text">{{ form.remember.label }}</span>
+    </label>
+  </div>
+
+  {% if redirect_field_value %}
+  <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+  {% endif %}
+
+  <button class="btn btn-primary w-full" type="submit" name="login" value="1">{% trans "Sign In" %}</button>
+</form>
