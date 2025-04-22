@@ -1,0 +1,56 @@
+<c-layouts.base>
+    <div class="max-w-2xl mx-auto">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold mb-2">Write a Review</h1>
+            <p class="text-gray-500">Share your experience with {{ company.name }}</p>
+        </div>
+
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+
+                    <!-- Rating -->
+                    <div>
+                        <label class="label">
+                            <span class="label-text">Rating (1-5 stars)</span>
+                        </label>
+                        <div class="rating rating-lg">
+                            <input type="radio" name="rating" value="1" class="mask mask-star-2 bg-orange-400" />
+                            <input type="radio" name="rating" value="2" class="mask mask-star-2 bg-orange-400" />
+                            <input type="radio" name="rating" value="3" class="mask mask-star-2 bg-orange-400" />
+                            <input type="radio" name="rating" value="4" class="mask mask-star-2 bg-orange-400" />
+                            <input type="radio" name="rating" value="5" class="mask mask-star-2 bg-orange-400"
+                                checked />
+                        </div>
+                    </div>
+
+                    <!-- Review Content -->
+                    <div>
+                        <label class="label">
+                            <span class="label-text">Your Review</span>
+                        </label>
+                        <textarea name="content" rows="4" class="textarea textarea-bordered w-full"
+                            placeholder="Write your review here..." required></textarea>
+                    </div>
+
+                    <!-- Anonymous Option -->
+                    <div class="form-control">
+                        <label class="label cursor-pointer justify-start gap-2">
+                            <input type="checkbox" name="is_anonymous" class="checkbox" />
+                            <span class="label-text">Post anonymously</span>
+                        </label>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="pt-4 flex gap-2 justify-end">
+                        <a href="{% url 'companies:detail' company.id %}" class="btn btn-ghost">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane mr-2"></i> Submit Review
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</c-layouts.base>
