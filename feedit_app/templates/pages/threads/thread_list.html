@@ -1,0 +1,163 @@
+<c-layouts.base>
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold">Threads</h1>
+            <a href="{% url 'thread_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus mr-2"></i> New Thread
+            </a>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-base-100 rounded-lg shadow-md p-4 mb-6">
+            <form method="get" class="flex flex-wrap gap-4">
+                <div class="form-control flex-1 min-w-[200px]">
+                    <label class="label">
+                        <span class="label-text">Search</span>
+                    </label>
+                    <input type="text" name="search" placeholder="Search threads..." class="input input-bordered w-full"
+                        value="{{ search_query }}">
+                </div>
+                <div class="form-control min-w-[150px]">
+                    <label class="label">
+                        <span class="label-text">Type</span>
+                    </label>
+                    <select name="type" class="select select-bordered w-full">
+                        <option value="">All Types</option>
+                        {% for value, label in thread_types %}
+                        <option value="{{ value }}" {% if thread_type == value %}selected{% endif %}>{{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-control min-w-[150px]">
+                    <label class="label">
+                        <span class="label-text">Visibility</span>
+                    </label>
+                    <select name="visibility" class="select select-bordered w-full">
+                        <option value="">All Visibility</option>
+                        {% for value, label in visibility_types %}
+                        <option value="{{ value }}" {% if visibility == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-control min-w-[150px]">
+                    <label class="label">
+                        <span class="label-text">Sort By</span>
+                    </label>
+                    <select name="sort" class="select select-bordered w-full">
+                        <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>Newest First
+                        </option>
+                        <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>Oldest First
+                        </option>
+                        <option value="-updated_at" {% if sort_by == '-updated_at' %}selected{% endif %}>Recently
+                            Updated</option>
+                        <option value="title" {% if sort_by == 'title' %}selected{% endif %}>Title (A-Z)</option>
+                        <option value="-title" {% if sort_by == '-title' %}selected{% endif %}>Title (Z-A)</option>
+                    </select>
+                </div>
+                <div class="form-control flex items-end">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Thread List -->
+        {% if threads %}
+        <div class="space-y-4">
+            {% for thread in threads %}
+            <div class="bg-base-100 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <div class="p-4">
+                    <div class="flex justify-between items-start">
+                        <h2 class="text-xl font-bold mb-2">
+                            <a href="{% url 'thread_detail' thread.pk %}"
+                                class="hover:text-primary">{{ thread.title }}</a>
+                        </h2>
+                        <div class="badge badge-{{ thread.type }}">{{ thread.get_type_display }}</div>
+                    </div>
+                    <div class="text-sm text-gray-500 mb-4">
+                        <span>Posted by {{ thread.get_author_name }}</span>
+                        <span class="mx-2">•</span>
+                        <span>{{ thread.created_at|date:"M d, Y" }}</span>
+                        {% if thread.created_at != thread.updated_at %}
+                        <span class="mx-2">•</span>
+                        <span>Updated {{ thread.updated_at|date:"M d, Y" }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="prose max-w-none line-clamp-3 mb-4">
+                        {{ thread.content|safe|truncatewords_html:30 }}
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <span class="flex items-center">
+                                <i class="fas fa-comment-alt text-gray-400 mr-1"></i>
+                                <span>{{ thread.replies.count }} replies</span>
+                            </span>
+                        </div>
+                        <a href="{% url 'thread_detail' thread.pk %}" class="btn btn-sm btn-ghost">
+                            Read More
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="flex justify-center mt-8">
+            <div class="btn-group">
+                {% if page_obj.has_previous %}
+                <a href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                    class="btn btn-sm">
+                    <i class="fas fa-angle-double-left"></i>
+                </a>
+                <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                    class="btn btn-sm">
+                    <i class="fas fa-angle-left"></i>
+                </a>
+                {% endif %}
+
+                <button class="btn btn-sm">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</button>
+
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                    class="btn btn-sm">
+                    <i class="fas fa-angle-right"></i>
+                </a>
+                <a href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                    class="btn btn-sm">
+                    <i class="fas fa-angle-double-right"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="bg-base-100 rounded-lg shadow-md p-8 text-center">
+            <div class="flex flex-col items-center">
+                <i class="fas fa-comments text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-bold mb-2">No threads yet</h3>
+                <p class="text-gray-500 mb-6">Be the first to start a conversation!</p>
+                <a href="{% url 'thread_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus mr-2"></i> Create Thread
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <style>
+        .badge-forum {
+            background-color: hsl(var(--p));
+            color: hsl(var(--pc));
+        }
+
+        .badge-announcement {
+            background-color: hsl(var(--s));
+            color: hsl(var(--sc));
+        }
+    </style>
+</c-layouts.base>

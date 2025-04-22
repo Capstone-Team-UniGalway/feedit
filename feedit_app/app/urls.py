@@ -20,6 +20,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
+from django.views.static import serve
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -71,5 +72,9 @@ urlpatterns = [
         name="report_bug",
     ),
     path("account/", include("accounts.urls")),
+    path("threads/", include("threads.urls")),
     path("upload/", include("django_ckeditor_5.urls")),
+
+    # Serve media files in development
+    path('media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT}),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

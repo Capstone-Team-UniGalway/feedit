@@ -6,7 +6,8 @@
 <li><a href="#" class="nav-link">
         <i class="fas fa-building"></i> Companies
     </a></li>
-<li><a href="#" class="nav-link">
+<li><a href="{% url 'thread_list' %}"
+        class="nav-link {% if request.resolver_match.url_name == 'thread_list' or request.resolver_match.url_name == 'thread_detail' %}active{% endif %}">
         <i class="fas fa-comment-dots"></i> Threads
     </a></li>
 <li><a href="#" class="nav-link">

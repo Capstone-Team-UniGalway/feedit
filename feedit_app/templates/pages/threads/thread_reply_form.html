@@ -1,0 +1,41 @@
+<c-layouts.base>
+    <div class="max-w-3xl mx-auto">
+        <!-- Breadcrumbs -->
+        <div class="text-sm breadcrumbs mb-4">
+            <ul>
+                <li><a href="{% url 'thread_list' %}">Threads</a></li>
+                <li><a href="{% url 'thread_detail' thread.pk %}">{{ thread.title|truncatechars:30 }}</a></li>
+                <li>Reply</li>
+            </ul>
+        </div>
+
+        <!-- Form Card -->
+        <div class="bg-base-100 rounded-lg shadow-md overflow-hidden">
+            <div class="p-4 bg-base-200 border-b border-base-300">
+                <h1 class="text-xl font-bold">Reply to Thread</h1>
+            </div>
+            <div class="p-6">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <!-- Content -->
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text">Your Reply</span>
+                        </label>
+                        {{ form.content.errors }}
+                        {{ form.content }}
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex justify-end gap-2">
+                        <a href="{% url 'thread_detail' thread.pk %}" class="btn btn-ghost">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane mr-2"></i> Post Reply
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</c-layouts.base>

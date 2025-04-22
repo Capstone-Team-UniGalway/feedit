@@ -21,19 +21,32 @@
 
     <style>
         .nav-link {
-            @apply flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-base-200 transition-colors;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s;
+        }
+
+        .nav-link:hover {
+            background-color: hsl(var(--b2));
         }
 
         .nav-link.active {
-            @apply bg-primary text-primary-content;
+            background-color: hsl(var(--p));
+            color: hsl(var(--pc));
         }
 
         .dropdown-menu {
-            @apply invisible opacity-0 transition-all duration-300;
+            visibility: hidden;
+            opacity: 0;
+            transition: all 0.3s;
         }
 
         .dropdown:hover .dropdown-menu {
-            @apply visible opacity-100;
+            visibility: visible;
+            opacity: 1;
         }
     </style>
 </head>
