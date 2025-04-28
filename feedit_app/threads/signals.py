@@ -40,14 +40,10 @@ def process_mentions(sender, instance, created, **kwargs):
 
             if user and user != instance.author:
                 # Create mention
-                Mention.objects.create(
-                    thread=instance, mentioned_user=user, mentioned_by=instance.author
-                )
+                Mention.objects.create(thread=instance, mentioned_user=user)
         except ValueError:
             # If the name doesn't have a space, try to find by first name
             user = User.objects.filter(first_name__iexact=username).first()
             if user and user != instance.author:
                 # Create mention
-                Mention.objects.create(
-                    thread=instance, mentioned_user=user, mentioned_by=instance.author
-                )
+                Mention.objects.create(thread=instance, mentioned_user=user)

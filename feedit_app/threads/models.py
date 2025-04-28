@@ -65,16 +65,15 @@ class Mention(BaseModel):
         on_delete=models.CASCADE,
         related_name="mentions_received",
     )
-    mentioned_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="mentions_created",
-    )
     is_read = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ("thread", "mentioned_user")
         ordering = ["-created_at"]
+
+    @property
+    def mentioned_by(self):
+        return self.thread.author
 
     def __str__(self):
         return (
