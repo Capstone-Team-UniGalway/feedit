@@ -154,9 +154,7 @@ class EmailConfirmView(ConfirmEmailView):
         return confirmation
 
     def post(self, request, *args, **kwargs):
-        success_url = reverse_lazy(
-            "dashboard"
-        )  # Redirect to dashboard after email confirmation
+        success_url = reverse_lazy("account_confirm_success")
 
         self.object = self.get_object()
         self.object.confirm(request)
@@ -233,13 +231,9 @@ class EditProfileView(LoginRequiredMixin, TemplateView):
         user = request.user
         is_profile_incomplete = not user.job_title or not user.bio
 
-        # If coming from email verification or profile is incomplete, show the simplified completion form
-        if is_profile_incomplete or "verification_email" in request.session:
+        # If profile is incomplete, show the simplified completion form
+        if is_profile_incomplete:
             self.template_name = self.complete_profile_template
-
-            # Clear the verification email from session once used
-            if "verification_email" in request.session:
-                del request.session["verification_email"]
 
         return self.render_to_response(self.get_context_data())
 

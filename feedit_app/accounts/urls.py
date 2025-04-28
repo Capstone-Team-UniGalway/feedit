@@ -31,14 +31,14 @@ urlpatterns = [
     ),  # required by Allauth
     path("logout", LogoutView.as_view(), name="account_logout"),
     path(
-        "confirm-email/<str:key>/",
-        EmailConfirmView.as_view(),
-        name="account_confirm_email",
-    ),
-    path(
         "confirm-email/success/",
         ConfirmSuccessView.as_view(),
         name="account_confirm_success",
+    ),
+    path(
+        "confirm-email/<str:key>/",
+        EmailConfirmView.as_view(),
+        name="account_confirm_email",
     ),
     path(
         "email-verification-sent/",
