@@ -132,7 +132,7 @@
                     </div>
                     <p class="text-sm text-gray-600">{{ review.content }}</p>
                     {% if user.is_authenticated and user == company.employer and not review.replies.exists %}
-                    <a href="{% url 'reviews:create_review_reply' review.id %}" class="btn btn-sm btn-outline">
+                    <a href="{% url 'reviews:create_review_reply' review.id %}" class="btn btn-sm btn-outline self-end">
                         <i class="fas fa-reply mr-1"></i> Reply
                     </a>
                     {% endif %}

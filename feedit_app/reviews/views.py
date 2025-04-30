@@ -1,17 +1,18 @@
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views import View
 from django.views.generic.edit import CreateView
 
+from app.mixins import SuperuserBypassMixin
 from companies.models import Company
 from .forms import ReviewForm, ReviewReplyForm
 from .models import Review, ReviewReply
 
 
-class CreateReviewView(UserPassesTestMixin, CreateView):
+class CreateReviewView(SuperuserBypassMixin, CreateView):
     http_method_names = ["get", "post"]
     model = Review
     form_class = ReviewForm
@@ -23,7 +24,7 @@ class CreateReviewView(UserPassesTestMixin, CreateView):
         )
         return super().dispatch(request, *args, **kwargs)
 
-    def test_func(self):
+    def user_test_func(self):
         user = self.request.user
 
         # Employer can't review own company
@@ -72,7 +73,7 @@ class CreateReviewView(UserPassesTestMixin, CreateView):
         return context
 
 
-class CreateReviewReplyView(LoginRequiredMixin, CreateView):
+class CreateReviewReplyView(LoginRequiredMixin, SuperuserBypassMixin, CreateView):
     http_method_names = ["get", "post"]
     model = ReviewReply
     form_class = ReviewReplyForm
@@ -83,12 +84,25 @@ class CreateReviewReplyView(LoginRequiredMixin, CreateView):
             Review, pk=self.kwargs["review_id"], is_deleted=False
         )
         self.company = self.review.company
-
-        if request.user != self.company.employer and not request.user.is_superuser:
-            messages.error(request, "Only the company employer can reply to reviews.")
-            return redirect("companies:detail", pk=self.company.pk)
-
         return super().dispatch(request, *args, **kwargs)
+
+    def user_test_func(self):
+        user = self.request.user
+        # Must be employer of the company
+        is_employer = user == self.company.employer
+        # Must not have already replied
+        has_replied = self.review.replies.filter(is_deleted=False).exists()
+        return is_employer and not has_replied
+
+    def handle_no_permission(self):
+        return render(
+            self.request,
+            "pages/reviews/review_restricted.html",
+            {
+                "company": self.company,
+                "message": "You are not allowed to reply to this review.",
+            },
+        )
 
     def form_valid(self, form):
         reply = form.save(commit=False)
