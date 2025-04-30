@@ -34,7 +34,6 @@ class CompanyDetailView(DetailView):
     """Route: /companies/<int:pk> | Permission: all"""
 
     http_method_names = ["get"]
-
     model = Company
     template_name = "pages/companies/company_profile.html"
     context_object_name = "company"
@@ -53,8 +52,13 @@ class CompanyDetailView(DetailView):
         .prefetch_related("replies") - fetches replies within same query to avoid N+1
         """
         context = super().get_context_data(**kwargs)
+        company = self.object
+        request = self.request
+        user = request.user
+
+        # --- Paginated reviews with replies ---
         reviews = (
-            self.object.reviews.filter(is_deleted=False)
+            company.reviews.filter(is_deleted=False)
             .select_related("user")
             .prefetch_related(
                 Prefetch(
@@ -67,12 +71,25 @@ class CompanyDetailView(DetailView):
             .order_by("-created_at")
         )
         paginator = Paginator(reviews, 5)  # 5 reviews per page
-        page_number = self.request.GET.get("page")
+        page_number = request.GET.get("page")
         page_obj = paginator.get_page(page_number)
 
         context["page_obj"] = page_obj
         context["reviews"] = page_obj.object_list
         context["is_paginated"] = page_obj.has_other_pages()
+
+        # --- User-specific context ---
+        context["is_employer"] = user.is_authenticated and user == company.employer
+        context["is_employee"] = user.is_authenticated and user.workplace == company
+
+        # User has reviewed (exclude deleted reviews)
+        if user.is_authenticated:
+            context["has_reviewed"] = company.reviews.filter(
+                user=user, is_deleted=False
+            ).exists()
+        else:
+            context["has_reviewed"] = False
+
         return context
 
 

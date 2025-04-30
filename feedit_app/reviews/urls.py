@@ -1,11 +1,18 @@
 from django.urls import path
-from . import views
+from .views import CreateReviewView, CreateReviewReplyView, ToggleGuestNameFieldView
 
 app_name = "reviews"
 
 urlpatterns = [
-    path("company/<int:company_id>/create/", views.create_review, name="create_review"),
+    path("create/<int:company_id>/", CreateReviewView.as_view(), name="create_review"),
     path(
-        "<int:review_id>/reply/", views.create_review_reply, name="create_review_reply"
+        "reply/<int:review_id>/",
+        CreateReviewReplyView.as_view(),
+        name="create_review_reply",
+    ),
+    path(
+        "hx/toggle-guest-name/",
+        ToggleGuestNameFieldView.as_view(),
+        name="hx_toggle_guest_name",
     ),
 ]

@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from app.base_model import BaseModel
+from django.contrib.auth.models import AnonymousUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 
@@ -41,9 +42,13 @@ class Review(BaseModel):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def clean(self):
+        if isinstance(self.user, AnonymousUser):
+            self.user = None
         # Ensure guest name is provided when no user and not anonymous
         if not self.user and not self.is_anonymous and not self.guest_name:
-            raise ValidationError("Guest name is required if not anonymous.")
+            raise ValidationError(
+                {"guest_name": "Guest name is required if not anonymous."}
+            )
 
     def get_display_name(self):
         if self.is_anonymous:

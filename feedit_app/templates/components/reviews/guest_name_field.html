@@ -1,0 +1,9 @@
+{% if form.guest_name %}
+<div id="guest-name-field" class="form-control">
+    <label class="label font-semibold">Your Name</label>
+    {{ form.guest_name }}
+    {% if form.guest_name.errors %}
+    <p class="text-red-500 text-sm mt-1">{{ form.guest_name.errors.0 }}</p>
+    {% endif %}
+</div>
+{% endif %}

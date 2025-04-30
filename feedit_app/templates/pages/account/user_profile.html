@@ -98,6 +98,13 @@
                                     <button class="btn btn-outline" onclick="shareVia('teams')">
                                         <i class="fab fa-microsoft mr-2"></i> Teams
                                     </button>
+                                    <!-- 🌍 Native Share Button -->
+                                    <button id="native-share-btn" class="btn btn-outline hidden"
+                                        data-url="{{ request.scheme }}://{{ request.get_host }}{% url 'account_profile'  %}?user={{ user.id }}"
+                                        data-title="{{ user.get_full_name }}"
+                                        data-text="{{ user.get_full_name }} on FeedIT!">
+                                        <i class="fas fa-share-alt mr-2"></i> Other Options
+                                    </button>
                                 </div>
                             </div>
 
@@ -152,6 +159,23 @@
     </section>
     <!-- JavaScript for Share Profile Functionality -->
     <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const nativeShareBtn = document.getElementById("native-share-btn");
+
+            if (navigator.share && nativeShareBtn) {
+                nativeShareBtn.classList.remove("hidden");
+
+                nativeShareBtn.addEventListener("click", () => {
+                    navigator.share({
+                        title: nativeShareBtn.dataset.title,
+                        text: nativeShareBtn.dataset.text,
+                        url: nativeShareBtn.dataset.url,
+                    }).catch((error) => {
+                        console.warn("Sharing failed:", error);
+                    });
+                });
+            }
+        });
         // Function to copy profile URL to clipboard
         function copyProfileUrl() {
             const profileUrl = document.getElementById('profile-url');
