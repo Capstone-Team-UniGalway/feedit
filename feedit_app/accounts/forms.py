@@ -12,6 +12,22 @@ User = get_user_model()
 class CustomLoginForm(AllauthLoginForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Override the login field to use email
+        self.fields["login"].widget = forms.EmailInput(
+            attrs={
+                "placeholder": "Email address",
+                "class": "input input-bordered w-full",
+            }
+        )
+        self.fields["login"].label = "Email"
+        # Style the password field
+        self.fields["password"].widget = forms.PasswordInput(
+            attrs={"placeholder": "Password", "class": "input input-bordered w-full"}
+        )
+        # Style the remember field
+        self.fields["remember"].widget = forms.CheckboxInput(
+            attrs={"class": "checkbox"}
+        )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -26,15 +42,46 @@ class CustomLoginForm(AllauthLoginForm):
 
 
 class CustomSignupForm(AllauthSignupForm):
-    first_name = forms.CharField(max_length=50)
-    last_name = forms.CharField(max_length=50)
-    type = forms.ChoiceField(choices=User.UserType.choices)
+    first_name = forms.CharField(
+        max_length=50,
+        widget=forms.TextInput(
+            attrs={"placeholder": "First name", "class": "input input-bordered w-full"}
+        ),
+    )
+    last_name = forms.CharField(
+        max_length=50,
+        widget=forms.TextInput(
+            attrs={"placeholder": "Last name", "class": "input input-bordered w-full"}
+        ),
+    )
+    type = forms.ChoiceField(
+        choices=User.UserType.choices,
+        widget=forms.Select(attrs={"class": "select select-bordered w-full"}),
+    )
 
     def __init__(self, *args, **kwargs):
         initial_role = kwargs.pop("initial_role", None)
         super().__init__(*args, **kwargs)
         if initial_role:
             self.fields["type"].initial = initial_role
+
+        # Style the email field
+        self.fields["email"].widget = forms.EmailInput(
+            attrs={
+                "placeholder": "Email address",
+                "class": "input input-bordered w-full",
+            }
+        )
+        # Style the password fields
+        self.fields["password1"].widget = forms.PasswordInput(
+            attrs={"placeholder": "Password", "class": "input input-bordered w-full"}
+        )
+        self.fields["password2"].widget = forms.PasswordInput(
+            attrs={
+                "placeholder": "Confirm password",
+                "class": "input input-bordered w-full",
+            }
+        )
 
     def save(self, request):
         user = super().save(request)
@@ -46,6 +93,20 @@ class CustomSignupForm(AllauthSignupForm):
 
 
 class UserProfileForm(forms.ModelForm):
+    # Override the model fields to make them required in the form
+    job_title = forms.CharField(
+        max_length=100,
+        required=True,
+        widget=forms.TextInput(attrs={"class": "input input-bordered w-full"}),
+        help_text="Your current role or position",
+    )
+    bio = forms.CharField(
+        required=True,
+        widget=forms.Textarea(attrs={"class": "textarea textarea-bordered w-full"}),
+        help_text="Tell us about yourself",
+        min_length=20,
+    )
+
     class Meta:
         model = User
         fields = ["first_name", "last_name", "job_title", "bio", "privacy"]
@@ -56,10 +117,6 @@ class UserProfileForm(forms.ModelForm):
             "last_name": forms.TextInput(
                 attrs={"class": "input input-bordered w-full"}
             ),
-            "job_title": forms.TextInput(
-                attrs={"class": "input input-bordered w-full"}
-            ),
-            "bio": forms.Textarea(attrs={"class": "textarea textarea-bordered w-full"}),
             "privacy": forms.Select(attrs={"class": "select select-bordered w-full"}),
         }
 

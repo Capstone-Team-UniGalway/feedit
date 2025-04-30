@@ -1,0 +1,39 @@
+<c-layouts.base>
+    <div class="max-w-md mx-auto">
+        <!-- Breadcrumbs -->
+        <div class="text-sm breadcrumbs mb-4">
+            <ul>
+                <li><a href="{% url 'thread_list' %}">Threads</a></li>
+                <li><a href="{% url 'thread_detail' object.pk %}">{{ object.title|truncatechars:30 }}</a></li>
+                <li>Delete</li>
+            </ul>
+        </div>
+
+        <!-- Delete Confirmation Card -->
+        <div class="bg-base-100 rounded-lg shadow-md overflow-hidden">
+            <div class="p-4 bg-error text-error-content border-b border-base-300">
+                <h1 class="text-xl font-bold">Delete Thread</h1>
+            </div>
+            <div class="p-6">
+                <div class="alert alert-warning mb-6">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>This action cannot be undone!</span>
+                </div>
+
+                <p class="mb-6">Are you sure you want to delete the thread "<strong>{{ object.title }}</strong>"?</p>
+
+                <p class="mb-6">This will also delete all replies to this thread.</p>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="flex justify-end gap-2">
+                        <a href="{% url 'thread_detail' object.pk %}" class="btn btn-ghost">Cancel</a>
+                        <button type="submit" class="btn btn-error">
+                            <i class="fas fa-trash mr-2"></i> Delete Thread
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</c-layouts.base>

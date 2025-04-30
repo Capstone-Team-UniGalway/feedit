@@ -211,3 +211,174 @@ if ENVIRONMENT == "production":
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "accounts.User"
+
+# CKEditor 5 Configuration
+customColorPalette = [
+    {"color": "hsl(4, 90%, 58%)", "label": "Red"},
+    {"color": "hsl(340, 82%, 52%)", "label": "Pink"},
+    {"color": "hsl(291, 64%, 42%)", "label": "Purple"},
+    {"color": "hsl(262, 52%, 47%)", "label": "Deep Purple"},
+    {"color": "hsl(231, 48%, 48%)", "label": "Indigo"},
+    {"color": "hsl(207, 90%, 54%)", "label": "Blue"},
+    {"color": "hsl(199, 98%, 48%)", "label": "Light Blue"},
+    {"color": "hsl(187, 100%, 42%)", "label": "Cyan"},
+    {"color": "hsl(174, 100%, 29%)", "label": "Teal"},
+    {"color": "hsl(122, 39%, 49%)", "label": "Green"},
+    {"color": "hsl(88, 50%, 53%)", "label": "Light Green"},
+    {"color": "hsl(66, 70%, 54%)", "label": "Lime"},
+    {"color": "hsl(49, 98%, 60%)", "label": "Yellow"},
+    {"color": "hsl(45, 100%, 51%)", "label": "Amber"},
+    {"color": "hsl(36, 100%, 50%)", "label": "Orange"},
+    {"color": "hsl(14, 100%, 57%)", "label": "Deep Orange"},
+    {"color": "hsl(15, 75%, 43%)", "label": "Brown"},
+    {"color": "hsl(0, 0%, 62%)", "label": "Grey"},
+    {"color": "hsl(200, 18%, 46%)", "label": "Blue Grey"},
+    {"color": "hsl(200, 18%, 26%)", "label": "Dark Grey"},
+]
+
+CKEDITOR_5_CONFIGS = {
+    "default": {
+        "toolbar": [
+            "heading",
+            "|",
+            "bold",
+            "italic",
+            "link",
+            "bulletedList",
+            "numberedList",
+            "|",
+            "outdent",
+            "indent",
+            "|",
+            "blockQuote",
+            "insertTable",
+            "|",
+            "undo",
+            "redo",
+        ],
+    },
+    "extends": {
+        "blockToolbar": [
+            "paragraph",
+            "heading1",
+            "heading2",
+            "heading3",
+            "|",
+            "bulletedList",
+            "numberedList",
+            "|",
+            "blockQuote",
+        ],
+        "toolbar": [
+            "heading",
+            "|",
+            "bold",
+            "italic",
+            "strikethrough",
+            "underline",
+            "code",
+            "subscript",
+            "superscript",
+            "highlight",
+            "|",
+            "bulletedList",
+            "numberedList",
+            "todoList",
+            "|",
+            "outdent",
+            "indent",
+            "|",
+            "link",
+            "blockQuote",
+            "insertTable",
+            "mediaEmbed",
+            "codeBlock",
+            "|",
+            "horizontalLine",
+            "pageBreak",
+            "|",
+            "sourceEditing",
+        ],
+        "image": {
+            "toolbar": [
+                "imageTextAlternative",
+                "imageTitle",
+                "|",
+                "imageStyle:inline",
+                "imageStyle:block",
+                "imageStyle:side",
+                "|",
+                "linkImage",
+            ],
+            "styles": [
+                "full",
+                "side",
+                "alignLeft",
+                "alignRight",
+                "alignCenter",
+                "alignBlockLeft",
+                "alignBlockRight",
+                "block",
+                "inline",
+            ],
+        },
+        "table": {
+            "contentToolbar": [
+                "tableColumn",
+                "tableRow",
+                "mergeTableCells",
+                "tableProperties",
+                "tableCellProperties",
+            ],
+            "tableProperties": {
+                "borderColors": customColorPalette,
+                "backgroundColors": customColorPalette,
+            },
+            "tableCellProperties": {
+                "borderColors": customColorPalette,
+                "backgroundColors": customColorPalette,
+            },
+        },
+        "heading": {
+            "options": [
+                {
+                    "model": "paragraph",
+                    "title": "Paragraph",
+                    "class": "ck-heading_paragraph",
+                },
+                {
+                    "model": "heading1",
+                    "view": "h1",
+                    "title": "Heading 1",
+                    "class": "ck-heading_heading1",
+                },
+                {
+                    "model": "heading2",
+                    "view": "h2",
+                    "title": "Heading 2",
+                    "class": "ck-heading_heading2",
+                },
+                {
+                    "model": "heading3",
+                    "view": "h3",
+                    "title": "Heading 3",
+                    "class": "ck-heading_heading3",
+                },
+            ]
+        },
+    },
+    "list": {
+        "properties": {
+            "styles": "true",
+            "startIndex": "true",
+            "reversed": "true",
+        }
+    },
+}
+
+# Media files configuration for CKEditor uploads
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+# Use default storage instead of DummyStorage which doesn't exist in this version
+# CKEDITOR_5_FILE_STORAGE = "django_ckeditor_5.storages.DummyStorage"
+CKEDITOR_5_UPLOAD_PATH = "uploads/"

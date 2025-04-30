@@ -1,25 +1,37 @@
 {% load widget_tweaks %}
 <c-layouts.base>
-    <div class="flex justify-center items-start min-h-screen px-4">
+    <div class="flex justify-center items-start min-h-screen px-4 py-4">
         <div class="w-full max-w-6xl bg-base-100 shadow-xl rounded-xl p-8">
             <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold">Access your account</h1>
-                <p class="text-gray-500">Login or create a new account</p>
+                <h1 class="mb-8 text-2xl font-medium">{{ request.GET.role|title }} Login or Register</h1>
             </div>
             {% if error_message %}
             <div class="alert alert-error shadow-lg mb-6">
                 <span>{{ error_message }}</span>
             </div>
             {% endif %}
+            {% if success_message %}
+            <div class="alert alert-success shadow-lg mb-4">
+                <span>{{ success_message }}</span>
+            </div>
+            {% endif %}
             <div class="flex flex-col lg:flex-row gap-8">
                 <!-- Login Form -->
                 <div class="w-full lg:w-1/2 border border-base-300 rounded-lg p-6">
                     <h2 class="text-xl font-semibold mb-4">Login</h2>
-                    <form method="POST" action="{% url 'account_auth' %}" class="space-y-4">
+                    <form method="POST"
+                        action="{% url 'account_auth' %}{% if request.GET.role %}?role={{ request.GET.role }}{% endif %}"
+                        class="space-y-4">
                         {% csrf_token %}
-
+                        {% if login_form.non_field_errors %}
+                        <div class="alert alert-error mb-4">
+                            {% for error in login_form.non_field_errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                         {% for field in login_form.visible_fields %}
-                        <div>
+                        <div class="form-control mb-4">
                             {% if field.name == "remember" %}
                             <label class="flex items-center gap-4 cursor-pointer">
                                 {% render_field field class="toggle toggle-primary" %}
@@ -58,9 +70,15 @@
                     <h2 class="text-xl font-semibold mb-4">Register</h2>
                     <form method="POST" action="{% url 'account_auth' %}" class="space-y-4">
                         {% csrf_token %}
-
+                        {% if signup_form.non_field_errors %}
+                        <div class="alert alert-error mb-4">
+                            {% for error in signup_form.non_field_errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                         {% for field in signup_form.visible_fields %}
-                        <div>
+                        <div class="form-control mb-4">
                             <label class="label"><span class="label-text">{{ field.label }}</span></label>
 
                             {% if field.name == "type" %}

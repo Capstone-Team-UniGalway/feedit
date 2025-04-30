@@ -1,11 +1,17 @@
-<li><a>Item 1</a></li>
-<li>
-    <details>
-        <summary>Parent</summary>
-        <ul class="p-2">
-        <li><a>Submenu 1</a></li>
-        <li><a>Submenu 2</a></li>
-        </ul>
-    </details>
-</li>
-<li><a>Item 3</a></li>
+{% if user.is_authenticated %}
+<li><a href="{% url 'dashboard' %}"
+        class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <i class="fas fa-home"></i> Dashboard
+    </a></li>
+<li><a href="{% url 'companies:list' %}"
+        class="nav-link {% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'companies' %}active{% endif %}">
+        <i class="fas fa-building"></i> Companies
+    </a></li>
+<li><a href="{% url 'thread_list' %}"
+        class="nav-link {% if request.resolver_match.url_name == 'thread_list' or request.resolver_match.url_name == 'thread_detail' %}active{% endif %}">
+        <i class="fas fa-comment-dots"></i> Threads
+    </a></li>
+<li><a href="#" class="nav-link">
+        <i class="fas fa-star"></i> Reviews
+    </a></li>
+{% endif %}

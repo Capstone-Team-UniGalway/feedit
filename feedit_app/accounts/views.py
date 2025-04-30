@@ -1,5 +1,9 @@
 from enum import Enum
-from django.views.generic import TemplateView, View
+from django.contrib import messages
+from django.db import models
+from django.http import JsonResponse
+from django.views.generic import TemplateView, View  # Add TemplateView to imports
+from django.shortcuts import render  # Keep render import
 from django.contrib.auth import (
     logout as auth_logout,
     update_session_auth_hash,
@@ -76,20 +80,27 @@ class AuthView(TemplateView):
 
     def post(self, request, *args, **kwargs):
         context = {}
+        role = request.GET.get("role")
 
         if "login" in request.POST:
             login_form = CustomLoginForm(request=request, data=request.POST)
-            signup_form = CustomSignupForm(initial_role=request.GET.get("role"))
+            signup_form = CustomSignupForm(initial_role=role)
             if login_form.is_valid():
                 user = login_form.user
-                session_data = request.session.get("account_login", {})
-                if session_data and isinstance(
-                    session_data.get("email_verification"), Enum
-                ):
-                    session_data["email_verification"] = str(
-                        session_data["email_verification"]
-                    )
-                    request.session["account_login"] = session_data
+                try:
+                    session_data = request.session.get("account_login", {})
+                    if not isinstance(session_data, dict):
+                        raise ValueError("Session data corrupted")
+                    if session_data and isinstance(
+                        session_data.get("email_verification"), Enum
+                    ):
+                        session_data["email_verification"] = str(
+                            session_data["email_verification"]
+                        )
+                        request.session["account_login"] = session_data
+                except Exception:
+                    # Reset corrupted session data
+                    request.session["account_login"] = {}
                 return perform_login(request, user, redirect_url=self.success_url)
 
             context = {
@@ -103,7 +114,10 @@ class AuthView(TemplateView):
             if signup_form.is_valid():
                 user = signup_form.save(request)
                 return complete_signup(
-                    request, user, allauth_settings.EMAIL_VERIFICATION, "/dashboard"
+                    request,
+                    user,
+                    allauth_settings.EMAIL_VERIFICATION,
+                    reverse_lazy("account_email_verification_sent"),
                 )
             context = {
                 "login_form": login_form,
@@ -141,7 +155,8 @@ class EmailConfirmView(ConfirmEmailView):
         return confirmation
 
     def post(self, request, *args, **kwargs):
-        success_url = reverse_lazy("dashboard")
+        success_url = reverse_lazy("account_confirm_success")
+
         self.object = self.get_object()
         self.object.confirm(request)
         return redirect(success_url)
@@ -166,7 +181,42 @@ class ProfileView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user = self.request.user
+
+        # Check if a specific user is requested via URL parameter
+        requested_user_id = self.request.GET.get("user")
+        User = get_user_model()
+
+        if requested_user_id:
+            try:
+                # Try to get the requested user
+                user = User.objects.get(id=requested_user_id)
+
+                # Check if the user's profile is visible based on privacy settings
+                # This is a placeholder - implement actual privacy logic as needed
+                if (
+                    hasattr(user, "privacy")
+                    and user.privacy == "private"
+                    and user != self.request.user
+                ):
+                    # If private and not the current user, show the current user instead
+                    messages.warning(self.request, "This profile is private.")
+                    user = self.request.user
+            except User.DoesNotExist:
+                # If user doesn't exist, show the current user
+                messages.error(self.request, "User not found.")
+                user = self.request.user
+        else:
+            # No user specified, show the current user
+            user = self.request.user
+
+        # Set a flag to indicate if the user has a profile picture
+        context["has_profile_picture"] = hasattr(user, "profile_picture") and bool(
+            user.profile_picture
+        )
+
+        # Set a flag to indicate if this is the current user's profile
+        context["is_own_profile"] = user == self.request.user
+
         context["user"] = user
         # Optional: preload recent activity later
         return context
@@ -174,10 +224,8 @@ class ProfileView(LoginRequiredMixin, TemplateView):
 
 class EditProfileView(LoginRequiredMixin, TemplateView):
     template_name = "pages/account/edit_profile.html"
-    success_url = reverse_lazy("account_edit")
-
-    def get(self, request, *args, **kwargs):
-        return self.render_to_response(self.get_context_data())
+    complete_profile_template = "pages/account/complete_profile.html"
+    success_url = reverse_lazy("dashboard")
 
     def post(self, request, *args, **kwargs):
         if "update_profile" in request.POST:
@@ -185,7 +233,7 @@ class EditProfileView(LoginRequiredMixin, TemplateView):
             password_form = ChangePasswordForm(user=request.user)
             if profile_form.is_valid():
                 profile_form.save()
-                # Optional: request.session["toast_success"] = "Profile updated."
+                messages.success(request, "Profile updated successfully.")
                 return redirect(self.success_url)
         elif "change_password" in request.POST:
             profile_form = UserProfileForm(instance=request.user)
@@ -194,6 +242,7 @@ class EditProfileView(LoginRequiredMixin, TemplateView):
                 request.user.set_password(password_form.cleaned_data["password1"])
                 request.user.save()
                 update_session_auth_hash(request, request.user)  # Keeps user logged in
+                messages.success(request, "Password changed successfully.")
                 return redirect(self.success_url)
         else:
             # fallback
@@ -274,3 +323,140 @@ class CustomPasswordResetView(PasswordResetView):
             msg.send()
 
         return redirect(self.success_url)
+
+
+# --- NEW CLASS-BASED DASHBOARD VIEW ---
+class DashboardView(LoginRequiredMixin, View):
+    """
+    Handles the main dashboard view after login.
+
+    Checks if the user's profile is considered complete. If not,
+    redirects to the profile editing page. Otherwise, renders the
+    main dashboard template.
+    """
+
+    template_name = "pages/dashboard.html"  # Template for the actual dashboard
+    profile_edit_url = reverse_lazy(
+        "account_edit"
+    )  # URL to redirect to if profile is incomplete
+
+    def get(self, request, *args, **kwargs):
+        """Handles GET requests to the dashboard."""
+        user = self.request.user
+
+        # --- Redirect or Render ---
+        if user.profile_incomplete:
+            # Profile details are missing, redirect to the edit profile page
+            return redirect(self.profile_edit_url)
+        else:
+            # Profile is complete, render the actual dashboard template
+            context = self.get_context_data(**kwargs)
+            return render(request, self.template_name, context)
+
+    def get_context_data(self, **kwargs):
+        """
+        Prepares context data for rendering the dashboard template.
+        This method is called only when the profile is considered complete.
+        """
+        user = self.request.user
+
+        # Get user's threads (excluding replies and deleted threads)
+        from threads.models import Thread
+
+        user_threads = Thread.objects.filter(
+            author=user,
+            parent__isnull=True,  # Only parent threads, not replies
+            is_deleted=False,  # Only non-deleted threads
+        ).order_by("-created_at")[
+            :5
+        ]  # Get the 5 most recent threads
+
+        # Get threads where the user is mentioned
+        from threads.models import Mention
+
+        mentions = Mention.objects.filter(
+            mentioned_user=user,
+            is_read=False,  # Only unread mentions
+            thread__is_deleted=False,  # Only mentions in non-deleted threads
+        ).order_by("-created_at")[
+            :5
+        ]  # Get the 5 most recent mentions
+
+        context = {
+            "user": user,
+            "user_threads": user_threads,
+            "mentions": mentions,
+            "thread_count": user_threads.count(),
+            "mention_count": mentions.count(),
+        }
+        return context
+
+
+class UserSearchView(LoginRequiredMixin, View):
+    """HTMX-compatible view for searching users (for @mentions)."""
+
+    def get(self, request):
+        query = request.GET.get("q", "").strip()
+        selected_user_id = request.GET.get("selected_user")
+        selected_name = request.GET.get("selected_name")
+
+        # If a user was selected, return the mention tag
+        if selected_user_id and selected_name and request.headers.get("HX-Request"):
+            return render(
+                request,
+                "components/mention_selected.html",
+                {"user_id": selected_user_id, "user_name": selected_name},
+            )
+
+        # Get the current user's company to limit search to company members
+        company = None
+        if hasattr(request.user, "workplace") and request.user.workplace:
+            company = request.user.workplace
+
+        # Get the User model
+        User = get_user_model()
+
+        # Base queryset
+        users_qs = User.objects.filter(is_active=True)
+
+        # Filter by company if available
+        if company:
+            users_qs = users_qs.filter(workplace=company)
+
+        # Initialize users as empty queryset
+        users = User.objects.none()
+
+        # Only search if query is at least 2 characters
+        if query and len(query) >= 2:
+            # Search by name or email
+            users = users_qs.filter(
+                models.Q(first_name__icontains=query)
+                | models.Q(last_name__icontains=query)
+                | models.Q(email__icontains=query)
+            ).exclude(id=request.user.id)[
+                :10
+            ]  # Limit to 10 results, exclude current user
+
+        # Check if this is an HTMX request
+        if request.headers.get("HX-Request"):
+            # Return HTML for HTMX
+            return render(
+                request,
+                "components/user_search_results.html",
+                {"users": users, "query": query},
+            )
+        else:
+            # For non-HTMX requests, return JSON
+            results = [
+                {
+                    "id": user.id,
+                    "name": user.get_full_name(),
+                    "email": user.email,
+                    "profile_url": f"{reverse('account_profile')}?user={user.id}",
+                    "has_profile_picture": hasattr(user, "profile_picture")
+                    and bool(user.profile_picture),
+                }
+                for user in users
+            ]
+
+            return JsonResponse({"users": results})

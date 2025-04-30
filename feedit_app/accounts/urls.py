@@ -16,6 +16,8 @@ from .views import (
     AuthPasswordResetDonePartial,
     CustomPasswordResetFromKeyView,
     CustomPasswordResetView,
+    DashboardView,
+    UserSearchView,
 )
 
 urlpatterns = [
@@ -30,14 +32,14 @@ urlpatterns = [
     ),  # required by Allauth
     path("logout", LogoutView.as_view(), name="account_logout"),
     path(
-        "confirm-email/<str:key>/",
-        EmailConfirmView.as_view(),
-        name="account_confirm_email",
-    ),
-    path(
         "confirm-email/success/",
         ConfirmSuccessView.as_view(),
         name="account_confirm_success",
+    ),
+    path(
+        "confirm-email/<str:key>/",
+        EmailConfirmView.as_view(),
+        name="account_confirm_email",
     ),
     path(
         "email-verification-sent/",
@@ -78,4 +80,6 @@ urlpatterns = [
         name="account_reauthenticate",
     ),
     path("mfa/authenticate/", AuthenticateView.as_view(), name="mfa_authenticate"),
+    path("dashboard", DashboardView.as_view(), name="dashboard"),
+    path("api/search-users/", UserSearchView.as_view(), name="api_search_users"),
 ]

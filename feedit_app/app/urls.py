@@ -20,6 +20,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
+from django.views.static import serve
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -34,11 +35,12 @@ urlpatterns = [
         TemplateView.as_view(template_name="pages/claim_company.html"),
         name="claim_company",
     ),
-    path(
-        "dashboard",
-        TemplateView.as_view(template_name="pages/dashboard.html"),
-        name="dashboard",
-    ),
+    # Remove the old dashboard route so it doesn't conflict with the new one in accounts.urls
+    # path(
+    #     "dashboard",
+    #     TemplateView.as_view(template_name="pages/dashboard.html"),
+    #     name="dashboard",
+    # ),
     path(
         "edit_profile",
         TemplateView.as_view(template_name="pages/edit_profile.html"),
@@ -70,5 +72,9 @@ urlpatterns = [
         name="report_bug",
     ),
     path("account/", include("accounts.urls")),
+    path("threads/", include("threads.urls")),
+    path("reviews/", include("reviews.urls")),
     path("upload/", include("django_ckeditor_5.urls")),
+    # Serve media files in development
+    path("media/<path:path>", serve, {"document_root": settings.MEDIA_ROOT}),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

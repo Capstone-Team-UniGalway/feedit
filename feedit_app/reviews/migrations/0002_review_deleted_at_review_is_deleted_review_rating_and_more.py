@@ -10,60 +10,73 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('reviews', '0001_initial'),
+        ("reviews", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='review',
-            name='deleted_at',
+            model_name="review",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='review',
-            name='is_deleted',
+            model_name="review",
+            name="is_deleted",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='review',
-            name='rating',
-            field=models.FloatField(default=0.0, validators=[django.core.validators.MinValueValidator(0.0), django.core.validators.MaxValueValidator(5.0), reviews.models.validate_rating_step]),
+            model_name="review",
+            name="rating",
+            field=models.FloatField(
+                default=0.0,
+                validators=[
+                    django.core.validators.MinValueValidator(0.0),
+                    django.core.validators.MaxValueValidator(5.0),
+                    reviews.models.validate_rating_step,
+                ],
+            ),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='review',
-            name='updated_at',
+            model_name="review",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True),
         ),
         migrations.AddField(
-            model_name='reviewreply',
-            name='deleted_at',
+            model_name="reviewreply",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='reviewreply',
-            name='is_deleted',
+            model_name="reviewreply",
+            name="is_deleted",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='reviewreply',
-            name='updated_at',
+            model_name="reviewreply",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True),
         ),
         migrations.AlterField(
-            model_name='review',
-            name='content',
+            model_name="review",
+            name="content",
             field=models.TextField(),
         ),
         migrations.AlterField(
-            model_name='review',
-            name='user',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='reviews', to=settings.AUTH_USER_MODEL),
+            model_name="review",
+            name="user",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="reviews",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='reviewreply',
-            name='content',
+            model_name="reviewreply",
+            name="content",
             field=models.TextField(),
         ),
     ]

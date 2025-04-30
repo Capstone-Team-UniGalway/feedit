@@ -9,8 +9,22 @@
             {% endif %}
         </h1>
         <div class="flex gap-2">
-            <button class="btn btn-outline">Filter</button>
-            <button class="btn btn-outline">Sort by</button>
+            <form method="get" class="flex gap-2">
+                <div class="form-control">
+                    <div class="input-group">
+                        <input type="text" name="q" placeholder="Search companies..." class="input input-bordered"
+                            value="{{ request.GET.q }}" />
+                        <button type="submit" class="btn btn-square">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+            {% if user.is_authenticated and not user.workplace %}
+            <a href="{% url 'claim_company' %}" class="btn btn-primary">
+                <i class="fas fa-plus mr-1"></i> Create Company
+            </a>
+            {% endif %}
         </div>
     </div>
     {% if companies %}
@@ -34,8 +48,22 @@
                     Rating: {{ company.average_rating }} ★
                 </p>
                 {% endif %}
-                <div class="card-actions justify-end">
+                <div class="card-actions justify-end mt-2">
                     <a href="{% url 'companies:detail' company.id %}" class="btn btn-sm btn-outline">View Profile</a>
+                    {% if user.is_authenticated and not user.workplace %}
+                    {% if company.id in pending_requests %}
+                    <button class="btn btn-sm btn-disabled">
+                        <i class="fas fa-clock mr-1"></i> Request Pending
+                    </button>
+                    {% else %}
+                    <form method="post" action="{# {% url 'join_company_request' company.id %} #}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus mr-1"></i> Join
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -55,7 +83,37 @@
     </div>
     {% endif %}
     {% else %}
-    <p class="text-gray-600">No companies found matching your search.</p>
-    {% endif %}
+    <div class="text-center py-12">
+        <div class="text-5xl text-gray-300 mb-4">
+            <i class="fas fa-building"></i>
+        </div>
+        <h3 class="text-xl font-medium mb-2">No companies found</h3>
 
+        {% if request.GET.q %}
+        <p class="text-gray-500 mb-6">No companies match your search criteria</p>
+
+        {% if user.is_authenticated %}
+        <div class="card bg-base-100 shadow-md max-w-md mx-auto mb-6">
+            <div class="card-body">
+                <h3 class="card-title">Would you like to create "{{ request.GET.q }}"?</h3>
+                <p class="text-gray-600">You can be the first to add this company to our platform.</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'claim_company' %}?name={{ request.GET.q }}" class="btn btn-primary">
+                        <i class="fas fa-plus mr-2"></i> Create "{{ request.GET.q }}"</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <p class="text-gray-500 mb-6">There are no companies available yet</p>
+        {% endif %}
+
+        {% if user.is_authenticated and not user.workplace %}
+        <a href="{% url 'claim_company' %}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i> Create a Company
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
 </c-layouts.base>

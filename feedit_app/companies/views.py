@@ -4,6 +4,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, View
+from django.contrib import messages
 from .models import Company
 from reviews.models import ReviewReply
 from app.mixins import SuperuserBypassMixin
@@ -96,6 +97,32 @@ class CreateCompanyView(LoginRequiredMixin, SuperuserBypassMixin, CreateView):
     def handle_no_permission(self):
         return redirect(self.success_url)  # Add message in middleware or template
 
+    def get_initial(self):
+        """Pre-fill form with data from URL parameters"""
+        initial = super().get_initial()
+        name = self.request.GET.get("name")
+        if name:
+            initial["name"] = name
+        return initial
+
+    def form_valid(self, form):
+        """Associate the company with the current user"""
+        company = form.save(commit=False)
+
+        # Set the employer to the current user if they are an employer
+        if self.request.user.type == "employer":
+            company.employer = self.request.user
+
+        company.save()
+
+        # Set the user's workplace to this company if user is employee
+        if self.request.user.type == "employee":
+            self.request.user.workplace = company
+            self.request.user.save()
+
+        messages.success(self.request, f"You have successfully created {company.name}!")
+        return super().form_valid(form)
+
 
 class EditCompanyView(LoginRequiredMixin, SuperuserBypassMixin, UpdateView):
     """Route: /company/<int:pk>/edit | GET/PUT"""
@@ -131,3 +158,24 @@ class DeleteCompanyView(LoginRequiredMixin, SuperuserBypassMixin, View):
         company = get_object_or_404(Company, pk=self.kwargs["pk"], is_deleted=False)
         company.delete()  # Uses soft-delete from BaseModel
         return redirect(success_url)
+
+
+class LeaveCompanyView(LoginRequiredMixin, View):
+    """View for users to leave their current company"""
+
+    def post(self, request, *args, **kwargs):
+        # Check if user has a workplace
+        if not request.user.workplace:
+            messages.error(
+                request, "You are not currently associated with any company."
+            )
+            return redirect("dashboard")
+
+        company_name = request.user.workplace.name
+
+        # Remove the workplace association
+        request.user.workplace = None
+        request.user.save()
+
+        messages.success(request, f"You have successfully left {company_name}.")
+        return redirect("dashboard")
