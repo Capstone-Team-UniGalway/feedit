@@ -24,7 +24,7 @@
                     Complete Profile
                 </li>
 
-                <li class="step {% if request.user.mfa_enabled %}step-primary{% endif %}">
+                <li class="step {% if request.user.has_mfa_enabled %}step-primary{% endif %}">
                     Enable MFA
                 </li>
 

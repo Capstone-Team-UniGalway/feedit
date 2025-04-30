@@ -2,8 +2,8 @@ from enum import Enum
 from django.contrib import messages
 from django.db import models
 from django.http import JsonResponse
-from django.views.generic import TemplateView, View  # Add TemplateView to imports
-from django.shortcuts import render  # Keep render import
+from django.views.generic import TemplateView, View, DetailView
+from django.shortcuts import render
 from django.contrib.auth import (
     logout as auth_logout,
     update_session_auth_hash,
@@ -177,49 +177,34 @@ class ConfirmSuccessView(TemplateView):
     template_name = "pages/account/email_confirm_success.html"
 
 
-class ProfileView(FullyActivatedUserMixin, TemplateView):
+class ProfileView(FullyActivatedUserMixin, DetailView):
     template_name = "pages/account/user_profile.html"
+    context_object_name = "user"
+
+    def get_object(self):
+        return self.request.user
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["is_own_profile"] = True
+        return context
 
-        # Check if a specific user is requested via URL parameter
-        requested_user_id = self.request.GET.get("user")
-        User = get_user_model()
 
-        if requested_user_id:
-            try:
-                # Try to get the requested user
-                user = User.objects.get(id=requested_user_id)
+class PublicProfileView(FullyActivatedUserMixin, DetailView):
+    model = User
+    template_name = "pages/account/user_profile.html"
+    context_object_name = "user"
 
-                # Check if the user's profile is visible based on privacy settings
-                # This is a placeholder - implement actual privacy logic as needed
-                if (
-                    hasattr(user, "privacy")
-                    and user.privacy == "private"
-                    and user != self.request.user
-                ):
-                    # If private and not the current user, show the current user instead
-                    messages.warning(self.request, "This profile is private.")
-                    user = self.request.user
-            except User.DoesNotExist:
-                # If user doesn't exist, show the current user
-                messages.error(self.request, "User not found.")
-                user = self.request.user
-        else:
-            # No user specified, show the current user
-            user = self.request.user
+    def get(self, request, *args, **kwargs):
+        user = self.get_object()
+        if user.privacy == User.PrivacyType.PRIVATE and user != request.user:
+            messages.warning(request, "This profile is private.")
+            return redirect("account_profile")
+        return super().get(request, *args, **kwargs)
 
-        # Set a flag to indicate if the user has a profile picture
-        context["has_profile_picture"] = hasattr(user, "profile_picture") and bool(
-            user.profile_picture
-        )
-
-        # Set a flag to indicate if this is the current user's profile
-        context["is_own_profile"] = user == self.request.user
-
-        context["user"] = user
-        # Optional: preload recent activity later
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["is_own_profile"] = self.get_object() == self.request.user
         return context
 
 

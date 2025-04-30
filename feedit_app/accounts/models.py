@@ -76,7 +76,6 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     privacy = models.CharField(
         max_length=10, choices=PrivacyType.choices, default=PrivacyType.PUBLIC
     )
-    mfa_enabled = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
@@ -101,12 +100,18 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         return bool(self.job_title and self.bio)
 
     @property
+    def has_mfa_enabled(self):
+        from allauth.mfa.models import Authenticator
+
+        return Authenticator.objects.filter(user=self, type="totp").exists()
+
+    @property
     def is_fully_activated(self):
         return (
             self.is_active
             and self.is_account_verified
             and self.is_profile_complete
-            and self.mfa_enabled
+            and self.has_mfa_enabled
         )
 
     @property
