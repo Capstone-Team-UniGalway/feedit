@@ -1,3 +1,4 @@
+{% load review_tags %}
 <c-layouts.base>
     <div class="max-w-2xl mx-auto">
         <div class="mb-8">
@@ -9,37 +10,59 @@
             <div class="card-body">
                 <form method="post" class="space-y-4">
                     {% csrf_token %}
-
-                    <!-- Rating -->
-                    <div>
-                        <label class="label">
-                            <span class="label-text">Rating (1-5 stars)</span>
-                        </label>
-                        <div class="rating rating-lg">
-                            <input type="radio" name="rating" value="1" class="mask mask-star-2 bg-orange-400" />
-                            <input type="radio" name="rating" value="2" class="mask mask-star-2 bg-orange-400" />
-                            <input type="radio" name="rating" value="3" class="mask mask-star-2 bg-orange-400" />
-                            <input type="radio" name="rating" value="4" class="mask mask-star-2 bg-orange-400" />
-                            <input type="radio" name="rating" value="5" class="mask mask-star-2 bg-orange-400"
-                                checked />
-                        </div>
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-error mb-4">
+                        {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
                     </div>
-
-                    <!-- Review Content -->
-                    <div>
-                        <label class="label">
-                            <span class="label-text">Your Review</span>
-                        </label>
-                        <textarea name="content" rows="4" class="textarea textarea-bordered w-full"
-                            placeholder="Write your review here..." required></textarea>
-                    </div>
-
-                    <!-- Anonymous Option -->
+                    {% endif %}
+                    <!-- ⭐ RATING as star input -->
                     <div class="form-control">
-                        <label class="label cursor-pointer justify-start gap-2">
-                            <input type="checkbox" name="is_anonymous" class="checkbox" />
-                            <span class="label-text">Post anonymously</span>
+                        <label class="label font-semibold">Rating</label>
+                        <div class="rating rating-half text-3xl">
+                            {% half_star_range as stars %}
+                            {% for value, mask in stars %}
+                            <input type="radio" name="rating" value="{{ value }}"
+                                class="mask mask-star-2 {{ mask }} bg-orange-400 hover:bg-orange-300 transition-all"
+                                {% if form.rating.value|stringformat:"f" == value|stringformat:"f" %}checked{% endif %}>
+                            {% endfor %}
+                        </div>
+                        {% if form.rating.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.rating.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- ✍️ Content textarea -->
+                    <div class="form-control">
+                        <label class="label font-semibold">Your Review</label>
+                        {{ form.content }}
+                        {% if form.content.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.content.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- 🙈 Anonymous checkbox -->
+                    <div class="form-control">
+                        <label class="cursor-pointer label">
+                            <input type="checkbox" name="is_anonymous" value="true" class="checkbox"
+                                hx-get="{% url 'reviews:hx_toggle_guest_name' %}" hx-target="#guest-name-wrapper"
+                                hx-trigger="change" hx-include="[name='is_anonymous']" hx-swap="innerHTML">
+                            <span class="label-text ml-2">Post anonymously</span>
                         </label>
+                    </div>
+
+                    <!-- 👤 HTMX dynamic swap target -->
+                    <div id="guest-name-wrapper">
+                        {% if form.guest_name %}
+                        <div id="guest-name-field" class="form-control">
+                            <label class="label font-semibold">Your Name</label>
+                            {{ form.guest_name }}
+                            {% if form.guest_name.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ form.guest_name.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
                     </div>
 
                     <!-- Submit Button -->

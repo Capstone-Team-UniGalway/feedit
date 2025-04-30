@@ -166,20 +166,20 @@
             <!-- Write Review -->
             <div class="mt-12">
                 <h2 class="text-2xl font-semibold mb-4">Write a review</h2>
-                {% if user.is_authenticated %}
+                {# {% if user.is_authenticated %} #}
                 <div class="flex justify-center">
                     <a href="{% url 'reviews:create_review' company.id %}" class="btn btn-primary">
                         <i class="fas fa-star mr-2"></i> Write a Review
                     </a>
                 </div>
-                {% else %}
+                {# {% else %}
                 <div class="text-center py-4">
                     <p class="text-gray-500 mb-2">You need to be logged in to write a review</p>
                     <a href="{% url 'account_auth' %}" class="btn btn-outline btn-sm">
                         <i class="fas fa-sign-in-alt mr-1"></i> Log In
                     </a>
                 </div>
-                {% endif %}
+                {% endif %} #}
             </div>
         </div>
     </section>
