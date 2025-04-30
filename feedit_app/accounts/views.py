@@ -2,8 +2,8 @@ from enum import Enum
 from django.contrib import messages
 from django.db import models
 from django.http import JsonResponse
-from django.views.generic import TemplateView, View  # Add TemplateView to imports
-from django.shortcuts import render  # Keep render import
+from django.views.generic import TemplateView, View, DetailView
+from django.shortcuts import render
 from django.contrib.auth import (
     logout as auth_logout,
     update_session_auth_hash,
@@ -38,6 +38,7 @@ from .forms import (
     CustomResetPasswordForm,
 )
 from django.http import Http404
+from app.mixins import FullyActivatedUserMixin
 
 User = get_user_model()
 
@@ -176,55 +177,42 @@ class ConfirmSuccessView(TemplateView):
     template_name = "pages/account/email_confirm_success.html"
 
 
-class ProfileView(LoginRequiredMixin, TemplateView):
+class ProfileView(FullyActivatedUserMixin, DetailView):
     template_name = "pages/account/user_profile.html"
+    context_object_name = "user"
+
+    def get_object(self):
+        return self.request.user
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["is_own_profile"] = True
+        return context
 
-        # Check if a specific user is requested via URL parameter
-        requested_user_id = self.request.GET.get("user")
-        User = get_user_model()
 
-        if requested_user_id:
-            try:
-                # Try to get the requested user
-                user = User.objects.get(id=requested_user_id)
+class PublicProfileView(FullyActivatedUserMixin, DetailView):
+    model = User
+    template_name = "pages/account/user_profile.html"
+    context_object_name = "user"
 
-                # Check if the user's profile is visible based on privacy settings
-                # This is a placeholder - implement actual privacy logic as needed
-                if (
-                    hasattr(user, "privacy")
-                    and user.privacy == "private"
-                    and user != self.request.user
-                ):
-                    # If private and not the current user, show the current user instead
-                    messages.warning(self.request, "This profile is private.")
-                    user = self.request.user
-            except User.DoesNotExist:
-                # If user doesn't exist, show the current user
-                messages.error(self.request, "User not found.")
-                user = self.request.user
-        else:
-            # No user specified, show the current user
-            user = self.request.user
+    def get(self, request, *args, **kwargs):
+        user = self.get_object()
+        if not user.can_view_profile(request.user):
+            messages.warning(request, "This profile is private.")
+            return redirect("account_profile")
+        return super().get(request, *args, **kwargs)
 
-        # Set a flag to indicate if the user has a profile picture
-        context["has_profile_picture"] = hasattr(user, "profile_picture") and bool(
-            user.profile_picture
-        )
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.get_object()
+        viewer = self.request.user
 
-        # Set a flag to indicate if this is the current user's profile
-        context["is_own_profile"] = user == self.request.user
-
-        context["user"] = user
-        # Optional: preload recent activity later
+        context["is_own_profile"] = user == viewer
         return context
 
 
 class EditProfileView(LoginRequiredMixin, TemplateView):
     template_name = "pages/account/edit_profile.html"
-    complete_profile_template = "pages/account/complete_profile.html"
     success_url = reverse_lazy("dashboard")
 
     def post(self, request, *args, **kwargs):
@@ -325,8 +313,7 @@ class CustomPasswordResetView(PasswordResetView):
         return redirect(self.success_url)
 
 
-# --- NEW CLASS-BASED DASHBOARD VIEW ---
-class DashboardView(LoginRequiredMixin, View):
+class DashboardView(FullyActivatedUserMixin, View):
     """
     Handles the main dashboard view after login.
 
@@ -345,7 +332,7 @@ class DashboardView(LoginRequiredMixin, View):
         user = self.request.user
 
         # --- Redirect or Render ---
-        if user.profile_incomplete:
+        if not user.is_profile_complete:
             # Profile details are missing, redirect to the edit profile page
             return redirect(self.profile_edit_url)
         else:
@@ -392,7 +379,7 @@ class DashboardView(LoginRequiredMixin, View):
         return context
 
 
-class UserSearchView(LoginRequiredMixin, View):
+class UserSearchView(FullyActivatedUserMixin, View):
     """HTMX-compatible view for searching users (for @mentions)."""
 
     def get(self, request):

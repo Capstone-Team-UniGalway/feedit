@@ -76,25 +76,37 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     privacy = models.CharField(
         max_length=10, choices=PrivacyType.choices, default=PrivacyType.PUBLIC
     )
-    mfa_enabled = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
-    is_approved = models.BooleanField(default=False)
 
     objects = ActiveUserManager()
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["first_name", "last_name"]
 
-    def __str__(self):
-        return self.email
-
-    def get_full_name(self):
-        return self.first_name + " " + self.last_name
+    @property
+    def is_account_verified(self):
+        """Returns True if the user's primary email is verified."""
+        return self.emailaddress_set.filter(verified=True).exists()
 
     @property
-    def profile_incomplete(self):
-        return not self.job_title or not self.bio
+    def is_profile_complete(self):
+        return bool(self.job_title and self.bio)
+
+    @property
+    def has_mfa_enabled(self):
+        from allauth.mfa.models import Authenticator
+
+        return Authenticator.objects.filter(user=self, type="totp").exists()
+
+    @property
+    def is_fully_activated(self):
+        return (
+            self.is_active
+            and self.is_account_verified
+            and self.is_profile_complete
+            and self.has_mfa_enabled
+        )
 
     @property
     def profile_picture(self):
@@ -109,3 +121,49 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
             return secure_file.file.url
 
         return static("images/user_placeholder.png")
+
+    def __str__(self):
+        return self.email
+
+    def get_full_name(self):
+        return self.first_name + " " + self.last_name
+
+    def can_view_profile(self, viewer):
+        """Returns True if `viewer` is allowed to see this user's profile."""
+
+        # Public profiles are always visible
+        if self.privacy == User.PrivacyType.PUBLIC:
+            return True
+
+        # Own profile is always visible
+        if self == viewer:
+            return True
+
+        # Internal profiles — apply fine-grained rules
+        if self.privacy == User.PrivacyType.INTERNAL:
+            # If either user lacks a company, deny
+            if not self.workplace and not hasattr(self, "company"):
+                return False
+            if not viewer.workplace and not hasattr(viewer, "company"):
+                return False
+
+            # Case: viewer is employer, user is employee at same company
+            if (
+                viewer.type == User.UserType.EMPLOYER
+                and self.type == User.UserType.EMPLOYEE
+            ):
+                return viewer.company and viewer.company == self.workplace
+
+            # Case: viewer is employee, user is employer at same company
+            if (
+                viewer.type == User.UserType.EMPLOYEE
+                and self.type == User.UserType.EMPLOYER
+            ):
+                return self.company and viewer.workplace == self.company
+
+            # Case: both employees at same company
+            if viewer.type == self.type == User.UserType.EMPLOYEE:
+                return viewer.workplace and viewer.workplace == self.workplace
+
+        # All other cases denied
+        return False

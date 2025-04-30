@@ -8,14 +8,14 @@
                 <!-- Profile Picture -->
                 <div class="avatar mb-4">
                     <div class="w-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                        {% if has_profile_picture %}
+                        {# {% if has_profile_picture %} #}
                         <img src="{{ user.profile_picture }}" alt="{{ user.get_full_name }}" />
-                        {% else %}
+                        {# {% else %}
                         <div
                             class="bg-primary text-primary-content w-32 h-32 flex items-center justify-center text-3xl font-bold">
                             {{ user.get_initials|default:user.email.0|upper }}
                         </div>
-                        {% endif %}
+                        {% endif %} #}
                     </div>
                 </div>
 
@@ -48,7 +48,7 @@
                 {% endif %}
 
                 <!-- Email Verification Warning -->
-                {% if not user.emailaddress_set.first.verified %}
+                {% if is_own_profile and not user.emailaddress_set.first.verified %}
                 <div class="alert alert-warning mt-4 max-w-md">
                     <i class="fas fa-exclamation-triangle"></i>
                     <span>Your email is not verified. Please check your inbox.</span>
@@ -98,13 +98,6 @@
                                     <button class="btn btn-outline" onclick="shareVia('teams')">
                                         <i class="fab fa-microsoft mr-2"></i> Teams
                                     </button>
-                                    <!-- 🌍 Native Share Button -->
-                                    <button id="native-share-btn" class="btn btn-outline hidden"
-                                        data-url="{{ request.scheme }}://{{ request.get_host }}{% url 'account_profile'  %}?user={{ user.id }}"
-                                        data-title="{{ user.get_full_name }}"
-                                        data-text="{{ user.get_full_name }} on FeedIT!">
-                                        <i class="fas fa-share-alt mr-2"></i> Other Options
-                                    </button>
                                 </div>
                             </div>
 
@@ -139,6 +132,7 @@
                     <h3 class="text-lg font-medium mb-2">No activity yet</h3>
                     <p class="text-sm text-gray-500 mb-4">Your recent actions will appear here</p>
 
+                    {% if is_own_profile %}
                     <!-- Suggested Actions -->
                     <div class="flex flex-wrap justify-center gap-2">
                         <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline">
@@ -153,29 +147,13 @@
                             <i class="fas fa-comment-dots mr-1"></i> Create a Thread
                         </button>
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </section>
     <!-- JavaScript for Share Profile Functionality -->
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const nativeShareBtn = document.getElementById("native-share-btn");
-
-            if (navigator.share && nativeShareBtn) {
-                nativeShareBtn.classList.remove("hidden");
-
-                nativeShareBtn.addEventListener("click", () => {
-                    navigator.share({
-                        title: nativeShareBtn.dataset.title,
-                        text: nativeShareBtn.dataset.text,
-                        url: nativeShareBtn.dataset.url,
-                    }).catch((error) => {
-                        console.warn("Sharing failed:", error);
-                    });
-                });
-            }
-        });
         // Function to copy profile URL to clipboard
         function copyProfileUrl() {
             const profileUrl = document.getElementById('profile-url');

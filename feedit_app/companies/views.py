@@ -1,4 +1,3 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Prefetch
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
@@ -7,7 +6,7 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, V
 from django.contrib import messages
 from .models import Company
 from reviews.models import ReviewReply
-from app.mixins import SuperuserBypassMixin
+from app.mixins import SuperuserBypassMixin, FullyActivatedUserMixin
 from .forms import CompanyForm
 from django.core.paginator import Paginator
 
@@ -93,7 +92,7 @@ class CompanyDetailView(DetailView):
         return context
 
 
-class CreateCompanyView(LoginRequiredMixin, SuperuserBypassMixin, CreateView):
+class CreateCompanyView(FullyActivatedUserMixin, SuperuserBypassMixin, CreateView):
     """Route: /companies/create | GET/POST | Permission: employer with no company"""
 
     http_method_names = ["get", "post"]
@@ -141,7 +140,7 @@ class CreateCompanyView(LoginRequiredMixin, SuperuserBypassMixin, CreateView):
         return super().form_valid(form)
 
 
-class EditCompanyView(LoginRequiredMixin, SuperuserBypassMixin, UpdateView):
+class EditCompanyView(FullyActivatedUserMixin, SuperuserBypassMixin, UpdateView):
     """Route: /company/<int:pk>/edit | GET/PUT"""
 
     http_method_names = ["get", "put"]
@@ -163,7 +162,7 @@ class EditCompanyView(LoginRequiredMixin, SuperuserBypassMixin, UpdateView):
         return Company.objects.filter(is_deleted=False)
 
 
-class DeleteCompanyView(LoginRequiredMixin, SuperuserBypassMixin, View):
+class DeleteCompanyView(FullyActivatedUserMixin, SuperuserBypassMixin, View):
     http_method_names = ["post"]
 
     def user_test_func(self):
@@ -177,7 +176,7 @@ class DeleteCompanyView(LoginRequiredMixin, SuperuserBypassMixin, View):
         return redirect(success_url)
 
 
-class LeaveCompanyView(LoginRequiredMixin, View):
+class LeaveCompanyView(FullyActivatedUserMixin, View):
     """View for users to leave their current company"""
 
     def post(self, request, *args, **kwargs):

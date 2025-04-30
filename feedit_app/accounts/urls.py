@@ -11,17 +11,18 @@ from .views import (
     EmailVerificationSentView,
     ResendEmailVerificationView,
     ProfileView,
+    PublicProfileView,
     EditProfileView,
     CloseAccountView,
     AuthPasswordResetDonePartial,
     CustomPasswordResetFromKeyView,
     CustomPasswordResetView,
-    DashboardView,
     UserSearchView,
 )
 
 urlpatterns = [
     path("", ProfileView.as_view(), name="account_profile"),
+    path("<int:pk>/", PublicProfileView.as_view(), name="account_public_profile"),
     path("edit", EditProfileView.as_view(), name="account_edit"),
     path("auth", AuthView.as_view(), name="account_auth"),  # canonical
     path(
@@ -80,6 +81,5 @@ urlpatterns = [
         name="account_reauthenticate",
     ),
     path("mfa/authenticate/", AuthenticateView.as_view(), name="mfa_authenticate"),
-    path("dashboard", DashboardView.as_view(), name="dashboard"),
     path("api/search-users/", UserSearchView.as_view(), name="api_search_users"),
 ]

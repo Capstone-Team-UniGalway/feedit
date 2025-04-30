@@ -21,26 +21,19 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
 from django.views.static import serve
+from accounts.views import DashboardView
+from .views import WelcomeView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("companies/", include("companies.urls")),
-    path(
-        "",
-        TemplateView.as_view(template_name="pages/welcome.html"),
-        name="welcome",
-    ),
+    path("", WelcomeView.as_view(), name="home"),
     path(
         "claim_company",
         TemplateView.as_view(template_name="pages/claim_company.html"),
         name="claim_company",
     ),
-    # Remove the old dashboard route so it doesn't conflict with the new one in accounts.urls
-    # path(
-    #     "dashboard",
-    #     TemplateView.as_view(template_name="pages/dashboard.html"),
-    #     name="dashboard",
-    # ),
+    path("dashboard", DashboardView.as_view(), name="dashboard"),
     path(
         "edit_profile",
         TemplateView.as_view(template_name="pages/edit_profile.html"),
