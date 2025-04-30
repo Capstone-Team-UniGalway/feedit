@@ -79,7 +79,6 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     mfa_enabled = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
-    is_approved = models.BooleanField(default=False)
 
     objects = ActiveUserManager()
 
@@ -93,8 +92,22 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         return self.first_name + " " + self.last_name
 
     @property
-    def profile_incomplete(self):
-        return not self.job_title or not self.bio
+    def is_account_verified(self):
+        """Returns True if the user's primary email is verified."""
+        return self.emailaddress_set.filter(verified=True).exists()
+
+    @property
+    def is_profile_complete(self):
+        return bool(self.job_title and self.bio)
+
+    @property
+    def is_fully_activated(self):
+        return (
+            self.is_active
+            and self.is_account_verified
+            and self.is_profile_complete
+            and self.mfa_enabled
+        )
 
     @property
     def profile_picture(self):

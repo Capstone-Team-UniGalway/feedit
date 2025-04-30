@@ -1,4 +1,5 @@
-from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 
 
 class SuperuserBypassMixin(UserPassesTestMixin):
@@ -16,3 +17,10 @@ class SuperuserBypassMixin(UserPassesTestMixin):
         raise NotImplementedError(
             "Subclasses of SuperuserBypassMixin must implement user_test_func()"
         )
+
+
+class FullyActivatedUserMixin(LoginRequiredMixin):
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_fully_activated:
+            raise PermissionDenied("Your account is not fully activated.")
+        return super().dispatch(request, *args, **kwargs)

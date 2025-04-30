@@ -6,7 +6,6 @@ from django.views.generic import (
     UpdateView,
     DeleteView,
 )
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages
 from django.http import HttpResponseRedirect
@@ -14,9 +13,10 @@ from django.db import models
 
 from .models import Thread, Mention
 from .forms import ThreadForm, ThreadReplyForm
+from app.mixins import FullyActivatedUserMixin
 
 
-class ThreadListView(LoginRequiredMixin, ListView):
+class ThreadListView(FullyActivatedUserMixin, ListView):
     """View for listing threads."""
 
     model = Thread
@@ -91,7 +91,7 @@ class ThreadListView(LoginRequiredMixin, ListView):
         return context
 
 
-class ThreadDetailView(LoginRequiredMixin, DetailView):
+class ThreadDetailView(FullyActivatedUserMixin, DetailView):
     """View for displaying a single thread and its replies."""
 
     model = Thread
@@ -123,7 +123,7 @@ class ThreadDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class ThreadCreateView(LoginRequiredMixin, CreateView):
+class ThreadCreateView(FullyActivatedUserMixin, CreateView):
     """View for creating a new thread."""
 
     model = Thread
@@ -151,7 +151,7 @@ class ThreadCreateView(LoginRequiredMixin, CreateView):
         return reverse("thread_detail", kwargs={"pk": self.object.pk})
 
 
-class ThreadReplyCreateView(LoginRequiredMixin, CreateView):
+class ThreadReplyCreateView(FullyActivatedUserMixin, CreateView):
     """View for creating a reply to a thread."""
 
     model = Thread
@@ -191,7 +191,7 @@ class ThreadReplyCreateView(LoginRequiredMixin, CreateView):
         return reverse("thread_detail", kwargs={"pk": self.object.parent.pk})
 
 
-class ThreadUpdateView(LoginRequiredMixin, UpdateView):
+class ThreadUpdateView(FullyActivatedUserMixin, UpdateView):
     """View for updating a thread."""
 
     model = Thread
@@ -206,7 +206,7 @@ class ThreadUpdateView(LoginRequiredMixin, UpdateView):
         return reverse("thread_detail", kwargs={"pk": self.object.pk})
 
 
-class ThreadDeleteView(LoginRequiredMixin, DeleteView):
+class ThreadDeleteView(FullyActivatedUserMixin, DeleteView):
     """View for deleting a thread."""
 
     model = Thread

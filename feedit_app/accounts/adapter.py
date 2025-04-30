@@ -1,4 +1,5 @@
 from allauth.account.adapter import DefaultAccountAdapter
+from allauth.mfa.models import Authenticator
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -25,3 +26,16 @@ class CustomAccountAdapter(DefaultAccountAdapter):
                 "token": "%(token)s",
             },
         )
+
+    def add_mfa_device(self, user, device):
+        """Sets mfa_enabled field to True when user enabled mfa"""
+        user.mfa_enabled = True
+        user.save(update_fields=["mfa_enabled"])
+        super().add_mfa_device(user, device)
+
+    def remove_mfa_device(self, user, device):
+        """If no devices left, mark MFA as disabled"""
+        if not Authenticator.objects.filter(user=user).exists():
+            user.mfa_enabled = False
+            user.save(update_fields=["mfa_enabled"])
+        super().remove_mfa_device(user, device)

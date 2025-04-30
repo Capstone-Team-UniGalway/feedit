@@ -38,6 +38,7 @@ from .forms import (
     CustomResetPasswordForm,
 )
 from django.http import Http404
+from app.mixins import FullyActivatedUserMixin
 
 User = get_user_model()
 
@@ -326,7 +327,7 @@ class CustomPasswordResetView(PasswordResetView):
 
 
 # --- NEW CLASS-BASED DASHBOARD VIEW ---
-class DashboardView(LoginRequiredMixin, View):
+class DashboardView(FullyActivatedUserMixin, View):
     """
     Handles the main dashboard view after login.
 
@@ -345,7 +346,7 @@ class DashboardView(LoginRequiredMixin, View):
         user = self.request.user
 
         # --- Redirect or Render ---
-        if user.profile_incomplete:
+        if not user.is_profile_complete:
             # Profile details are missing, redirect to the edit profile page
             return redirect(self.profile_edit_url)
         else:
@@ -392,7 +393,7 @@ class DashboardView(LoginRequiredMixin, View):
         return context
 
 
-class UserSearchView(LoginRequiredMixin, View):
+class UserSearchView(FullyActivatedUserMixin, View):
     """HTMX-compatible view for searching users (for @mentions)."""
 
     def get(self, request):

@@ -35,7 +35,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         for _ in range(10):
-            employer = UserFactory(type="employer", is_approved=True)
+            employer = UserFactory(type="employer")
             CompanyFactory(
                 employer=employer,
                 country=random.choice(COUNTRIES),
