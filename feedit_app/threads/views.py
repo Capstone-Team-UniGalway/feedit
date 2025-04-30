@@ -72,7 +72,7 @@ class ThreadListView(LoginRequiredMixin, ListView):
                 queryset = queryset.order_by("-created_at")
 
             return queryset
-        return None
+        return Thread.objects.none()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
