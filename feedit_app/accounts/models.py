@@ -84,12 +84,6 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["first_name", "last_name"]
 
-    def __str__(self):
-        return self.email
-
-    def get_full_name(self):
-        return self.first_name + " " + self.last_name
-
     @property
     def is_account_verified(self):
         """Returns True if the user's primary email is verified."""
@@ -127,3 +121,49 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
             return secure_file.file.url
 
         return static("images/user_placeholder.png")
+
+    def __str__(self):
+        return self.email
+
+    def get_full_name(self):
+        return self.first_name + " " + self.last_name
+
+    def can_view_profile(self, viewer):
+        """Returns True if `viewer` is allowed to see this user's profile."""
+
+        # Public profiles are always visible
+        if self.privacy == User.PrivacyType.PUBLIC:
+            return True
+
+        # Own profile is always visible
+        if self == viewer:
+            return True
+
+        # Internal profiles — apply fine-grained rules
+        if self.privacy == User.PrivacyType.INTERNAL:
+            # If either user lacks a company, deny
+            if not self.workplace and not hasattr(self, "company"):
+                return False
+            if not viewer.workplace and not hasattr(viewer, "company"):
+                return False
+
+            # Case: viewer is employer, user is employee at same company
+            if (
+                viewer.type == User.UserType.EMPLOYER
+                and self.type == User.UserType.EMPLOYEE
+            ):
+                return viewer.company and viewer.company == self.workplace
+
+            # Case: viewer is employee, user is employer at same company
+            if (
+                viewer.type == User.UserType.EMPLOYEE
+                and self.type == User.UserType.EMPLOYER
+            ):
+                return self.company and viewer.workplace == self.company
+
+            # Case: both employees at same company
+            if viewer.type == self.type == User.UserType.EMPLOYEE:
+                return viewer.workplace and viewer.workplace == self.workplace
+
+        # All other cases denied
+        return False

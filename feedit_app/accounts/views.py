@@ -197,14 +197,17 @@ class PublicProfileView(FullyActivatedUserMixin, DetailView):
 
     def get(self, request, *args, **kwargs):
         user = self.get_object()
-        if user.privacy == User.PrivacyType.PRIVATE and user != request.user:
+        if not user.can_view_profile(request.user):
             messages.warning(request, "This profile is private.")
             return redirect("account_profile")
         return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["is_own_profile"] = self.get_object() == self.request.user
+        user = self.get_object()
+        viewer = self.request.user
+
+        context["is_own_profile"] = user == viewer
         return context
 
 
