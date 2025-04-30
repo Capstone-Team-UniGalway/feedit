@@ -14,6 +14,11 @@
                 <p class="text-sm text-gray-400">{{ company.city }}{% if company.city and company.country %},
                     {% endif %}{{ company.country }}</p>
                 {% endif %}
+                {% if is_employer %}
+                <p class="text-sm text-gray-500">You manage this company.</p>
+                {% elif is_employee %}
+                <p class="text-sm text-gray-500">You work here.</p>
+                {% endif %}
                 {% if company.average_rating %}
                 <p class="text-sm text-yellow-500 font-semibold">
                     Rating: {{ company.average_rating }} ★
@@ -163,6 +168,7 @@
             <p class="text-sm text-gray-500">No reviews yet for this company.</p>
             {% endif %}
 
+            {% if not has_reviewed %}
             <!-- Write Review -->
             <div class="mt-12">
                 <h2 class="text-2xl font-semibold mb-4">Write a review</h2>
@@ -181,6 +187,7 @@
                 </div>
                 {% endif %} #}
             </div>
+            {% endif %}
         </div>
     </section>
 
@@ -190,17 +197,19 @@
             <h3 class="font-bold text-lg mb-4">Share {{ company.name }}'s Profile</h3>
             <p class="mb-4">Copy the link below to share this company profile:</p>
 
-            <div class="form-control mb-4">
-                <div class="input-group">
+            <!-- Copyable URL -->
+            <div class="form-control mb-4 w-full">
+                <div class="input-group join w-full">
                     <input type="text" id="company-url"
                         value="{{ request.scheme }}://{{ request.get_host }}{% url 'companies:detail' company.id %}"
-                        class="input input-bordered w-full" readonly />
-                    <button class="btn btn-square" onclick="copyProfileUrl()">
+                        class="join-item input input-bordered w-full" readonly />
+                    <button class="join-item btn btn-square" onclick="copyProfileUrl()">
                         <i class="fas fa-copy"></i>
                     </button>
                 </div>
             </div>
 
+            <!-- Social Share Links -->
             <div class="flex justify-center gap-3 mt-6">
                 <a href="https://twitter.com/intent/tweet?url={{ request.scheme }}://{{ request.get_host }}{% url 'companies:detail' company.id %}&text=Check out {{ company.name }} on FeedIT!"
                     target="_blank" class="btn btn-outline">
@@ -210,8 +219,15 @@
                     target="_blank" class="btn btn-outline">
                     <i class="fab fa-linkedin mr-2"></i> LinkedIn
                 </a>
+                <!-- 🌍 Native Share Button -->
+                <button id="native-share-btn" class="btn btn-outline hidden"
+                    data-url="{{ request.scheme }}://{{ request.get_host }}{% url 'companies:detail' company.id %}"
+                    data-title="{{ company.name }}" data-text="Check out {{ company.name }} on FeedIT!">
+                    <i class="fas fa-share-alt mr-2"></i> Other Options
+                </button>
             </div>
 
+            <!-- Close -->
             <div class="modal-action">
                 <form method="dialog">
                     <button class="btn">Close</button>
@@ -292,6 +308,24 @@
 
     <!-- JavaScript for Share Profile Functionality -->
     <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const nativeShareBtn = document.getElementById("native-share-btn");
+
+            if (navigator.share && nativeShareBtn) {
+                nativeShareBtn.classList.remove("hidden");
+
+                nativeShareBtn.addEventListener("click", () => {
+                    navigator.share({
+                        title: nativeShareBtn.dataset.title,
+                        text: nativeShareBtn.dataset.text,
+                        url: nativeShareBtn.dataset.url,
+                    }).catch((error) => {
+                        console.warn("Sharing failed:", error);
+                    });
+                });
+            }
+        });
+
         // Function to copy profile URL to clipboard
         function copyProfileUrl() {
             const profileUrl = document.getElementById('company-url');

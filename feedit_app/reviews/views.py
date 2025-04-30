@@ -1,7 +1,7 @@
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views import View
 from django.views.generic.edit import CreateView
@@ -11,7 +11,7 @@ from .forms import ReviewForm, ReviewReplyForm
 from .models import Review, ReviewReply
 
 
-class CreateReviewView(CreateView):
+class CreateReviewView(UserPassesTestMixin, CreateView):
     http_method_names = ["get", "post"]
     model = Review
     form_class = ReviewForm
@@ -22,6 +22,32 @@ class CreateReviewView(CreateView):
             Company, pk=self.kwargs["company_id"], is_deleted=False
         )
         return super().dispatch(request, *args, **kwargs)
+
+    def test_func(self):
+        user = self.request.user
+
+        # Employer can't review own company
+        if user.is_authenticated and user == self.company.employer:
+            return False
+
+        # Authenticated user can't review more than once
+        if user.is_authenticated:
+            return not Review.objects.filter(
+                company=self.company, user=user, is_deleted=False
+            ).exists()
+
+        # Guests are always allowed (validation logic will handle them in form)
+        return True
+
+    def handle_no_permission(self):
+        return render(
+            self.request,
+            "pages/reviews/review_restricted.html",
+            {
+                "company": self.company,
+                "message": "You are not allowed to submit a review for this company.",
+            },
+        )
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
