@@ -3,19 +3,35 @@
 <c-layouts.base>
     <!-- Profile Settings -->
     <section class="max-w-3xl mx-auto space-y-8">
-        {% if not request.user.is_profile_complete %}
+        {% if not request.user.is_fully_activated %}
         <!-- Header -->
         <div class="text-center mb-10">
             <h1 class="text-3xl font-bold mb-2">Complete Your Profile</h1>
-            <p class="text-gray-600">Tell us a bit more about yourself to get started with FeedIT</p>
+            <p class="text-gray-600">To access all features, please finish the steps below.</p>
         </div>
+
         <!-- Progress Steps -->
         <div class="flex justify-center mb-8">
             <ul class="steps steps-horizontal w-full">
-                <li class="step step-primary">Register</li>
-                <li class="step step-primary">Verify Email</li>
-                <li class="step step-primary">Complete Profile</li>
-                <li class="step">Dashboard</li>
+
+                <li class="step {% if request.user.is_authenticated %}step-primary{% endif %}">Register</li>
+
+                <li class="step {% if request.user.is_account_verified %}step-primary{% endif %}">
+                    Verify Email
+                </li>
+
+                <li class="step {% if request.user.is_profile_complete %}step-primary{% endif %}">
+                    Complete Profile
+                </li>
+
+                <li class="step {% if request.user.mfa_enabled %}step-primary{% endif %}">
+                    Enable MFA
+                </li>
+
+                <li class="step {% if request.user.is_fully_activated %}step-primary{% endif %}">
+                    Dashboard
+                </li>
+
             </ul>
         </div>
         {% else %}

@@ -177,7 +177,7 @@ class ConfirmSuccessView(TemplateView):
     template_name = "pages/account/email_confirm_success.html"
 
 
-class ProfileView(LoginRequiredMixin, TemplateView):
+class ProfileView(FullyActivatedUserMixin, TemplateView):
     template_name = "pages/account/user_profile.html"
 
     def get_context_data(self, **kwargs):
@@ -225,7 +225,6 @@ class ProfileView(LoginRequiredMixin, TemplateView):
 
 class EditProfileView(LoginRequiredMixin, TemplateView):
     template_name = "pages/account/edit_profile.html"
-    complete_profile_template = "pages/account/complete_profile.html"
     success_url = reverse_lazy("dashboard")
 
     def post(self, request, *args, **kwargs):

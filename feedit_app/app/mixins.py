@@ -1,5 +1,7 @@
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
-from django.core.exceptions import PermissionDenied
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.urls import reverse_lazy
 
 
 class SuperuserBypassMixin(UserPassesTestMixin):
@@ -20,7 +22,18 @@ class SuperuserBypassMixin(UserPassesTestMixin):
 
 
 class FullyActivatedUserMixin(LoginRequiredMixin):
+    """
+    Enforces that the user is fully activated (email verified, MFA enabled,
+    profile complete). If not, redirect to profile edit with a warning.
+    """
+
+    redirect_url = reverse_lazy("account_edit")
+
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_fully_activated:
-            raise PermissionDenied("Your account is not fully activated.")
+            messages.warning(
+                request,
+                "Please complete your profile, to access this feature.",
+            )
+            return redirect(self.redirect_url)
         return super().dispatch(request, *args, **kwargs)
