@@ -1,4 +1,6 @@
 from enum import Enum
+from datetime import timedelta
+from django.utils import timezone
 from django.contrib import messages
 from django.db import models
 from django.http import JsonResponse
@@ -313,69 +315,55 @@ class CustomPasswordResetView(PasswordResetView):
         return redirect(self.success_url)
 
 
-class DashboardView(FullyActivatedUserMixin, View):
+class DashboardView(FullyActivatedUserMixin, TemplateView):
     """
     Handles the main dashboard view after login.
-
-    Checks if the user's profile is considered complete. If not,
-    redirects to the profile editing page. Otherwise, renders the
-    main dashboard template.
     """
 
     template_name = "pages/dashboard.html"  # Template for the actual dashboard
-    profile_edit_url = reverse_lazy(
-        "account_edit"
-    )  # URL to redirect to if profile is incomplete
-
-    def get(self, request, *args, **kwargs):
-        """Handles GET requests to the dashboard."""
-        user = self.request.user
-
-        # --- Redirect or Render ---
-        if not user.is_profile_complete:
-            # Profile details are missing, redirect to the edit profile page
-            return redirect(self.profile_edit_url)
-        else:
-            # Profile is complete, render the actual dashboard template
-            context = self.get_context_data(**kwargs)
-            return render(request, self.template_name, context)
 
     def get_context_data(self, **kwargs):
         """
         Prepares context data for rendering the dashboard template.
         This method is called only when the profile is considered complete.
         """
+        context = super().get_context_data(**kwargs)
         user = self.request.user
 
         # Get user's threads (excluding replies and deleted threads)
-        from threads.models import Thread
-
-        user_threads = Thread.objects.filter(
-            author=user,
-            parent__isnull=True,  # Only parent threads, not replies
-            is_deleted=False,  # Only non-deleted threads
-        ).order_by("-created_at")[
-            :5
-        ]  # Get the 5 most recent threads
+        user_threads = (
+            user.threads.filter(
+                parent__isnull=True,  # Exclude replies
+                is_deleted=False,  # Only non-deleted
+            )
+            .select_related("company")
+            .order_by("-created_at")[:5]
+        )  # Get the 5 most recent threads
 
         # Get threads where the user is mentioned
-        from threads.models import Mention
+        mentions = (
+            user.mentions_received.filter(
+                is_read=False,
+                thread__is_deleted=False,
+            )
+            .select_related("thread")
+            .order_by("-created_at")[:5]
+        )  # Get the 5 most recent mentions
 
-        mentions = Mention.objects.filter(
-            mentioned_user=user,
-            is_read=False,  # Only unread mentions
-            thread__is_deleted=False,  # Only mentions in non-deleted threads
-        ).order_by("-created_at")[
-            :5
-        ]  # Get the 5 most recent mentions
+        # Determine if this is a new account with no threads (even deleted)
+        account_age = timezone.now() - user.created_at
+        has_any_threads = user.threads.exists()
+        is_new_account = account_age < timedelta(days=7) and not has_any_threads
 
-        context = {
-            "user": user,
-            "user_threads": user_threads,
-            "mentions": mentions,
-            "thread_count": user_threads.count(),
-            "mention_count": mentions.count(),
-        }
+        context.update(
+            {
+                "user_threads": user_threads,
+                "mentions": mentions,
+                "thread_count": user_threads.count(),
+                "mention_count": mentions.count(),
+                "new_account": is_new_account,
+            }
+        )
         return context
 
 
