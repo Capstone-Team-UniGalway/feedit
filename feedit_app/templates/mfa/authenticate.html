@@ -20,7 +20,16 @@
                     {% csrf_token %}
                     {% for field in form %}
                     <div class="mb-6">
-                        <label class="label font-medium">{{ field.label }}</label>
+                        <label class="label font-medium">{{ field.label }}
+                            <div class="tooltip tooltip">
+                                <div class="tooltip-content">
+                                    Use a <i class="fas fa-key"></i> <strong>Recovery Code</strong> if you can't access
+                                    your authenticator app.
+                                </div>
+                                <i class="fas fa-circle-info"></i>
+
+                            </div>
+                        </label>
                         {% render_field field class="input input-bordered w-full text-center text-xl tracking-widest"
                     placeholder="000000" %}
                         {% if field.errors %}
@@ -37,14 +46,6 @@
                         <i class="fas fa-check-circle mr-2"></i> Verify Identity
                     </button>
                 </form>
-
-                <div class="divider">OR</div>
-
-                <div class="text-center">
-                    <a href="{% url 'mfa_view_recovery_codes' %}" class="btn btn-outline btn-sm">
-                        <i class="fas fa-key mr-2"></i> Use Recovery Code
-                    </a>
-                </div>
             </div>
         </div>
 

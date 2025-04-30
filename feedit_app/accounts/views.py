@@ -313,7 +313,6 @@ class CustomPasswordResetView(PasswordResetView):
         return redirect(self.success_url)
 
 
-# --- NEW CLASS-BASED DASHBOARD VIEW ---
 class DashboardView(FullyActivatedUserMixin, View):
     """
     Handles the main dashboard view after login.

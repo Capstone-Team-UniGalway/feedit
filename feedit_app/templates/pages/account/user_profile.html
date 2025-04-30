@@ -48,7 +48,7 @@
                 {% endif %}
 
                 <!-- Email Verification Warning -->
-                {% if not user.emailaddress_set.first.verified %}
+                {% if is_own_profile and not user.emailaddress_set.first.verified %}
                 <div class="alert alert-warning mt-4 max-w-md">
                     <i class="fas fa-exclamation-triangle"></i>
                     <span>Your email is not verified. Please check your inbox.</span>
@@ -132,6 +132,7 @@
                     <h3 class="text-lg font-medium mb-2">No activity yet</h3>
                     <p class="text-sm text-gray-500 mb-4">Your recent actions will appear here</p>
 
+                    {% if is_own_profile %}
                     <!-- Suggested Actions -->
                     <div class="flex flex-wrap justify-center gap-2">
                         <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline">
@@ -146,6 +147,7 @@
                             <i class="fas fa-comment-dots mr-1"></i> Create a Thread
                         </button>
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

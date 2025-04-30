@@ -4,8 +4,9 @@
     <div class="flex items-center gap-3 mb-2">
       <h1 class="text-3xl font-bold">Welcome, {{ user.first_name }}</h1>
       {% if thread_count == 0 %}
-      <div class="badge badge-primary">New Account</div>
+      <div class="badge badge-success">New Account</div>
       {% endif %}
+      <div class="badge badge-primary">{{ user.type|title }}</div>
     </div>
     <p class="text-sm text-gray-500">
       {% if user.workplace %}
