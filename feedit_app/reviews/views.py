@@ -72,7 +72,7 @@ class CreateReviewView(SuperuserBypassMixin, CreateView):
         return context
 
 
-class CreateReviewReplyView(FullyActivatedUserMixin, SuperuserBypassMixin, CreateView):
+class CreateReviewReplyView(FullyActivatedUserMixin, CreateView):
     http_method_names = ["get", "post"]
     model = ReviewReply
     form_class = ReviewReplyForm

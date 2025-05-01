@@ -6,7 +6,7 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, V
 from django.contrib import messages
 from .models import Company
 from reviews.models import ReviewReply
-from app.mixins import SuperuserBypassMixin, FullyActivatedUserMixin
+from app.mixins import FullyActivatedUserMixin
 from .forms import CompanyForm
 from django.core.paginator import Paginator
 
@@ -92,7 +92,7 @@ class CompanyDetailView(DetailView):
         return context
 
 
-class CreateCompanyView(FullyActivatedUserMixin, SuperuserBypassMixin, CreateView):
+class CreateCompanyView(FullyActivatedUserMixin, CreateView):
     """Route: /companies/create | GET/POST | Permission: employer with no company"""
 
     http_method_names = ["get", "post"]
@@ -104,6 +104,7 @@ class CreateCompanyView(FullyActivatedUserMixin, SuperuserBypassMixin, CreateVie
 
     def user_test_func(self):
         user = self.request.user
+
         is_employer_without_company = user.type == "employer" and not hasattr(
             user, "company"
         )
@@ -140,7 +141,7 @@ class CreateCompanyView(FullyActivatedUserMixin, SuperuserBypassMixin, CreateVie
         return super().form_valid(form)
 
 
-class EditCompanyView(FullyActivatedUserMixin, SuperuserBypassMixin, UpdateView):
+class EditCompanyView(FullyActivatedUserMixin, UpdateView):
     """Route: /company/<int:pk>/edit | GET/PUT"""
 
     http_method_names = ["get", "put"]
@@ -153,6 +154,7 @@ class EditCompanyView(FullyActivatedUserMixin, SuperuserBypassMixin, UpdateView)
     def user_test_func(self):
         company = self.get_object()
         user = self.request.user
+
         return user.type == "employer" and user == company.employer
 
     def handle_no_permission(self):
@@ -162,7 +164,7 @@ class EditCompanyView(FullyActivatedUserMixin, SuperuserBypassMixin, UpdateView)
         return Company.objects.filter(is_deleted=False)
 
 
-class DeleteCompanyView(FullyActivatedUserMixin, SuperuserBypassMixin, View):
+class DeleteCompanyView(FullyActivatedUserMixin, View):
     http_method_names = ["post"]
 
     def user_test_func(self):
