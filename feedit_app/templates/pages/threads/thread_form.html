@@ -1,3 +1,5 @@
+{% load widget_tweaks %}
+
 <c-layouts.base>
     <div class="max-w-3xl mx-auto">
         <!-- Breadcrumbs -->
@@ -9,67 +11,37 @@
         </div>
 
         <!-- Form Card -->
-        <div class="bg-base-100 rounded-lg shadow-md overflow-hidden">
+        <div class="bg-base-100 rounded-lg shadow-md">
             <div class="p-4 bg-base-200 border-b border-base-300">
                 <h1 class="text-xl font-bold">{{ object.id|yesno:"Edit,Create" }} Thread</h1>
             </div>
             <div class="p-6">
                 <form method="post">
                     {% csrf_token %}
-
-                    <!-- Title -->
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-error mb-4">
+                        {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% for field in form.visible_fields %}
                     <div class="form-control mb-4">
-                        <label class="label">
-                            <span class="label-text">Title</span>
+                        <label class="label" for="{{ field.id_for_label }}">
+                            <span class="label-text">{{ field.label }}</span>
+                            {% if field.help_text %}
+                            <div class="tooltip">
+                                <div class="tooltip-content">{{ field.help_text|safe }}</div>
+                                <i class="fas fa-circle-info"></i>
+                            </div>
+                            {% endif %}
                         </label>
-                        {{ form.title.errors }}
-                        <input type="text" name="title" id="id_title" class="input input-bordered w-full"
-                            value="{{ form.title.value|default:'' }}" required placeholder="Enter a descriptive title">
+                        {% for error in field.errors %}
+                        <p class="text-sm text-error">{{ error }}</p>
+                        {% endfor %}
+                        {{ field }}
                     </div>
-
-                    <!-- Content -->
-                    <div class="form-control mb-4">
-                        <label class="label">
-                            <span class="label-text">Content</span>
-                        </label>
-                        {{ form.content.errors }}
-                        {{ form.content }}
-                    </div>
-
-                    <!-- Type and Visibility -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text">Thread Type</span>
-                            </label>
-                            {{ form.type.errors }}
-                            <select name="type" id="id_type" class="select select-bordered w-full">
-                                {% for value, text in form.fields.type.choices %}
-                                <option value="{{ value }}" {% if form.type.value == value %}selected{% endif %}>
-                                    {{ text }}</option>
-                                {% endfor %}
-                            </select>
-                            <label class="label">
-                                <span class="label-text-alt">Forum threads allow replies, announcements don't.</span>
-                            </label>
-                        </div>
-
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text">Visibility</span>
-                            </label>
-                            {{ form.visibility.errors }}
-                            <select name="visibility" id="id_visibility" class="select select-bordered w-full">
-                                {% for value, text in form.fields.visibility.choices %}
-                                <option value="{{ value }}" {% if form.visibility.value == value %}selected{% endif %}>
-                                    {{ text }}</option>
-                                {% endfor %}
-                            </select>
-                            <label class="label">
-                                <span class="label-text-alt">Internal: visible to all. Private: employees only.</span>
-                            </label>
-                        </div>
-                    </div>
+                    {% endfor %}
 
                     <!-- Form Actions -->
                     <div class="flex justify-end gap-2">

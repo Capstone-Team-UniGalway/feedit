@@ -9,7 +9,13 @@
             <h2 class="text-xl font-semibold mb-4">Company Info</h2>
             <form method="post" class="space-y-4">
                 {% csrf_token %}
-
+                {% if form.non_field_errors %}
+                <div class="alert alert-error mb-4">
+                    {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
                 {% for field in form.visible_fields %}
                 <div>
                     <label class="label" for="{{ field.id_for_label }}">{{ field.label }}</label>

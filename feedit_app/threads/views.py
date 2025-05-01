@@ -1,3 +1,4 @@
+from django import forms
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import (
     ListView,
@@ -6,10 +7,10 @@ from django.views.generic import (
     UpdateView,
     DeleteView,
 )
-from django.urls import reverse_lazy, reverse
+from django.urls import reverse_lazy
 from django.contrib import messages
 from django.http import HttpResponseRedirect
-from django.db import models
+from django.db.models import Count, Q, Prefetch
 
 from .models import Thread, Mention
 from .forms import ThreadForm, ThreadReplyForm
@@ -25,68 +26,75 @@ class ThreadListView(FullyActivatedUserMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        # Get threads that the user has access to
-        queryset = super().get_queryset()
+        user = self.request.user
+        # Access threads via user.workplace (employee) or user.company (employer)
+        company = user.workplace or getattr(user, "company", None)
+        if not company:
+            return Thread.objects.none()
 
-        # Filter by company if the user is associated with one
-        if hasattr(self.request.user, "workplace") and self.request.user.workplace:
-            queryset = queryset.filter(company=self.request.user.workplace)
+        queryset = company.threads.filter(parent__isnull=True, is_deleted=False)
 
-            # Filter out replies (only show parent threads)
-            queryset = queryset.filter(parent__isnull=True)
+        # Apply search
+        search = self.request.GET.get("search")
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) | Q(content__icontains=search)
+            )
 
-            # Filter out deleted threads
-            queryset = queryset.filter(is_deleted=False)
+        # Apply type filter
+        thread_type = self.request.GET.get("type")
+        if thread_type:
+            queryset = queryset.filter(type=thread_type)
 
-            # Apply search filter if provided
-            search_query = self.request.GET.get("search")
-            if search_query:
-                queryset = queryset.filter(
-                    models.Q(title__icontains=search_query)
-                    | models.Q(content__icontains=search_query)
-                )
-
-            # Apply type filter if provided
-            thread_type = self.request.GET.get("type")
-            if thread_type:
-                queryset = queryset.filter(type=thread_type)
-
-            # Apply visibility filter if provided
-            visibility = self.request.GET.get("visibility")
-            if visibility:
-                queryset = queryset.filter(visibility=visibility)
-
-            # Apply sorting
-            sort_by = self.request.GET.get("sort", "-created_at")
-            valid_sort_fields = [
-                "created_at",
-                "-created_at",
-                "updated_at",
-                "-updated_at",
-                "title",
-                "-title",
+        # Apply visibility filtering by role
+        if user.type == user.UserType.EMPLOYEE:
+            allowed_visibilities = [
+                Thread.ThreadVisibility.INTERNAL,
+                Thread.ThreadVisibility.PRIVATE,
             ]
-            if sort_by in valid_sort_fields:
-                queryset = queryset.order_by(sort_by)
+            requested_visibility = self.request.GET.get("visibility")
+            if requested_visibility in allowed_visibilities:
+                queryset = queryset.filter(visibility=requested_visibility)
             else:
-                queryset = queryset.order_by("-created_at")
+                queryset = queryset.filter(visibility__in=allowed_visibilities)
+        else:
+            queryset = queryset.filter(visibility=Thread.ThreadVisibility.INTERNAL)
 
-            return queryset
-        return Thread.objects.none()
+        # Annotate with non-deleted reply count
+        queryset = queryset.annotate(
+            reply_count=Count("replies", filter=Q(replies__is_deleted=False))
+        )
+
+        # Sorting
+        sort_by = self.request.GET.get("sort", "-created_at")
+        valid_sort_fields = [
+            "created_at",
+            "-created_at",
+            "updated_at",
+            "-updated_at",
+            "title",
+            "-title",
+        ]
+        queryset = queryset.order_by(
+            sort_by if sort_by in valid_sort_fields else "-created_at"
+        )
+
+        return queryset.select_related("author", "company")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["page_title"] = "Threads"
+        user = self.request.user
 
-        # Add filter parameters to context for form persistence
+        context["page_title"] = "Threads"
         context["search_query"] = self.request.GET.get("search", "")
         context["thread_type"] = self.request.GET.get("type", "")
-        context["visibility"] = self.request.GET.get("visibility", "")
         context["sort_by"] = self.request.GET.get("sort", "-created_at")
-
-        # Add thread type and visibility choices for the filter form
         context["thread_types"] = Thread.ThreadType.choices
-        context["visibility_types"] = Thread.ThreadVisibility.choices
+
+        # Only add visibility filter context if employee
+        if user.workplace:
+            context["visibility"] = self.request.GET.get("visibility", "")
+            context["visibility_types"] = Thread.ThreadVisibility.choices
 
         return context
 
@@ -98,27 +106,49 @@ class ThreadDetailView(FullyActivatedUserMixin, DetailView):
     template_name = "pages/threads/thread_detail.html"
     context_object_name = "thread"
 
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        user = request.user
+        is_employer = getattr(user, "company", None)
+        same_company = (user.workplace and user.workplace == self.object.company) or (
+            is_employer and user.company == self.object.company
+        )
+
+        if not same_company or (
+            self.object.visibility == Thread.ThreadVisibility.PRIVATE and is_employer
+        ):
+            messages.error(request, "You do not have access to this thread.")
+            return redirect("thread_list")
+
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
-        # Only show non-deleted threads
-        return Thread.objects.filter(is_deleted=False)
+        return (
+            Thread.objects.filter(is_deleted=False)
+            .select_related("author", "company")
+            .prefetch_related(
+                Prefetch(
+                    "replies",
+                    queryset=Thread.objects.filter(is_deleted=False).select_related(
+                        "author"
+                    ),
+                )
+            )
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        thread = self.object
 
-        # Add replies to the context
-        thread = self.get_object()
+        # Replies already prefetched → no extra query
         context["replies"] = thread.replies.order_by("created_at")
-
-        # Add form for replying
         context["reply_form"] = ThreadReplyForm()
 
-        # Mark any mentions of the current user as read
         if self.request.user.is_authenticated:
-            mentions = Mention.objects.filter(
+            Mention.objects.filter(
                 thread=thread, mentioned_user=self.request.user, is_read=False
-            )
-            for mention in mentions:
-                mention.mark_as_read()
+            ).update(is_read=True)
 
         return context
 
@@ -130,65 +160,63 @@ class ThreadCreateView(FullyActivatedUserMixin, CreateView):
     form_class = ThreadForm
     template_name = "pages/threads/thread_form.html"
 
-    def form_valid(self, form):
-        # Set the author to the current user
-        form.instance.author = self.request.user
-
-        # Set the company if the user is associated with one
-        if hasattr(self.request.user, "workplace") and self.request.user.workplace:
-            form.instance.company = self.request.user.workplace
-            messages.success(self.request, "Thread created successfully!")
-            return super().form_valid(form)
-        else:
-            # Redirect to company selection if user doesn't have a company
+    def dispatch(self, request, *args, **kwargs):
+        user = request.user
+        if not user.workplace and not getattr(user, "company", None):
             messages.info(
-                self.request,
-                "Please join or create a company before creating a thread.",
+                request,
+                "Please join, claim or create a company before creating a thread.",
             )
             return redirect("companies:list")
+        return super().dispatch(request, *args, **kwargs)
 
-    def get_success_url(self):
-        return reverse("thread_detail", kwargs={"pk": self.object.pk})
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        user = self.request.user
 
+        # Patch POST data to inject required hidden values before validation
+        if self.request.method == "POST":
+            data = kwargs["data"].copy()  # make mutable
 
-class ThreadReplyCreateView(FullyActivatedUserMixin, CreateView):
-    """View for creating a reply to a thread."""
+            if user.type == user.UserType.EMPLOYEE:
+                data["type"] = Thread.ThreadType.FORUM
+            elif user.type == user.UserType.EMPLOYER:
+                data["visibility"] = Thread.ThreadVisibility.INTERNAL
 
-    model = Thread
-    form_class = ThreadReplyForm
-    template_name = "pages/threads/thread_reply_form.html"
+            kwargs["data"] = data
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        # Add the parent thread to the context
-        context["thread"] = get_object_or_404(Thread, pk=self.kwargs.get("pk"))
-        return context
+        return kwargs
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        user = self.request.user
+
+        # Hide restricted fields in the form
+        if user.type == user.UserType.EMPLOYEE:
+            form.fields["type"].widget = forms.HiddenInput()
+        elif user.type == user.UserType.EMPLOYER:
+            form.fields["visibility"].widget = forms.HiddenInput()
+
+        return form
 
     def form_valid(self, form):
-        # Get the parent thread
-        parent_thread = get_object_or_404(Thread, pk=self.kwargs.get("pk"))
+        user = self.request.user
+        form.instance.author = user
 
-        # Set the author to the current user
-        form.instance.author = self.request.user
+        # Enforce type and visibility rules at save level
+        # (in case someone bypasses the form)
+        if user.type == user.UserType.EMPLOYEE:
+            form.instance.company = user.workplace
+            form.instance.type = Thread.ThreadType.FORUM  # hard-enforced
+        elif user.type == user.UserType.EMPLOYER:
+            form.instance.company = user.company
+            form.instance.visibility = Thread.ThreadVisibility.INTERNAL  # hard-enforced
 
-        # Set the parent thread
-        form.instance.parent = parent_thread
-
-        # Set the company to the same as the parent thread
-        form.instance.company = parent_thread.company
-
-        # Set the type and visibility to match the parent
-        form.instance.type = parent_thread.type
-        form.instance.visibility = parent_thread.visibility
-
-        # Set a title for the reply (optional)
-        form.instance.title = f"Re: {parent_thread.title}"
-
-        messages.success(self.request, "Reply added successfully!")
+        messages.success(self.request, "Thread created successfully!")
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse("thread_detail", kwargs={"pk": self.object.parent.pk})
+        return self.object.get_absolute_url()
 
 
 class ThreadUpdateView(FullyActivatedUserMixin, UpdateView):
@@ -198,12 +226,57 @@ class ThreadUpdateView(FullyActivatedUserMixin, UpdateView):
     form_class = ThreadForm
     template_name = "pages/threads/thread_form.html"
 
-    def get_queryset(self):
-        # Only allow the author to update the thread
-        return Thread.objects.filter(author=self.request.user)
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        if self.object.author != request.user:
+            messages.error(request, "You are not allowed to edit this thread.")
+            return redirect("thread_list")
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        user = self.request.user
+
+        if self.request.method == "POST":
+            data = kwargs["data"].copy()
+
+            if user.type == user.UserType.EMPLOYEE:
+                data["type"] = Thread.ThreadType.FORUM
+            elif user.type == user.UserType.EMPLOYER:
+                data["visibility"] = Thread.ThreadVisibility.INTERNAL
+
+            kwargs["data"] = data
+
+        return kwargs
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        user = self.request.user
+
+        if user.type == user.UserType.EMPLOYEE:
+            form.fields["type"].widget = forms.HiddenInput()
+        elif user.type == user.UserType.EMPLOYER:
+            form.fields["visibility"].widget = forms.HiddenInput()
+
+        return form
+
+    def form_valid(self, form):
+        user = self.request.user
+
+        if user.type == user.UserType.EMPLOYEE:
+            form.instance.company = user.workplace
+            form.instance.type = Thread.ThreadType.FORUM
+        elif user.type == user.UserType.EMPLOYER:
+            form.instance.company = user.company
+            form.instance.visibility = Thread.ThreadVisibility.INTERNAL
+
+        messages.success(self.request, "Thread updated successfully!")
+        return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse("thread_detail", kwargs={"pk": self.object.pk})
+        return self.object.get_absolute_url()
 
 
 class ThreadDeleteView(FullyActivatedUserMixin, DeleteView):
@@ -213,19 +286,82 @@ class ThreadDeleteView(FullyActivatedUserMixin, DeleteView):
     template_name = "pages/threads/thread_confirm_delete.html"
     success_url = reverse_lazy("thread_list")
 
-    def get_queryset(self):
-        # Only allow the author to delete the thread
-        return Thread.objects.filter(author=self.request.user)
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        if self.object.author != request.user and not request.user.is_superuser:
+            messages.error(request, "You are not allowed to delete this thread.")
+            return redirect("thread_list")
+
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        # Get the thread
         thread = self.get_object()
-
-        # Soft delete the thread (BaseModel.delete() handles this)
-        thread.delete()
-
-        # Add success message
-        messages.success(self.request, f'Thread "{thread.title}" has been deleted.')
-
-        # Redirect to success URL
+        thread.delete()  # soft delete via BaseModel
+        messages.success(request, f'Thread "{thread.title}" has been deleted.')
         return HttpResponseRedirect(self.success_url)
+
+
+class ThreadReplyCreateView(FullyActivatedUserMixin, CreateView):
+    """View for creating a reply to a thread."""
+
+    model = Thread
+    form_class = ThreadReplyForm
+    template_name = "pages/threads/thread_reply_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.parent_thread = self.get_parent_thread()
+        user = request.user
+
+        # Restrict private threads to employees only
+        if (
+            self.parent_thread.visibility == Thread.ThreadVisibility.PRIVATE
+            and user.type == user.UserType.EMPLOYER
+        ):
+            messages.error(request, "Employers cannot reply to private threads.")
+            return redirect("thread_list")
+
+        # Check company match
+        same_company = (
+            user.type == user.UserType.EMPLOYEE
+            and user.workplace == self.parent_thread.company
+        ) or (
+            user.type == user.UserType.EMPLOYER
+            and getattr(user, "company", None) == self.parent_thread.company
+        )
+
+        if not same_company:
+            messages.error(request, "You do not have access to this thread.")
+            return redirect("thread_list")
+
+        # Check thread type (must be forum)
+        if self.parent_thread.type != Thread.ThreadType.FORUM:
+            messages.error(request, "You cannot reply to announcements.")
+            return redirect("thread_list")
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_parent_thread(self):
+        return get_object_or_404(Thread, pk=self.kwargs["pk"], is_deleted=False)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["thread"] = self.parent_thread
+        return context
+
+    def form_valid(self, form):
+        parent = self.parent_thread
+        user = self.request.user
+
+        form.instance.author = user
+        form.instance.parent = parent
+        form.instance.company = parent.company
+        form.instance.type = parent.type
+        form.instance.visibility = parent.visibility
+        form.instance.title = f"Re: {parent.title}"
+
+        messages.success(self.request, "Reply added successfully!")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return self.object.parent.get_absolute_url()

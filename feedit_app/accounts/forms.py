@@ -119,6 +119,12 @@ class UserProfileForm(forms.ModelForm):
             ),
             "privacy": forms.Select(attrs={"class": "select select-bordered w-full"}),
         }
+        help_texts = {
+            "privacy": (
+                "Public: any user can view; Private: nobody can view; "
+                "Internal: users within company can view"
+            ),
+        }
 
 
 class CustomResetPasswordForm(ResetPasswordForm):
