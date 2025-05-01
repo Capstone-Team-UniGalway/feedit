@@ -10,9 +10,26 @@ class ThreadForm(forms.ModelForm):
         model = Thread
         fields = ["title", "content", "type", "visibility"]
         widgets = {
+            "title": forms.TextInput(
+                attrs={
+                    "class": "input input-bordered w-full",
+                    "placeholder": "Enter a descriptive title",
+                    "required": True,
+                }
+            ),
             "content": CKEditor5Widget(
-                attrs={"class": "django_ckeditor_5"}, config_name="extends"
-            )
+                attrs={"class": "django_ckeditor_5 w-full"}, config_name="extends"
+            ),
+            "type": forms.Select(attrs={"class": "select select-bordered w-full"}),
+            "visibility": forms.Select(
+                attrs={"class": "select select-bordered w-full"}
+            ),
+        }
+        help_texts = {
+            "type": "Forum threads allow replies; announcements don't.",
+            "visibility": (
+                "Internal: visible to all. Private: visible to employees only."
+            ),
         }
 
 

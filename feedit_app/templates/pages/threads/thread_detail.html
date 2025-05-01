@@ -58,9 +58,33 @@
                     <a href="{% url 'thread_update' thread.pk %}" class="btn btn-sm btn-outline">
                         <i class="fas fa-edit mr-1"></i> Edit
                     </a>
-                    <a href="{% url 'thread_delete' thread.pk %}" class="btn btn-sm btn-outline btn-error">
+                    <button class="btn btn-sm btn-outline btn-error" onclick="delete_thread_modal.showModal()">
                         <i class="fas fa-trash mr-1"></i> Delete
-                    </a>
+                    </button>
+                    <!-- Modal -->
+                    <dialog id="delete_thread_modal" class="modal">
+                        <div class="modal-box">
+                            <h3 class="font-bold text-lg">Confirm Thread Deletion</h3>
+                            <div class="alert alert-warning my-3">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>This action cannot be undone!</span>
+                            </div>
+                            <p class="py-1 text-sm text-gray-600">Are you sure you want to delete the thread
+                                "<strong>{{ thread.title }}</strong>"?</p>
+                            <p class="py-1 text-sm text-gray-600">This will also delete all replies to this thread.</p>
+                            <div class="modal-action">
+                                <form method="post" action="{% url 'thread_delete' thread.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-error">
+                                        <i class="fas fa-exclamation-triangle mr-2"></i> Yes, Delete Thread
+                                    </button>
+                                </form>
+                                <form method="dialog">
+                                    <button class="btn">Cancel</button>
+                                </form>
+                            </div>
+                        </div>
+                    </dialog>
                     {% endif %}
                 </div>
             </div>

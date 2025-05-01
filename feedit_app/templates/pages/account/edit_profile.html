@@ -64,13 +64,25 @@
                 <h2 class="card-title">Personal Information</h2>
                 <form method="post" class="space-y-4">
                     {% csrf_token %}
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-error mb-4">
+                        {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                     {% for field in form.visible_fields %}
                     <div>
-                        <label class="label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        <label class="label" for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                            {% if field.help_text %}
+                            <div class="tooltip">
+                                <div class="tooltip-content">{{ field.help_text|safe }}</div>
+                                <i class="fas fa-circle-info"></i>
+                            </div>
+                            {% endif %}
+                        </label>
                         {% render_field field class="input input-bordered w-full" %}
-                        {% if field.help_text %}
-                        <p class="text-sm text-gray-500">{{ field.help_text }}</p>
-                        {% endif %}
                         {% for error in field.errors %}
                         <p class="text-sm text-error mt-1">{{ error }}</p>
                         {% endfor %}
@@ -96,9 +108,24 @@
                     <h3 class="font-medium text-lg mb-2">Change Password</h3>
                     <form method="post" class="space-y-4">
                         {% csrf_token %}
+                        {% if password_change_form.non_field_errors %}
+                        <div class="alert alert-error mb-4">
+                            {% for error in password_change_form.non_field_errors %}
+                            <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                         {% for field in password_change_form.visible_fields %}
                         <div>
-                            <label class="label font-medium" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            <label class="label font-medium" for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                                {% if field.help_text %}
+                                <div class="tooltip">
+                                    <div class="tooltip-content">{{ field.help_text|safe }}</div>
+                                    <i class="fas fa-circle-info"></i>
+                                </div>
+                                {% endif %}
+                            </label>
                             {% render_field field class="input input-bordered w-full" %}
                             {% for error in field.errors %}
                             <p class="text-sm text-error mt-1">{{ error }}</p>
