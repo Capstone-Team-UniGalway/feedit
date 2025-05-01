@@ -98,7 +98,7 @@
                         <div class="flex items-center gap-2">
                             <span class="flex items-center">
                                 <i class="fas fa-comment-alt text-gray-400 mr-1"></i>
-                                <span>{{ thread.replies.count }} replies</span>
+                                <span>{{ thread.reply_count }} replies</span>
                             </span>
                         </div>
                         <a href="{% url 'thread_detail' thread.pk %}" class="btn btn-sm btn-ghost">

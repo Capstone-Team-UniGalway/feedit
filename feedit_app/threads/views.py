@@ -10,7 +10,7 @@ from django.views.generic import (
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.http import HttpResponseRedirect
-from django.db.models import Q, Prefetch
+from django.db.models import Count, Q, Prefetch
 
 from .models import Thread, Mention
 from .forms import ThreadForm, ThreadReplyForm
@@ -47,8 +47,7 @@ class ThreadListView(FullyActivatedUserMixin, ListView):
             queryset = queryset.filter(type=thread_type)
 
         # Apply visibility filtering by role
-        if user.workplace:
-            # Employee: internal + private, allow narrowing by GET param
+        if user.type == user.UserType.EMPLOYEE:
             allowed_visibilities = [
                 Thread.ThreadVisibility.INTERNAL,
                 Thread.ThreadVisibility.PRIVATE,
@@ -59,8 +58,12 @@ class ThreadListView(FullyActivatedUserMixin, ListView):
             else:
                 queryset = queryset.filter(visibility__in=allowed_visibilities)
         else:
-            # Employer: only internal, no GET param filtering
             queryset = queryset.filter(visibility=Thread.ThreadVisibility.INTERNAL)
+
+        # Annotate with non-deleted reply count
+        queryset = queryset.annotate(
+            reply_count=Count("replies", filter=Q(replies__is_deleted=False))
+        )
 
         # Sorting
         sort_by = self.request.GET.get("sort", "-created_at")
@@ -76,7 +79,7 @@ class ThreadListView(FullyActivatedUserMixin, ListView):
             sort_by if sort_by in valid_sort_fields else "-created_at"
         )
 
-        return queryset.select_related("author", "company").prefetch_related("replies")
+        return queryset.select_related("author", "company")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -306,22 +309,57 @@ class ThreadReplyCreateView(FullyActivatedUserMixin, CreateView):
     form_class = ThreadReplyForm
     template_name = "pages/threads/thread_reply_form.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        self.parent_thread = self.get_parent_thread()
+        user = request.user
+
+        # Restrict private threads to employees only
+        if (
+            self.parent_thread.visibility == Thread.ThreadVisibility.PRIVATE
+            and user.type == user.UserType.EMPLOYER
+        ):
+            messages.error(request, "Employers cannot reply to private threads.")
+            return redirect("thread_list")
+
+        # Check company match
+        same_company = (
+            user.type == user.UserType.EMPLOYEE
+            and user.workplace == self.parent_thread.company
+        ) or (
+            user.type == user.UserType.EMPLOYER
+            and getattr(user, "company", None) == self.parent_thread.company
+        )
+
+        if not same_company:
+            messages.error(request, "You do not have access to this thread.")
+            return redirect("thread_list")
+
+        # Check thread type (must be forum)
+        if self.parent_thread.type != Thread.ThreadType.FORUM:
+            messages.error(request, "You cannot reply to announcements.")
+            return redirect("thread_list")
+
+        return super().dispatch(request, *args, **kwargs)
+
     def get_parent_thread(self):
         return get_object_or_404(Thread, pk=self.kwargs["pk"], is_deleted=False)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["thread"] = self.get_parent_thread()
+        context["thread"] = self.parent_thread
         return context
 
     def form_valid(self, form):
-        parent = self.get_parent_thread()
-        form.instance.author = self.request.user
+        parent = self.parent_thread
+        user = self.request.user
+
+        form.instance.author = user
         form.instance.parent = parent
         form.instance.company = parent.company
         form.instance.type = parent.type
         form.instance.visibility = parent.visibility
         form.instance.title = f"Re: {parent.title}"
+
         messages.success(self.request, "Reply added successfully!")
         return super().form_valid(form)
 
