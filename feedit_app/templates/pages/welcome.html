@@ -7,21 +7,16 @@
             <a href="{% url 'account_auth' %}?role=employee"
                 class="card bg-primary text-primary-content w-64 shadow-xl transition hover:scale-105">
                 <div class="card-body items-center text-center">
-                    <svg class="mb-2 h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                    </svg>
+                    <i class="fas fa-id-badge text-5xl mb-2 w-12 h-12" aria-hidden="true"></i>
                     <h2 class="card-title">Employee</h2>
                 </div>
             </a>
 
             <!-- Employer Button -->
             <a href="{% url 'account_auth' %}?role=employer"
-                class="card bg-base-200 text-base-content w-64 shadow-xl transition hover:scale-105">
+                class="card bg-secondary text-secondary-content w-64 shadow-xl transition hover:scale-105">
                 <div class="card-body items-center text-center">
-                    <svg class="mb-2 h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M4 4h16v16H4z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
+                    <i class="fas fa-briefcase text-5xl mb-2 w-12 h-12" aria-hidden="true"></i>
                     <h2 class="card-title">Employer</h2>
                 </div>
             </a>
