@@ -11,10 +11,12 @@ class SuperuserBypassMixin(UserPassesTestMixin):
     """
 
     def test_func(self):
-        if not self.request.user.is_authenticated:
-            return False
-        if self.request.user.is_superuser:
+        user = self.request.user
+
+        # Let the view decide on guests (don't block here)
+        if user.is_authenticated and user.is_superuser:
             return True
+
         return self.user_test_func()
 
     def user_test_func(self):
@@ -33,14 +35,20 @@ class FullyActivatedUserMixin(SuperuserBypassMixin):
     redirect_url = reverse_lazy("account_edit")
 
     def user_test_func(self):
-        # Ensure only authenticated users are checked here
         user = self.request.user
+
+        # Block guests
+        if not user.is_authenticated:
+            return False
+
+        # Check regular user activation state
         return user.is_fully_activated
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
-            # Let LoginRequiredMixin handle the redirect
+            # Let LoginRequiredMixin or default handler manage guests
             return super().handle_no_permission()
+
         messages.warning(
             self.request,
             "Please complete your profile to access this feature.",
