@@ -1,0 +1,70 @@
+<c-layouts.base>
+
+    <div class="container mx-auto">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold mb-2">{{ title|default:"Requests" }}</h1>
+            <p class="text-gray-500">{{ description|default:"View and manage requests" }}</p>
+        </div>
+
+        {% if requests %}
+        <div class="grid grid-cols-1 gap-4">
+            {% for request in requests %}
+            <div class="card bg-base-100 shadow-md">
+                <div class="card-body">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="card-title">
+                                <span class="badge badge-{{ request.get_type_badge_color }}">{{ request.get_type_display
+                                    }}</span>
+                                {{ request.title }}
+                            </h3>
+                            <p class="text-sm text-gray-500">
+                                Submitted by {{ request.author.get_full_name }} on {{ request.created_at|date:"M d, Y"
+                                }}
+                            </p>
+                        </div>
+                        <span class="badge badge-{{ request.get_status_badge_color }}">{{ request.get_status_display
+                            }}</span>
+                    </div>
+
+                    <div class="mt-4">
+                        {{ request.content|safe|truncatewords_html:50 }}
+                    </div>
+
+                    <div class="card-actions justify-end mt-4">
+                        <a href="{% url 'requests:detail' request.id %}" class="btn btn-sm btn-outline">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="join mt-10 justify-center flex">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn">«</a>
+            {% endif %}
+
+            <button class="join-item btn">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</button>
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="join-item btn">»</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="card bg-base-100 shadow-md">
+            <div class="card-body text-center py-12">
+                <i class="fas fa-inbox text-5xl text-gray-300 mb-3"></i>
+                <h3 class="text-xl font-bold">No Requests Found</h3>
+                <p class="text-gray-500">There are no requests to display at this time.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</c-layouts.base>

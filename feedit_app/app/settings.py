@@ -113,6 +113,10 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
+            "builtins": [
+                "django_cotton.templatetags.cotton",
+                "app.templatetags.cotton_fixes",
+            ],
         },
     },
 ]

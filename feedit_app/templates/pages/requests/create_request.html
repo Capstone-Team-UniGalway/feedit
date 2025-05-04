@@ -1,0 +1,50 @@
+<c-layouts.base>
+
+    <div class="container mx-auto max-w-3xl">
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title text-2xl mb-4">Submit Request</h2>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <!-- Request Type -->
+                    <div class="form-control mb-4">
+                        <label class="label font-semibold">Request Type</label>
+                        {{ form.type }}
+                        {% if form.type.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.type.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Title -->
+                    <div class="form-control mb-4">
+                        <label class="label font-semibold">Title</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.title.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Content -->
+                    <div class="form-control mb-4">
+                        <label class="label font-semibold">Message</label>
+                        {{ form.content }}
+                        {% if form.content.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.content.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex justify-end gap-2 mt-6">
+                        <a href="{% url 'companies:detail' company.id %}" class="btn btn-ghost">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane mr-2"></i> Submit Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</c-layouts.base>

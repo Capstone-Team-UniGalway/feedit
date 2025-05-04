@@ -8,6 +8,7 @@
     <div class="container mx-auto">
       <c-partials.messages />
       {{ slot }}
+      {% block content %}{% endblock %}
     </div>
   </main>
   <c-partials.footer />
