@@ -28,6 +28,70 @@ class PublicCompanyListView(ListView):
             qs = qs.filter(Q(name__icontains=query) | Q(industry__icontains=query))
         return qs.order_by("name")
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        # Add pending requests context for authenticated users
+        if user.is_authenticated and not user.workplace:
+            # Import here to avoid circular import
+            from django.apps import apps
+            Request = apps.get_model('requests', 'Request')
+
+            # Get IDs of companies where the user has pending join requests
+            pending_requests = Request.objects.filter(
+                author=user,
+                type='join',  # Using string value instead of enum
+                status='pending'  # Using string value instead of enum
+            ).values_list('company_id', flat=True)
+
+            context['pending_requests'] = list(pending_requests)
+        else:
+            context['pending_requests'] = []
+
+        return context
+
+
+class JoinCompanyView(ListView):
+    """Route: /join_company | Permission: all"""
+
+    http_method_names = ["get"]
+
+    model = Company
+    template_name = "pages/join_company.html"
+    context_object_name = "companies"
+    paginate_by = 8
+
+    def get_queryset(self):
+        query = self.request.GET.get("q", "")
+        qs = Company.objects.filter(is_deleted=False)
+        if query:
+            qs = qs.filter(Q(name__icontains=query) | Q(industry__icontains=query))
+        return qs.order_by("name")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        # Add pending requests context for authenticated users
+        if user.is_authenticated and not user.workplace:
+            # Import here to avoid circular import
+            from django.apps import apps
+            Request = apps.get_model('requests', 'Request')
+
+            # Get IDs of companies where the user has pending join requests
+            pending_requests = Request.objects.filter(
+                author=user,
+                type='join',  # Using string value instead of enum
+                status='pending'  # Using string value instead of enum
+            ).values_list('company_id', flat=True)
+
+            context['pending_requests'] = list(pending_requests)
+        else:
+            context['pending_requests'] = []
+
+        return context
+
 
 class CompanyDetailView(DetailView):
     """Route: /companies/<int:pk> | Permission: all"""
@@ -86,8 +150,27 @@ class CompanyDetailView(DetailView):
             context["has_reviewed"] = company.reviews.filter(
                 user=user, is_deleted=False
             ).exists()
+
+            # Add pending requests context for authenticated users without a workplace
+            if not user.workplace:
+                # Import here to avoid circular import
+                from django.apps import apps
+                Request = apps.get_model('requests', 'Request')
+
+                # Check if user has a pending join request for this company
+                has_pending_request = Request.objects.filter(
+                    author=user,
+                    company=company,
+                    type='join',  # Using string value instead of enum
+                    status='pending'  # Using string value instead of enum
+                ).exists()
+
+                context['pending_requests'] = [company.id] if has_pending_request else []
+            else:
+                context['pending_requests'] = []
         else:
             context["has_reviewed"] = False
+            context['pending_requests'] = []
 
         return context
 
@@ -197,3 +280,116 @@ class LeaveCompanyView(FullyActivatedUserMixin, View):
 
         messages.success(request, f"You have successfully left {company_name}.")
         return redirect("dashboard")
+
+
+class ManageRequestsView(FullyActivatedUserMixin, ListView):
+    """View for company employers to manage join requests"""
+    template_name = "pages/companies/manage_requests.html"
+    context_object_name = "requests"
+    paginate_by = 10
+
+    def get_queryset(self):
+        company = get_object_or_404(Company, pk=self.kwargs.get('pk'), is_deleted=False)
+
+        # Only company employer can access this view
+        if self.request.user != company.employer:
+            return []
+
+        # Import Request model using apps to avoid circular imports
+        from django.apps import apps
+        Request = apps.get_model('requests', 'Request')
+
+        # Get all join requests for this company
+        return Request.objects.filter(
+            company=company,
+            type='join',  # Using string value instead of enum
+            status='pending',  # Only show pending requests
+            is_deleted=False
+        ).order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        company = get_object_or_404(Company, pk=self.kwargs.get('pk'), is_deleted=False)
+        context['company'] = company
+        return context
+
+
+class ManageClaimsView(FullyActivatedUserMixin, ListView):
+    """View for admins to manage company claim requests"""
+    template_name = "pages/companies/manage_claims.html"
+    context_object_name = "requests"
+    paginate_by = 10
+
+    def user_test_func(self):
+        # Only superusers can access this view
+        return self.request.user.is_superuser
+
+    def get_queryset(self):
+        # Import Request model using apps to avoid circular imports
+        from django.apps import apps
+        Request = apps.get_model('requests', 'Request')
+
+        # Get all claim requests
+        return Request.objects.filter(
+            type='claim',  # Using string value instead of enum
+            status='pending',  # Only show pending requests
+            is_deleted=False
+        ).order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Manage Company Claims"
+        context['description'] = "Review and process requests to claim company ownership"
+        return context
+
+
+class ProcessClaimView(FullyActivatedUserMixin, View):
+    """View for processing company claim requests"""
+
+    def user_test_func(self):
+        # Only superusers can process claim requests
+        return self.request.user.is_superuser
+
+    def post(self, request, *args, **kwargs):
+        # Import Request model using apps to avoid circular imports
+        from django.apps import apps
+        Request = apps.get_model('requests', 'Request')
+
+        request_obj = get_object_or_404(Request, pk=kwargs.get('pk'), is_deleted=False)
+
+        # Verify this is a claim request
+        if request_obj.type != 'claim':
+            messages.error(request, "This is not a claim request.")
+            return redirect('companies:manage_claims')
+
+        action = request.POST.get('action')
+
+        if action == 'approve':
+            # Update request status
+            request_obj.status = Request.RequestStatus.APPROVED
+            request_obj.save()
+
+            # Update the company's employer
+            company = request_obj.company
+            if request_obj.author and request_obj.author.type == 'employer':
+                # If the company already has an employer, remove that association
+                if company.employer:
+                    old_employer = company.employer
+                    old_employer.company = None
+                    old_employer.save()
+
+                # Set the new employer
+                company.employer = request_obj.author
+                company.save()
+
+                messages.success(request, f"Claim request approved. {request_obj.author.get_full_name()} is now the employer of {company.name}.")
+            else:
+                messages.warning(request, "Claim approved but the user is not an employer type.")
+
+        elif action == 'reject':
+            request_obj.status = Request.RequestStatus.REJECTED
+            request_obj.save()
+            messages.success(request, f"Claim request rejected.")
+
+        # Redirect back to the claims management page
+        return redirect('companies:manage_claims')

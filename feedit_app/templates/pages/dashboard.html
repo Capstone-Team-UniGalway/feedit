@@ -6,7 +6,11 @@
       {% if new_account %}
       <div class="badge badge-success">New Account</div>
       {% endif %}
+      {% if user.is_superuser or user.is_staff %}
+      <div class="badge badge-primary">Admin</div>
+      {% else %}
       <div class="badge badge-primary">{{ user.type|title }}</div>
+      {% endif %}
     </div>
     <p class="text-sm text-gray-500">
       {% if user.workplace or user.company %}
@@ -162,16 +166,14 @@
           <h2 class="card-title">Requests</h2>
           {% if user.is_authenticated or user.is_superuser %}
           <div class="space-y-4">
-            {% if user.type == 'employer' %}
-            <a href="#" class="btn btn-primary btn-sm w-full">
+            {% if user.type == 'employer' and user.company %}
+            <a href="{% url 'companies:manage_requests' user.company.id %}" class="btn btn-primary btn-sm w-full">
               <i class="fas fa-user-plus mr-1"></i> Manage Join Requests
-              <span class="badge badge-secondary ml-1">0</span>
             </a>
             {% endif %}
             {% if user.is_superuser %}
-            <a href="#" class="btn btn-info btn-sm w-full">
+            <a href="{% url 'companies:manage_claims' %}" class="btn btn-info btn-sm w-full">
               <i class="fas fa-building mr-1"></i> Manage Company Claims
-              <span class="badge badge-secondary ml-1">0</span>
             </a>
             {% endif %}
           </div>

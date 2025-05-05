@@ -1,0 +1,26 @@
+<div class="card bg-base-100 shadow-md">
+    <div class="card-body">
+        <div class="flex justify-between items-start">
+            <div>
+                <h3 class="card-title">
+                    <span class="badge badge-{{ request.get_type_badge_color }}">{{ request.get_type_display }}</span>
+                    {{ request.title }}
+                </h3>
+                <p class="text-sm text-gray-500">
+                    Submitted by {{ request.author.get_full_name }} on {{ request.created_at|date:"M d, Y" }}
+                </p>
+            </div>
+            <span class="badge badge-{{ request.get_status_badge_color }}">{{ request.get_status_display }}</span>
+        </div>
+        
+        <div class="mt-4">
+            {{ request.content|safe|truncatewords_html:50 }}
+        </div>
+        
+        <div class="card-actions justify-end mt-4">
+            <a href="{% url 'requests:detail' request.id %}" class="btn btn-sm btn-outline">
+                View Details
+            </a>
+        </div>
+    </div>
+</div>

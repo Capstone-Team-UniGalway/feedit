@@ -32,10 +32,16 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {% for company in companies %}
         <!-- Example Card -->
-        <div class="card bg-base-100 shadow-xl">
+        <div
+            class="card {% if user.workplace == company %}bg-base-100 shadow-xl border-2 border-success{% else %}bg-base-100 shadow-xl{% endif %}">
             <figure>
                 <img src="{{ company.profile_picture }}" alt="{{ company.name }} logo"
                     class="h-36 w-full object-cover" />
+                {% if user.workplace == company %}
+                <div class="absolute top-2 right-2 badge badge-success gap-1">
+                    <i class="fas fa-briefcase"></i> Current Workplace
+                </div>
+                {% endif %}
             </figure>
             <div class="card-body">
                 <h2 class="card-title truncate">{{ company.name }}</h2>
@@ -50,18 +56,28 @@
                 {% endif %}
                 <div class="card-actions justify-end mt-2">
                     <a href="{% url 'companies:detail' company.id %}" class="btn btn-sm btn-outline">View Profile</a>
-                    {% if user.is_authenticated and not user.workplace %}
-                    {% if company.id in pending_requests %}
+
+                    {% if user.is_authenticated %}
+                    {% if user.workplace == company %}
+                    <!-- Leave current workplace -->
+                    <button class="btn btn-sm btn-error" onclick="leave_company_modal.showModal()">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Leave Company
+                    </button>
+                    {% elif company.employer == user %}
+                    <!-- User owns this company -->
+                    <button class="btn btn-sm btn-disabled">
+                        <i class="fas fa-check mr-1"></i> You Own This
+                    </button>
+                    {% elif not user.workplace and company.id in pending_requests %}
+                    <!-- User has a pending request -->
                     <button class="btn btn-sm btn-disabled">
                         <i class="fas fa-clock mr-1"></i> Request Pending
                     </button>
-                    {% else %}
-                    <form method="post" action="{# {% url 'join_company_request' company.id %} #}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-primary">
-                            <i class="fas fa-plus mr-1"></i> Join
-                        </button>
-                    </form>
+                    {% elif not user.workplace %}
+                    <!-- User can join this company -->
+                    <a href="{% url 'requests:create' company.id %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus mr-1"></i> Join
+                    </a>
                     {% endif %}
                     {% endif %}
                 </div>
@@ -115,5 +131,29 @@
         </a>
         {% endif %}
     </div>
+    {% endif %}
+    <!-- Leave Company Modal -->
+    {% if user.is_authenticated and user.workplace %}
+    <dialog id="leave_company_modal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg">
+                Confirm Leaving {{ user.workplace.name }}
+            </h3>
+            <p class="py-4 text-sm text-gray-600">
+                Are you absolutely sure? This action is permanent.
+            </p>
+            <div class="modal-action">
+                <form method="post" action="{% url 'companies:leave' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-error">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> Yes, Leave Company
+                    </button>
+                </form>
+                <form method="dialog">
+                    <button class="btn">Cancel</button>
+                </form>
+            </div>
+        </div>
+    </dialog>
     {% endif %}
 </c-layouts.base>

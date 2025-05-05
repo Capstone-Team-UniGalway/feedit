@@ -33,6 +33,13 @@ class Request(BaseModel):
     title = models.CharField(max_length=255)
     content = CKEditor5Field()
 
+    def __str__(self):
+        return f"{self.get_type_display()} Request: {self.title}"
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('requests:detail', kwargs={'pk': self.pk})
+
 
 # Replies to private employee requests
 class RequestReply(BaseModel):
