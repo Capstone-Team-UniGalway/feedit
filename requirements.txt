@@ -28,7 +28,7 @@ pycparser==2.22
 pytest==8.3.5
 pytest-django==4.11.1
 python-dateutil==2.9.0.post0
-qrcode==8.0
+qrcode==8.2
 s3transfer==0.11.4
 six==1.17.0
 sqlparse==0.5.3
