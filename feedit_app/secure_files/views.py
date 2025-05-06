@@ -111,22 +111,23 @@ class JoinRequestFileDownloadView(LoginRequiredMixin, View):
         # Check permissions based on user role
         user = request.user
 
+        # Superusers can always access files
+        if user.is_superuser:
+            # Allow access - superusers can see all files
+            pass
         # Check if user is an employee
-        if user.type == 'employee':
+        elif user.type == 'employee':
             # Employee can only access their own join request files
-            if join_request.author_id != user.id:
+            if join_request.author != user:
                 raise PermissionDenied("You don't have permission to access this file")
-
         # Check if user is an employer
         elif user.type == 'employer':
             # Employer can only access join request files for their company
             company = join_request.company
-            if not company.is_claimed or company.employer_id != user.id:
+            if not company or company.employer != user:
                 raise PermissionDenied("You don't have permission to access this file")
-
-        # Check if user is an admin (superuser)
-        elif not user.is_superuser:
-            # If not an employee, employer, or admin, deny access
+        # Other user types cannot access join request files
+        else:
             raise PermissionDenied("You don't have permission to access this file")
 
         # If all checks pass, return the file
@@ -167,19 +168,17 @@ class ClaimRequestFileDownloadView(LoginRequiredMixin, View):
         # Check permissions based on user role
         user = request.user
 
-        # Check if user is an employee - deny access
-        if user.type == 'employee':
-            raise PermissionDenied("You don't have permission to access this file")
-
+        # Superusers can always access files
+        if user.is_superuser:
+            # Allow access - superusers can see all files
+            pass
         # Check if user is an employer
         elif user.type == 'employer':
             # Employer can only access their own claim request files
-            if claim_request.author_id != user.id:
+            if claim_request.author != user:
                 raise PermissionDenied("You don't have permission to access this file")
-
-        # Check if user is an admin (superuser)
-        elif not user.is_superuser:
-            # If not an employer or admin, deny access
+        # Employees and other user types cannot access claim request files
+        else:
             raise PermissionDenied("You don't have permission to access this file")
 
         # If all checks pass, return the file

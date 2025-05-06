@@ -378,6 +378,21 @@ class ProcessClaimView(FullyActivatedUserMixin, View):
                     old_employer.company = None
                     old_employer.save()
 
+                # Check if the new employer is already associated with another company
+                try:
+                    existing_company = request_obj.author.company
+                    if existing_company and existing_company != company:
+                        # Remove the employer from their current company
+                        existing_company.employer = None
+                        existing_company.save()
+                        messages.info(
+                            request,
+                            f"{request_obj.author.get_full_name()} has been removed as the employer of {existing_company.name}."
+                        )
+                except:
+                    # No existing company or error accessing it, continue
+                    pass
+
                 # Set the new employer
                 company.employer = request_obj.author
                 company.save()

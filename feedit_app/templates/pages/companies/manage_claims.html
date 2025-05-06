@@ -41,9 +41,16 @@
                                     <div class="font-bold">{{ request.company.name }}</div>
                                     <div class="text-sm opacity-50">
                                         {% if request.company.employer %}
-                                        Currently owned by: {{ request.company.employer.get_full_name }}
+                                        <span class="text-warning">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                                            Ownership dispute - Currently owned by: {{
+                                            request.company.employer.get_full_name }}
+                                        </span>
                                         {% else %}
-                                        Currently unclaimed
+                                        <span class="text-info">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            New claim for unclaimed company
+                                        </span>
                                         {% endif %}
                                     </div>
                                 </td>
@@ -54,38 +61,45 @@
                                         ago</span>
                                 </td>
                                 <td>
-                                    {% if request.message %}
-                                    {{ request.message }}
+                                    {% if request.content %}
+                                    {{ request.content|truncatechars:100|safe }}
                                     {% else %}
                                     <span class="text-gray-400">No message provided</span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if request.verification_document %}
-                                    <a href="{{ request.verification_document.url }}" target="_blank"
-                                        class="btn btn-sm btn-outline">
-                                        <i class="fas fa-file-alt mr-1"></i> View
+                                    {% load secure_files_tags %}
+                                    {% get_object_files request as files %}
+                                    {% if files %}
+                                    <a href="{% url 'requests:detail' request.id %}" class="btn btn-sm btn-outline">
+                                        <i class="fas fa-file-alt mr-1"></i> View Files ({{ files|length }})
                                     </a>
                                     {% else %}
-                                    <span class="text-gray-400">No document</span>
+                                    <span class="text-gray-400">No documents</span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <div class="flex gap-2">
-                                        <form method="post" action="{% url 'companies:process_claim' request.id %}">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="action" value="approve">
-                                            <button type="submit" class="btn btn-success btn-sm">
-                                                <i class="fas fa-check mr-1"></i> Approve
-                                            </button>
-                                        </form>
-                                        <form method="post" action="{% url 'companies:process_claim' request.id %}">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="action" value="reject">
-                                            <button type="submit" class="btn btn-error btn-sm">
-                                                <i class="fas fa-times mr-1"></i> Reject
-                                            </button>
-                                        </form>
+                                    <div class="flex flex-col gap-2">
+                                        <a href="{% url 'requests:detail' request.id %}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-eye mr-1"></i> View Details
+                                        </a>
+
+                                        <div class="flex gap-2">
+                                            <form method="post" action="{% url 'requests:process' request.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="approve">
+                                                <button type="submit" class="btn btn-success btn-sm">
+                                                    <i class="fas fa-check mr-1"></i> Approve
+                                                </button>
+                                            </form>
+                                            <form method="post" action="{% url 'requests:process' request.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="reject">
+                                                <button type="submit" class="btn btn-error btn-sm">
+                                                    <i class="fas fa-times mr-1"></i> Reject
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>

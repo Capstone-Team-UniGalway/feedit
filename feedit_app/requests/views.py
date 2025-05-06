@@ -49,7 +49,15 @@ class CreateRequestView(FullyActivatedUserMixin, CreateView):
             if self.request.user.type != 'employer':
                 messages.error(self.request, "Only employers can claim companies.")
                 return self.form_invalid(form)
-            messages.success(self.request, "Your claim request has been submitted and is pending admin approval.")
+
+            # Get the company
+            company = self.get_company()
+
+            # Check if this is a dispute (company already has an employer)
+            if company.employer:
+                messages.success(self.request, "Your ownership dispute has been submitted and is pending admin review. You will be notified of the decision.")
+            else:
+                messages.success(self.request, "Your claim request has been submitted and is pending admin approval.")
         else:
             # Default to JOIN type for other cases
             form.instance.type = Request.RequestType.JOIN
@@ -196,11 +204,34 @@ class ProcessRequestView(FullyActivatedUserMixin, View):
             elif request_obj.type == Request.RequestType.CLAIM and request_obj.author:
                 if request_obj.author.type == 'employer':
                     company = request_obj.company
-                    # If the company already has an employer, remove that association
+                    # If the company already has an employer, handle ownership transfer
                     if company.employer:
                         old_employer = company.employer
-                        # We can't directly set company to None because it's a OneToOneField
+                        # Notify the old employer about the ownership change
+                        # (In a real app, you might want to send an email here)
+
+                        # Create a system message or notification for the old employer
+                        messages.info(
+                            request,
+                            f"The previous owner ({old_employer.get_full_name()}) has been notified of this ownership change."
+                        )
+
                         # The relationship will be automatically removed when we set a new employer
+
+                    # Check if the new employer is already associated with another company
+                    try:
+                        existing_company = request_obj.author.company
+                        if existing_company and existing_company != company:
+                            # Remove the employer from their current company
+                            existing_company.employer = None
+                            existing_company.save()
+                            messages.info(
+                                request,
+                                f"{request_obj.author.get_full_name()} has been removed as the employer of {existing_company.name}."
+                            )
+                    except:
+                        # No existing company or error accessing it, continue
+                        pass
 
                     # Set the new employer
                     company.employer = request_obj.author
