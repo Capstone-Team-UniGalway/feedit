@@ -1,0 +1,61 @@
+{% comment %}
+Secure File List Component
+
+Usage:
+{% include "components/secure_file_list.html" with files=files %}
+
+Parameters:
+- files: QuerySet of SecureFile objects
+- show_delete: (Optional) Whether to show delete buttons
+{% endcomment %}
+
+{% load static %}
+{% load secure_files_tags %}
+
+<div class="secure-file-list">
+    {% if files %}
+    <div class="overflow-x-auto">
+        <table class="table table-zebra w-full">
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Size</th>
+                    <th>Uploaded</th>
+                    {% if show_delete %}
+                    <th>Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for file in files %}
+                <tr>
+                    <td>
+                        {% get_file_url file as file_url %}
+                        <a href="{{ file_url }}" class="link link-primary flex items-center">
+                            <i class="fas fa-file mr-2"></i> {{ file.filename }}
+                        </a>
+                    </td>
+                    <td>{{ file.size|filesizeformat }}</td>
+                    <td>{{ file.created_at|date:"M d, Y" }}</td>
+                    {% if show_delete %}
+                    <td>
+                        <form method="post" action="{% url 'secure_files:delete' file_id=file.id %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-error"
+                                onclick="return confirm('Are you sure you want to delete this file?')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle mr-2"></i> No files attached.
+    </div>
+    {% endif %}
+</div>
