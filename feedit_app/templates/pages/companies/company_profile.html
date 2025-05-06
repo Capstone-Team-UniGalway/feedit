@@ -64,11 +64,20 @@
                 <!-- Company is claimed, show join request option -->
                 {% if company.id in pending_requests %}
                 <button class="btn btn-sm btn-disabled">
-                    <i class="fas fa-clock mr-1"></i> Join Request Pending
+                    <i class="fas fa-clock mr-1"></i>
+                    {% if request.user.type == 'employer' %}
+                    Claim Request Pending
+                    {% else %}
+                    Join Request Pending
+                    {% endif %}
                 </button>
                 {% else %}
                 <a href="{% url 'requests:create' company.id %}" class="btn btn-sm btn-primary">
+                    {% if request.user.type == 'employer' %}
+                    <i class="fas fa-flag mr-1"></i> Claim Company
+                    {% else %}
                     <i class="fas fa-plus mr-1"></i> Request to Join
+                    {% endif %}
                 </a>
                 {% endif %}
 

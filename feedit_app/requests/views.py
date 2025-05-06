@@ -14,6 +14,12 @@ class CreateRequestView(FullyActivatedUserMixin, CreateView):
     form_class = RequestForm
     template_name = 'pages/requests/create_request.html'
 
+    def get_form_kwargs(self):
+        """Pass the current user to the form."""
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         company_id = self.kwargs.get('company_id')
@@ -25,9 +31,16 @@ class CreateRequestView(FullyActivatedUserMixin, CreateView):
 
     def get_initial(self):
         initial = super().get_initial()
-        # Pre-fill the form with join request type
-        initial['type'] = Request.RequestType.JOIN
-        initial['title'] = f"Request to join {self.get_company().name}"
+        company_name = self.get_company().name
+
+        # Set appropriate initial values based on user type
+        if self.request.user.type == 'employer':
+            initial['type'] = Request.RequestType.CLAIM
+            initial['title'] = f"Request to claim {company_name}"
+        else:
+            initial['type'] = Request.RequestType.JOIN
+            initial['title'] = f"Request to join {company_name}"
+
         return initial
 
     def get_company(self):
@@ -40,18 +53,13 @@ class CreateRequestView(FullyActivatedUserMixin, CreateView):
     def form_valid(self, form):
         form.instance.author = self.request.user
         form.instance.company_id = self.kwargs.get('company_id')
+        user = self.request.user
+        company = self.get_company()
 
-        # Use the type selected in the form
-        request_type = form.cleaned_data.get('type')
-
-        if request_type == Request.RequestType.CLAIM:
-            # Ensure only employers can make claim requests
-            if self.request.user.type != 'employer':
-                messages.error(self.request, "Only employers can claim companies.")
-                return self.form_invalid(form)
-
-            # Get the company
-            company = self.get_company()
+        # Force the correct request type based on user type
+        if user.type == 'employer':
+            # Employers can only make claim requests
+            form.instance.type = Request.RequestType.CLAIM
 
             # Check if this is a dispute (company already has an employer)
             if company.employer:
@@ -59,7 +67,7 @@ class CreateRequestView(FullyActivatedUserMixin, CreateView):
             else:
                 messages.success(self.request, "Your claim request has been submitted and is pending admin approval.")
         else:
-            # Default to JOIN type for other cases
+            # Employees can only make join requests
             form.instance.type = Request.RequestType.JOIN
             messages.success(self.request, "Your join request has been submitted successfully.")
 
