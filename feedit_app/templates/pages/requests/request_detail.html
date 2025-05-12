@@ -1,5 +1,5 @@
+{% load request_tags secure_files_tags %}
 <c-layouts.base>
-
     <div class="container mx-auto max-w-4xl">
         <!-- Request Details -->
         <div class="card bg-base-100 shadow-xl mb-6">
@@ -7,7 +7,7 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <h2 class="card-title text-2xl">
-                            <span class="badge badge-{{ request.get_type_badge_color }}">{{ request.get_type_display
+                            <span class="badge badge-{{ request.type|get_type_badge_color }}">{{ request.get_type_display
                                 }}</span>
                             {{ request.title }}
                         </h2>
@@ -15,7 +15,7 @@
                             Submitted by {{ request.author.get_full_name }} on {{ request.created_at|date:"M d, Y" }}
                         </p>
                     </div>
-                    <span class="badge badge-lg badge-{{ request.get_status_badge_color }}">{{
+                    <span class="badge badge-lg badge-{{ request.status|get_status_badge_color }}">{{
                         request.get_status_display }}</span>
                 </div>
 

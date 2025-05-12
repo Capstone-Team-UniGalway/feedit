@@ -188,9 +188,9 @@ class CreateCompanyView(FullyActivatedUserMixin, CreateView):
 
 
 class EditCompanyView(FullyActivatedUserMixin, UpdateView):
-    """Route: /company/<int:pk>/edit | GET/PUT"""
+    """Route: /company/<int:pk>/edit | GET/POST"""
 
-    http_method_names = ["get", "put"]
+    http_method_names = ["get", "post"]
 
     model = Company
     form_class = CompanyForm
@@ -243,40 +243,6 @@ class LeaveCompanyView(FullyActivatedUserMixin, View):
 
         messages.success(request, f"You have successfully left {company_name}.")
         return redirect("dashboard")
-
-
-class ManageRequestsView(FullyActivatedUserMixin, ListView):
-    """View for company employers to manage join requests"""
-
-    template_name = "pages/companies/manage_requests.html"
-    context_object_name = "requests"
-    paginate_by = 10
-
-    def get_queryset(self):
-        company = get_object_or_404(Company, pk=self.kwargs.get("pk"), is_deleted=False)
-
-        # Only company employer can access this view
-        if self.request.user != company.employer:
-            return []
-
-        # Import Request model using apps to avoid circular imports
-        from django.apps import apps
-
-        Request = apps.get_model("requests", "Request")
-
-        # Get all join requests for this company
-        return Request.objects.filter(
-            company=company,
-            type="join",  # Using string value instead of enum
-            status="pending",  # Only show pending requests
-            is_deleted=False,
-        ).order_by("-created_at")
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        company = get_object_or_404(Company, pk=self.kwargs.get("pk"), is_deleted=False)
-        context["company"] = company
-        return context
 
 
 class ManageClaimsView(FullyActivatedUserMixin, ListView):
@@ -357,9 +323,10 @@ class ProcessClaimView(FullyActivatedUserMixin, View):
                         existing_company.save()
                         messages.info(
                             request,
-                            f"{request_obj.author.get_full_name()} has been removed as the employer of {existing_company.name}.",
+                            f"{request_obj.author.get_full_name()} has been removed as "
+                            f"the employer of {existing_company.name}.",
                         )
-                except:
+                except Exception:
                     # No existing company or error accessing it, continue
                     pass
 
@@ -369,7 +336,8 @@ class ProcessClaimView(FullyActivatedUserMixin, View):
 
                 messages.success(
                     request,
-                    f"Claim request approved. {request_obj.author.get_full_name()} is now the employer of {company.name}.",
+                    f"Claim request approved. {request_obj.author.get_full_name()} is "
+                    f"now the employer of {company.name}.",
                 )
             else:
                 messages.warning(
@@ -379,7 +347,7 @@ class ProcessClaimView(FullyActivatedUserMixin, View):
         elif action == "reject":
             request_obj.status = Request.RequestStatus.REJECTED
             request_obj.save()
-            messages.success(request, f"Claim request rejected.")
+            messages.success(request, "Claim request rejected.")
 
         # Redirect back to the claims management page
         return redirect("companies:manage_claims")

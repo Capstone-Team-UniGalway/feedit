@@ -1,5 +1,5 @@
+{% load request_tags secure_files_tags %}
 <c-layouts.base>
-
     <div class="container mx-auto">
         <div class="mb-8">
             <h1 class="text-3xl font-bold mb-2">{{ title|default:"Requests" }}</h1>
@@ -14,17 +14,17 @@
                     <div class="flex justify-between items-start">
                         <div>
                             <h3 class="card-title">
-                                <span class="badge badge-{{ request.get_type_badge_color }}">{{ request.get_type_display
-                                    }}</span>
+                                <span
+                                    class="badge badge-{{ request.type|get_type_badge_color }}">{{ request.get_type_display }}</span>
                                 {{ request.title }}
                             </h3>
                             <p class="text-sm text-gray-500">
-                                Submitted by {{ request.author.get_full_name }} on {{ request.created_at|date:"M d, Y"
-                                }}
+                                Submitted by {{ request.author.get_full_name }} on
+                                {{ request.created_at|date:"M d, Y" }}
                             </p>
                         </div>
-                        <span class="badge badge-{{ request.get_status_badge_color }}">{{ request.get_status_display
-                            }}</span>
+                        <span
+                            class="badge badge-{{ request.status|get_status_badge_color }}">{{ request.get_status_display }}</span>
                     </div>
 
                     <div class="mt-4">
@@ -35,6 +35,34 @@
                         <a href="{% url 'requests:detail' request.id %}" class="btn btn-sm btn-outline">
                             View Details
                         </a>
+
+                        {% if company and request.status == "pending" and request.type == "join" %}
+                        {% if user == company.employer or user.is_superuser %}
+                        <!-- Approve/Reject Buttons -->
+                        <form method="post" action="{% url 'requests:process' request.id %}" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="approve">
+                            <button type="submit" class="btn btn-sm btn-success ml-2">
+                                <i class="fas fa-check mr-1"></i> Approve
+                            </button>
+                        </form>
+                        <form method="post" action="{% url 'requests:process' request.id %}" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="reject">
+                            <button type="submit" class="btn btn-sm btn-error ml-1">
+                                <i class="fas fa-times mr-1"></i> Reject
+                            </button>
+                        </form>
+                        {% endif %}
+                        {% elif not company and request.status == "pending" and request.author == user %}
+                        <!-- Cancel Button -->
+                        <form method="post" action="#">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-warning ml-2">
+                                <i class="fas fa-ban mr-1"></i> Cancel Request
+                            </button>
+                        </form>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -45,26 +73,43 @@
         {% if is_paginated %}
         <div class="join mt-10 justify-center flex">
             {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn">«</a>
+            <a href="?page=1" class="join-item btn">
+                <i class="fas fa-angles-left"></i>
+            </a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn">
+                <i class="fas fa-angle-left"></i>
+            </a>
             {% endif %}
 
-            <button class="join-item btn">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</button>
+            {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <a href="?page={{ num }}" class="join-item btn btn-active">{{ num }}</a>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <a href="?page={{ num }}" class="join-item btn">{{ num }}</a>
+            {% endif %}
+            {% endfor %}
 
             {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}" class="join-item btn">»</a>
+            <a href="?page={{ page_obj.next_page_number }}" class="join-item btn">
+                <i class="fas fa-angle-right"></i>
+            </a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="join-item btn">
+                <i class="fas fa-angles-right"></i>
+            </a>
             {% endif %}
         </div>
         {% endif %}
-
         {% else %}
         <div class="card bg-base-100 shadow-md">
             <div class="card-body text-center py-12">
                 <i class="fas fa-inbox text-5xl text-gray-300 mb-3"></i>
                 <h3 class="text-xl font-bold">No Requests Found</h3>
                 <p class="text-gray-500">There are no requests to display at this time.</p>
+                <a href="{% url 'dashboard' %}" class="btn btn-primary">
+                    <i class="fas fa-home mr-2"></i> Back to Dashboard
+                </a>
             </div>
         </div>
         {% endif %}
     </div>
-
 </c-layouts.base>

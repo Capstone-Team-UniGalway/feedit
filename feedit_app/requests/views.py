@@ -1,4 +1,5 @@
 from django.views.generic import CreateView, ListView, DetailView, View
+from django.utils.functional import cached_property
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from django.urls import reverse
@@ -15,68 +16,75 @@ class CreateRequestView(FullyActivatedUserMixin, CreateView):
     form_class = RequestForm
     template_name = "pages/requests/create_request.html"
 
+    @cached_property
+    def company(self):
+        company_id = self.kwargs.get("company_id")
+        if company_id:
+            return get_object_or_404(Company, id=company_id, is_deleted=False)
+
+        user = self.request.user
+        return (
+            user.workplace
+            if user.type == "employee"
+            else getattr(user, "company", None)
+        )
+
     def dispatch(self, request, *args, **kwargs):
-        self.user = request.user
+        self.request_type = self.determine_request_type()
+        return super().dispatch(request, *args, **kwargs)
 
-        if "company_id" in kwargs:
-            company_id = kwargs.get("company_id")
-            self.request_type = "claim" if self.user.type == "employer" else "join"
+    def determine_request_type(self):
+        if "company_id" in self.kwargs:
+            if self.request.user.type == "employer":
+                return Request.RequestType.CLAIM
+            return Request.RequestType.JOIN
+        return Request.RequestType.OTHER
 
-            self.company = get_object_or_404(Company, id=company_id)
+    def user_test_func(self):
+        user = self.request.user
 
-            # 🔍 Check for pending request FIRST
-            existing_request = Request.objects.filter(
-                author=self.user,
+        if not user.is_authenticated or not user.is_fully_activated:
+            return False
+
+        # Block if no associated company (only applies to 'other')
+        if not self.company:
+            self.permission_denied_message = (
+                "You need to join a company before making requests."
+            )
+            self.permission_denied_redirect_url = "companies:list"
+            return False
+
+        # Block multiple pending requests (only for 'join' and 'claim')
+        if self.request_type in [Request.RequestType.JOIN, Request.RequestType.CLAIM]:
+            if user.has_company:
+                self.permission_denied_message = (
+                    f"You cannot make {self.request_type} requests while you are "
+                    "already part of a company."
+                )
+                self.permission_denied_redirect_url = "dashboard"
+                return False
+
+            existing = Request.objects.filter(
+                author=user,
                 type=self.request_type,
                 status=Request.RequestStatus.PENDING,
                 is_deleted=False,
             ).first()
 
-            if existing_request:
-                return self.handle_no_permission(
+            if existing:
+                self.permission_denied_message = (
                     "You already have a pending request. Please wait for a response or "
-                    "cancel it before submitting a new one.",
-                    "requests:list",
+                    "cancel it before submitting a new one."
                 )
+                self.permission_denied_redirect_url = "requests:list"
+                return False
 
-            # 🔒 THEN block if user already part of a company
-            if self.user.has_company:
-                return self.handle_no_permission(
-                    f"You cannot make {self.request_type} requests while you are "
-                    "already part of a company",
-                    "dashboard",
-                )
-
-        else:
-            self.request_type = "other"
-            if self.user.workplace:
-                company_id = self.user.workplace.id
-            elif getattr(self.user, "company", None):
-                company_id = self.user.company.id
-            else:
-                return self.handle_no_permission(
-                    "You need to join a company before making requests.",
-                    "companies:list",
-                )
-            self.company = get_object_or_404(Company, id=company_id)
-
-        return super().dispatch(request, *args, **kwargs)
-
-    def handle_no_permission(self, msg=None, route="companies:list"):
-        if (
-            not self.request.user.is_authenticated
-            or not self.request.user.is_fully_activated
-        ):
-            return super().handle_no_permission()
-
-        if msg:
-            messages.warning(self.request, msg)
-        return redirect(route)
+        return True
 
     def get_form_kwargs(self):
         """Pass the current user and request type to the form."""
         kwargs = super().get_form_kwargs()
-        kwargs["user"] = self.user
+        kwargs["user"] = self.request.user
         kwargs["request_type"] = self.request_type
         return kwargs
 
@@ -89,52 +97,45 @@ class CreateRequestView(FullyActivatedUserMixin, CreateView):
         initial = super().get_initial()
         company_name = self.company.name
 
-        # Set appropriate initial values based on request type
-        if self.request_type == "claim":
+        if self.request_type == Request.RequestType.CLAIM:
             initial["title"] = f"Request to claim {company_name}"
-        elif self.request_type == "join":
+        elif self.request_type == Request.RequestType.JOIN:
             initial["title"] = f"Request to join {company_name}"
         else:
             initial["title"] = f"Request to {company_name}"
+
         initial["type"] = self.request_type
         return initial
 
     def form_valid(self, form):
-        form.instance.author = self.user
+        form.instance.author = self.request.user
         form.instance.company = self.company
         form.instance.type = self.request_type
-        company = self.company
 
-        # Contextual messages
-        if self.request_type == "claim":
-            if company.employer:
-                msg = (
-                    "Your ownership dispute has been submitted and is pending "
-                    "admin review."
+        if self.request_type == Request.RequestType.CLAIM:
+            msg = (
+                "Your ownership dispute has been submitted and is pending admin review."
+                if self.company.employer
+                else (
+                    "Your claim request has been submitted and is pending "
+                    "admin approval."
                 )
-            else:
-                msg = (
-                    "Your claim request has been submitted and is pending admin "
-                    "approval."
-                )
-        elif self.request_type == "join":
+            )
+        elif self.request_type == Request.RequestType.JOIN:
             msg = "Your join request has been submitted successfully."
         else:
             msg = "Your request has been submitted to your company."
-        messages.success(self.request, msg)
 
+        messages.success(self.request, msg)
         response = super().form_valid(form)
 
-        # Handle optional secure file upload
         file = self.request.FILES.get("verification_document")
         if file:
-            from django.contrib.contenttypes.models import ContentType
-
             SecureFile.objects.create(
                 content_type=ContentType.objects.get_for_model(Request),
                 object_id=self.object.id,
                 file=file,
-                uploaded_by=self.user,
+                uploaded_by=self.request.user,
             )
             messages.success(
                 self.request, "Verification document uploaded successfully."
@@ -147,6 +148,23 @@ class RequestDetailView(FullyActivatedUserMixin, DetailView):
     model = Request
     template_name = "pages/requests/request_detail.html"
     context_object_name = "request"
+
+    def user_test_func(self):
+        user = self.request.user
+        obj = self.get_object()
+
+        if not user.is_authenticated or not user.is_fully_activated:
+            return False
+
+        if obj.author == user or obj.company.employer == user or user.is_superuser:
+            return True
+
+        # Store custom denial reason
+        self.permission_denied_message = (
+            "You do not have permission to view this request."
+        )
+        self.permission_denied_redirect_url = "dashboard"
+        return False
 
     def get_queryset(self):
         return Request.objects.filter(is_deleted=False)
@@ -188,35 +206,52 @@ class RequestListView(FullyActivatedUserMixin, ListView):
     context_object_name = "requests"
     paginate_by = 10
 
-    def get_queryset(self):
-        user = self.request.user
-        # Show requests created by the current user
-        return Request.objects.filter(author=user, is_deleted=False).order_by(
-            "-created_at"
-        )
-
-
-class CompanyRequestListView(FullyActivatedUserMixin, ListView):
-    model = Request
-    template_name = "pages/requests/request_list.html"
-    context_object_name = "requests"
-    paginate_by = 10
-
-    def get_queryset(self):
+    @cached_property
+    def company(self):
         company_id = self.kwargs.get("company_id")
-        company = get_object_or_404(Company, id=company_id)
+        if company_id:
+            return get_object_or_404(Company, id=company_id, is_deleted=False)
+        return None
 
-        # Only company employer can see company requests
-        if self.request.user != company.employer:
-            return Request.objects.none()
+    def user_test_func(self):
+        user = self.request.user
 
-        return Request.objects.filter(company=company, is_deleted=False).order_by(
-            "-created_at"
-        )
+        if not user.is_authenticated or not user.is_fully_activated:
+            return False
+
+        if self.company:
+            if user.is_superuser or user == self.company.employer:
+                return True
+
+            # Set denial message and redirect target
+            self.permission_denied_message = (
+                "You don't have permission to view this company's requests."
+            )
+            self.permission_denied_redirect_url = "requests:list"
+            return False
+
+        return True  # fallback for self requests view
+
+    def get_queryset(self):
+        if self.company:
+            # Only show pending requests for employers
+            return Request.objects.filter(
+                company=self.company, is_deleted=False
+            ).order_by("-created_at")
+        else:
+            return Request.objects.filter(
+                author=self.request.user, is_deleted=False
+            ).order_by("-created_at")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["company_view"] = True
+
+        if self.company:
+            context["company"] = self.company
+            context["title"] = f"Requests for {self.company.name}"
+        else:
+            context["title"] = "My Requests"
+
         return context
 
 

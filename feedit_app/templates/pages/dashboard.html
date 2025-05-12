@@ -167,7 +167,7 @@
           {% if user.is_authenticated or user.is_superuser %}
           <div class="space-y-4">
             {% if user.type == 'employer' and user.company %}
-            <a href="{% url 'companies:manage_requests' user.company.id %}" class="btn btn-primary btn-sm w-full">
+            <a href="{% url 'requests:company' user.company.id %}" class="btn btn-primary btn-sm w-full">
               <i class="fas fa-user-plus mr-1"></i> Manage Join Requests
             </a>
             {% endif %}

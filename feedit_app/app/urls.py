@@ -28,31 +28,11 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("companies/", include("companies.urls")),
     path("", WelcomeView.as_view(), name="home"),
-    path(
-        "claim_company",
-        TemplateView.as_view(template_name="pages/claim_company.html"),
-        name="claim_company",
-    ),
     path("dashboard", DashboardView.as_view(), name="dashboard"),
-    path(
-        "edit_profile",
-        TemplateView.as_view(template_name="pages/edit_profile.html"),
-        name="edit_profile",
-    ),
     path(
         "privacy",
         TemplateView.as_view(template_name="pages/privacy.html"),
         name="privacy",
-    ),
-    path(
-        "profile",
-        TemplateView.as_view(template_name="pages/profile.html"),
-        name="profile",
-    ),
-    path(
-        "register_login",
-        TemplateView.as_view(template_name="pages/register_login.html"),
-        name="register_login",
     ),
     path(
         "report_bug",

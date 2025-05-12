@@ -18,7 +18,7 @@ urlpatterns = [
     ),
     path(
         "company/<int:company_id>/",
-        views.CompanyRequestListView.as_view(),
-        name="company_requests",
+        views.RequestListView.as_view(),
+        name="company",
     ),
 ]
