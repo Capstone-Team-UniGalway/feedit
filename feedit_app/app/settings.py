@@ -41,6 +41,9 @@ if ENVIRONMENT == "development":
         }
     }
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    # MailerSend settings for development (not used with console backend)
+    MAILERSEND_API_KEY = env("MAILERSEND_API_KEY", default="")
+    MAILERSEND_VERIFICATION_SENDER_EMAIL = env("MAILERSEND_VERIFICATION_SENDER_EMAIL", default="your_verified_sender@yourdomain.com")
 else:
     DATABASES = {
         "default": {
@@ -52,6 +55,13 @@ else:
             "PORT": env("DB_PORT"),
         }
     }
+    # MailerSend settings for production
+    MAILERSEND_API_KEY = env("MAILERSEND_API_KEY")
+    MAILERSEND_VERIFICATION_SENDER_EMAIL = env("MAILERSEND_VERIFICATION_SENDER_EMAIL")
+
+    # Use MailerSend email backend in production
+    EMAIL_BACKEND = "app.mail.MailerSendEmailBackend"
+
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])

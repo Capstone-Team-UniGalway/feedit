@@ -10,10 +10,11 @@ from django.contrib.auth import (
     logout as auth_logout,
     update_session_auth_hash,
 )
+from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.views import PasswordResetConfirmView
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
@@ -306,10 +307,23 @@ class CustomPasswordResetView(PasswordResetView):
             }
 
             subject = "Reset your password"
-            body = render_to_string(
+            # Plain text version
+            text_body = render_to_string(
                 "emails/account/password_reset_key_message.txt", context
             )
-            msg = EmailMessage(subject, body, to=[user.email])
+            # HTML version
+            html_body = render_to_string(
+                "emails/account/password_reset_key_message.html", context
+            )
+
+            # Create email message with both text and HTML versions
+            msg = EmailMultiAlternatives(
+                subject=subject,
+                body=text_body,
+                from_email=settings.MAILERSEND_VERIFICATION_SENDER_EMAIL,
+                to=[user.email]
+            )
+            msg.attach_alternative(html_body, "text/html")
             msg.send()
 
         return redirect(self.success_url)
