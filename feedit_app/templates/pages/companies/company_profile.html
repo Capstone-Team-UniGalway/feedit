@@ -71,6 +71,13 @@
                     <i class="fas fa-plus mr-1"></i> Request to Join
                 </a>
                 {% endif %}
+
+                <!-- Allow employers to dispute ownership of claimed companies -->
+                {% if request.user.type == 'employer' %}
+                <button class="btn btn-sm btn-outline btn-warning" onclick="claim_dispute_modal.showModal()">
+                    <i class="fas fa-gavel mr-1"></i> Dispute Ownership
+                </button>
+                {% endif %}
                 {% endif %}
                 {% endif %}
                 <button class="btn btn-sm btn-neutral" onclick="document.getElementById('share_modal').showModal()">
@@ -257,15 +264,19 @@
         <p class="mb-4">If you believe you should be the rightful owner of this company, you can submit a dispute.
         </p>
 
-        <form method="post" action="{# {% url 'companies:dispute_claim' company.id %} #}" enctype="multipart/form-data"
+        <form method="post" action="{% url 'requests:create' company.id %}" enctype="multipart/form-data"
             class="space-y-4">
             {% csrf_token %}
+
+            <!-- Hidden fields to set request type and title -->
+            <input type="hidden" name="type" value="claim">
+            <input type="hidden" name="title" value="Ownership Dispute for {{ company.name }}">
 
             <div class="form-control">
                 <label class="label">
                     <span class="label-text">Why should you be the owner instead of the current owner?</span>
                 </label>
-                <textarea name="message" class="textarea textarea-bordered" rows="3" required></textarea>
+                <textarea name="content" class="textarea textarea-bordered" rows="3" required></textarea>
             </div>
 
             <div class="form-control">

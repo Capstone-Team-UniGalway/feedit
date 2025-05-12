@@ -25,6 +25,16 @@
                     {{ request.content|safe }}
                 </div>
 
+                <!-- Attached Files -->
+                {% load secure_files_tags %}
+                {% get_object_files request as files %}
+                {% if files %}
+                <div class="mt-4">
+                    <h3 class="text-lg font-semibold mb-2">Attached Documents</h3>
+                    {% include "components/secure_file_list.html" with files=files show_delete=False %}
+                </div>
+                {% endif %}
+
                 {% if can_process_request and request.status == 'pending' %}
                 <div class="card-actions justify-end mt-6">
                     <form method="post" action="{% url 'requests:process' request.id %}">

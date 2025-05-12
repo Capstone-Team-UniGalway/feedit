@@ -65,10 +65,16 @@ urlpatterns = [
         TemplateView.as_view(template_name="pages/report_bug.html"),
         name="report_bug",
     ),
+    path(
+        "secure_file_demo",
+        TemplateView.as_view(template_name="pages/secure_file_demo.html"),
+        name="secure_file_demo",
+    ),
     path("account/", include("accounts.urls")),
     path("threads/", include("threads.urls")),
     path("reviews/", include("reviews.urls")),
     path("requests/", include("requests.urls")),
+    path("secure-files/", include("secure_files.urls")),
     path("upload/", include("django_ckeditor_5.urls")),
     # Serve media files in development
     path("media/<path:path>", serve, {"document_root": settings.MEDIA_ROOT}),

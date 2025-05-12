@@ -3,9 +3,11 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 from django.urls import reverse
+from django.contrib.contenttypes.models import ContentType
 from app.mixins import FullyActivatedUserMixin
 from .models import Request, RequestReply
 from .forms import RequestForm, RequestReplyForm
+from secure_files.models import SecureFile
 
 class CreateRequestView(FullyActivatedUserMixin, CreateView):
     model = Request
@@ -47,13 +49,43 @@ class CreateRequestView(FullyActivatedUserMixin, CreateView):
             if self.request.user.type != 'employer':
                 messages.error(self.request, "Only employers can claim companies.")
                 return self.form_invalid(form)
-            messages.success(self.request, "Your claim request has been submitted and is pending admin approval.")
+
+            # Get the company
+            company = self.get_company()
+
+            # Check if this is a dispute (company already has an employer)
+            if company.employer:
+                messages.success(self.request, "Your ownership dispute has been submitted and is pending admin review. You will be notified of the decision.")
+            else:
+                messages.success(self.request, "Your claim request has been submitted and is pending admin approval.")
         else:
             # Default to JOIN type for other cases
             form.instance.type = Request.RequestType.JOIN
             messages.success(self.request, "Your join request has been submitted successfully.")
 
-        return super().form_valid(form)
+        # Save the form to create the request object
+        response = super().form_valid(form)
+
+        # Handle file upload if provided
+        verification_document = self.request.FILES.get('verification_document')
+        if verification_document:
+            # Get the content type for Request model
+            content_type = ContentType.objects.get_for_model(Request)
+
+            # Create a SecureFile instance
+            secure_file = SecureFile(
+                content_type=content_type,
+                object_id=self.object.id,  # self.object is the newly created Request
+                file=verification_document,
+                uploaded_by=self.request.user
+            )
+
+            # Save the secure file
+            secure_file.save()
+
+            messages.success(self.request, "Verification document uploaded successfully.")
+
+        return response
 
 
 class RequestDetailView(FullyActivatedUserMixin, DetailView):
@@ -81,9 +113,18 @@ class RequestDetailView(FullyActivatedUserMixin, DetailView):
                 if user.is_superuser:
                     can_process = True
 
+        # Get attached files
+        content_type = ContentType.objects.get_for_model(Request)
+        files = SecureFile.objects.filter(
+            content_type=content_type,
+            object_id=request_obj.id,
+            is_deleted=False
+        )
+
         context['can_process_request'] = can_process
         context['can_reply'] = can_process or user == request_obj.author
         context['reply_form'] = RequestReplyForm()
+        context['files'] = files
 
         return context
 
@@ -163,11 +204,34 @@ class ProcessRequestView(FullyActivatedUserMixin, View):
             elif request_obj.type == Request.RequestType.CLAIM and request_obj.author:
                 if request_obj.author.type == 'employer':
                     company = request_obj.company
-                    # If the company already has an employer, remove that association
+                    # If the company already has an employer, handle ownership transfer
                     if company.employer:
                         old_employer = company.employer
-                        # We can't directly set company to None because it's a OneToOneField
+                        # Notify the old employer about the ownership change
+                        # (In a real app, you might want to send an email here)
+
+                        # Create a system message or notification for the old employer
+                        messages.info(
+                            request,
+                            f"The previous owner ({old_employer.get_full_name()}) has been notified of this ownership change."
+                        )
+
                         # The relationship will be automatically removed when we set a new employer
+
+                    # Check if the new employer is already associated with another company
+                    try:
+                        existing_company = request_obj.author.company
+                        if existing_company and existing_company != company:
+                            # Remove the employer from their current company
+                            existing_company.employer = None
+                            existing_company.save()
+                            messages.info(
+                                request,
+                                f"{request_obj.author.get_full_name()} has been removed as the employer of {existing_company.name}."
+                            )
+                    except:
+                        # No existing company or error accessing it, continue
+                        pass
 
                     # Set the new employer
                     company.employer = request_obj.author

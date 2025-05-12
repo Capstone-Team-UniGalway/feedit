@@ -5,7 +5,7 @@
             <div class="card-body">
                 <h2 class="card-title text-2xl mb-4">Submit Request</h2>
 
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
 
                     <!-- Request Type -->
@@ -32,6 +32,18 @@
                         {{ form.content }}
                         {% if form.content.errors %}
                         <p class="text-red-500 text-sm mt-1">{{ form.content.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Verification Document -->
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text font-semibold">Verification Document (optional)</span>
+                            <span class="label-text-alt">Upload proof of your association with this company</span>
+                        </label>
+                        {{ form.verification_document }}
+                        {% if form.verification_document.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ form.verification_document.errors.0 }}</p>
                         {% endif %}
                     </div>
 
