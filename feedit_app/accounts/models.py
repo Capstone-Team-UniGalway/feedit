@@ -109,6 +109,10 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         )
 
     @property
+    def has_company(self):
+        return bool(self.workplace or getattr(self, "company", None))
+
+    @property
     def profile_picture(self):
         from secure_files.models import SecureFile
 

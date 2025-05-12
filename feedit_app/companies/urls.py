@@ -25,7 +25,9 @@ urlpatterns = [
     ),  # /companies/5/delete/
     path("leave/", LeaveCompanyView.as_view(), name="leave"),  # /companies/leave/
     path(
-        "<int:pk>/manage-requests/", ManageRequestsView.as_view(), name="manage_requests"
+        "<int:pk>/manage-requests/",
+        ManageRequestsView.as_view(),
+        name="manage_requests",
     ),  # /companies/5/manage-requests/
     path(
         "manage-claims/", ManageClaimsView.as_view(), name="manage_claims"

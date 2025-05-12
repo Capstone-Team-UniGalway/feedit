@@ -72,7 +72,7 @@
                     {% endif %}
                 </button>
                 {% else %}
-                <a href="{% url 'requests:create' company.id %}" class="btn btn-sm btn-primary">
+                <a href="{% url 'requests:create_with_id' company.id %}" class="btn btn-sm btn-primary">
                     {% if request.user.type == 'employer' %}
                     <i class="fas fa-flag mr-1"></i> Claim Company
                     {% else %}
@@ -273,7 +273,7 @@
         <p class="mb-4">If you believe you should be the rightful owner of this company, you can submit a dispute.
         </p>
 
-        <form method="post" action="{% url 'requests:create' company.id %}" enctype="multipart/form-data"
+        <form method="post" action="{% url 'requests:create_with_id' company.id %}" enctype="multipart/form-data"
             class="space-y-4">
             {% csrf_token %}
 
