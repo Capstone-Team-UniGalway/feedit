@@ -74,9 +74,13 @@
                         <i class="fas fa-clock mr-1"></i> Request Pending
                     </button>
                     {% elif not user.workplace %}
-                    <!-- User can join this company -->
+                    <!-- User can join/claim this company based on their type -->
                     <a href="{% url 'requests:create' company.id %}" class="btn btn-sm btn-primary">
+                        {% if user.type == 'employer' %}
+                        <i class="fas fa-flag mr-1"></i> Claim
+                        {% else %}
                         <i class="fas fa-plus mr-1"></i> Join
+                        {% endif %}
                     </a>
                     {% endif %}
                     {% endif %}
