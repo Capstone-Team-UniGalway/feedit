@@ -23,7 +23,6 @@ from django.views.generic import TemplateView
 from django.views.static import serve
 from accounts.views import DashboardView
 from .views import WelcomeView
-from companies.views import JoinCompanyView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -39,11 +38,6 @@ urlpatterns = [
         "edit_profile",
         TemplateView.as_view(template_name="pages/edit_profile.html"),
         name="edit_profile",
-    ),
-    path(
-        "join_company",
-        JoinCompanyView.as_view(),
-        name="join_company",
     ),
     path(
         "privacy",
