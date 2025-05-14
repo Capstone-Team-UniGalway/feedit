@@ -40,8 +40,13 @@ if ENVIRONMENT == "development":
             "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
         }
     }
+    # Use console backend for testing
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-    # MailerSend settings for development (not used with console backend)
+
+    # Uncomment the line below to use MailerSend backend
+    # EMAIL_BACKEND = "app.mail.MailerSendEmailBackend"
+
+    # MailerSend settings for development
     MAILERSEND_API_KEY = env("MAILERSEND_API_KEY", default="")
     MAILERSEND_VERIFICATION_SENDER_EMAIL = env("MAILERSEND_VERIFICATION_SENDER_EMAIL", default="your_verified_sender@yourdomain.com")
 else:

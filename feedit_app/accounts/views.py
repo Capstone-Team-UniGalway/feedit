@@ -263,8 +263,8 @@ class CloseAccountView(LoginRequiredMixin, View):
         return redirect(success_url)
 
 
-class AuthPasswordResetDonePartial(TemplateView):
-    template_name = "components/account/password_reset_done.html"
+class PasswordResetDoneView(TemplateView):
+    template_name = "pages/account/password_reset_done.html"
 
 
 class CustomPasswordResetFromKeyView(PasswordResetConfirmView):
@@ -280,7 +280,7 @@ class CustomPasswordResetFromKeyView(PasswordResetConfirmView):
 
 class CustomPasswordResetView(PasswordResetView):
     form_class = CustomResetPasswordForm
-    template_name = "components/account/password_reset_form.html"
+    template_name = "pages/account/password_reset.html"
     success_url = "/account/password/reset/done/"
 
     def form_valid(self, form):

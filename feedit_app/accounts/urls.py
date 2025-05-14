@@ -1,4 +1,6 @@
 from django.urls import path, include
+from django.views.generic import TemplateView
+from django.conf import settings
 from allauth.mfa import urls as allauth_mfa_urls
 from allauth.account.views import ReauthenticateView
 from allauth.mfa.base.views import AuthenticateView
@@ -14,7 +16,7 @@ from .views import (
     PublicProfileView,
     EditProfileView,
     CloseAccountView,
-    AuthPasswordResetDonePartial,
+    PasswordResetDoneView,
     CustomPasswordResetFromKeyView,
     CustomPasswordResetView,
     UserSearchView,
@@ -60,7 +62,7 @@ urlpatterns = [
     ),
     path(
         "password/reset/done/",
-        AuthPasswordResetDonePartial.as_view(),
+        PasswordResetDoneView.as_view(),
         name="account_reset_password_done",
     ),
     # UIDB64 + token – actual valid route
