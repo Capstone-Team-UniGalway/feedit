@@ -18,6 +18,12 @@
         <i class="fas fa-comment-dots"></i> Threads
     </a>
 </li>
+<li>
+    <a href="{% url 'companies:directory' %}"
+        class="nav-link {% if request.resolver_match.url_name == 'directory' and request.resolver_match.namespace == 'companies' %}active{% endif %}">
+        <i class="fas fa-users"></i> Employee Directory
+    </a>
+</li>
 {% endif %}
 {% if user.company %}
 <li>

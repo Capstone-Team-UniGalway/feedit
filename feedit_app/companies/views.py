@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, View
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from .models import Company
 from reviews.models import ReviewReply
 from app.mixins import FullyActivatedUserMixin
@@ -408,3 +409,73 @@ class ProcessClaimView(FullyActivatedUserMixin, View):
 
         # Redirect back to the claims management page
         return redirect('companies:manage_claims')
+
+
+class CompanyEmployeeDirectoryView(FullyActivatedUserMixin, ListView):
+    """View for company members to search and find coworkers
+    Route: /companies/directory/ | Permission: authenticated users with a company"""
+
+    http_method_names = ["get"]
+    template_name = "pages/companies/employee_directory.html"
+    context_object_name = "employees"
+    paginate_by = 12
+
+    def user_test_func(self):
+        """Only allow access to users who belong to a company"""
+        user = self.request.user
+        return user.is_authenticated and (user.workplace is not None or hasattr(user, "company"))
+
+    def handle_no_permission(self):
+        messages.warning(self.request, "You need to be part of a company to access the employee directory.")
+        return redirect("dashboard")
+
+    def get_queryset(self):
+        """Get all employees from the user's company"""
+        user = self.request.user
+        User = get_user_model()
+
+        # Determine the user's company
+        company = None
+        if hasattr(user, "workplace") and user.workplace:
+            company = user.workplace
+        elif hasattr(user, "company"):
+            company = user.company
+
+        if not company:
+            return User.objects.none()
+
+        # Base queryset - all active users in the company
+        queryset = User.objects.filter(
+            is_active=True,
+            is_deleted=False
+        ).filter(
+            Q(workplace=company) | Q(company=company)
+        ).order_by('first_name', 'last_name')
+
+        # Apply search if provided
+        search_query = self.request.GET.get('q', '').strip()
+        if search_query:
+            queryset = queryset.filter(
+                Q(first_name__icontains=search_query) |
+                Q(last_name__icontains=search_query) |
+                Q(email__icontains=search_query) |
+                Q(job_title__icontains=search_query)
+            )
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        # Determine the user's company
+        company = None
+        if hasattr(user, "workplace") and user.workplace:
+            company = user.workplace
+        elif hasattr(user, "company"):
+            company = user.company
+
+        context['company'] = company
+        context['search_query'] = self.request.GET.get('q', '')
+
+        return context

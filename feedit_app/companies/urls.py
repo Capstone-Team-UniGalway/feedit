@@ -9,6 +9,7 @@ from .views import (
     ManageRequestsView,
     ManageClaimsView,
     ProcessClaimView,
+    CompanyEmployeeDirectoryView,
 )
 
 app_name = "companies"
@@ -33,4 +34,7 @@ urlpatterns = [
     path(
         "process-claim/<int:pk>/", ProcessClaimView.as_view(), name="process_claim"
     ),  # /companies/process-claim/5/
+    path(
+        "directory/", CompanyEmployeeDirectoryView.as_view(), name="directory"
+    ),  # /companies/directory/
 ]
