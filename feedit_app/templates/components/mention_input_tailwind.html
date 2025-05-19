@@ -1,0 +1,74 @@
+{% load cotton %}
+
+<!-- Ultra-simple mention input component -->
+<div class="mention-input-container relative w-full">
+  <!-- The actual textarea -->
+  <textarea name="{{ name }}" id="{{ id|default:name }}" class="textarea textarea-bordered w-full {{ css_class }}"
+    placeholder="{{ placeholder|default:'Write your message...' }}"
+    hx-get="{% url 'api_search_users' %}?id={{ id|default:name }}"
+    hx-trigger="keyup[target.value.includes('@')] delay:100ms, keydown[event.key=='@'] delay:100ms"
+    hx-target="#mention-results-{{ id|default:name }}" hx-include="this" hx-swap="innerHTML" {% if required %}required{%
+    endif %}>{{ value|default:'' }}</textarea>
+
+  <!-- Mention results dropdown - will be populated by HTMX -->
+  <div id="mention-results-{{ id|default:name }}" class="mention-results"></div>
+
+  <!-- Hidden input to store mention data -->
+  <input type="hidden" name="{{ name }}_mentions" id="{{ id|default:name }}_mentions" value="">
+
+  <!-- Mention tracking -->
+  <div class="text-xs text-gray-500 mt-1">
+    <span>Use @ to mention users</span>
+    <div id="{{ id|default:name }}_mention_list" class="mention-list mt-1 flex flex-wrap gap-1"></div>
+  </div>
+</div>
+
+<script>
+  // This function will be called when a user is selected from the dropdown
+  function selectMention(textareaId, userId, userName) {
+    console.log(`Selecting mention: ${userName} (${userId}) for textarea ${textareaId}`);
+    const textarea = document.getElementById(textareaId);
+    if (!textarea) {
+      console.error(`Textarea with ID ${textareaId} not found`);
+      return;
+    }
+
+    // Get the current text and cursor position
+    const text = textarea.value;
+    const cursorPos = textarea.selectionStart;
+
+    // Find the position of the @ symbol before the cursor
+    const beforeCursor = text.substring(0, cursorPos);
+    const atIndex = beforeCursor.lastIndexOf('@');
+
+    if (atIndex >= 0) {
+      // Replace the @query with a standardized mention format
+      const mentionFormat = `@${userName}[${userId}]`;
+      const newText = text.substring(0, atIndex) + mentionFormat + ' ' + text.substring(cursorPos);
+      textarea.value = newText;
+
+      // Set cursor position after the inserted mention
+      const newCursorPos = atIndex + mentionFormat.length + 1;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+
+      // Hide the dropdown
+      const dropdown = document.getElementById(`mention-results-${textareaId}`);
+      if (dropdown) {
+        dropdown.innerHTML = '';
+      }
+
+      // Focus back on the textarea
+      textarea.focus();
+
+      // Add to the visual mention list
+      const mentionList = document.getElementById(`${textareaId}_mention_list`);
+      if (mentionList) {
+        const mentionTag = document.createElement('span');
+        mentionTag.className = 'mention-tag bg-primary/10 text-primary px-2 py-0.5 rounded text-xs';
+        mentionTag.setAttribute('data-user-id', userId);
+        mentionTag.textContent = '@' + userName;
+        mentionList.appendChild(mentionTag);
+      }
+    }
+  }
+</script>
