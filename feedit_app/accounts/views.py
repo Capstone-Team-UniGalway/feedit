@@ -380,26 +380,30 @@ class DashboardView(FullyActivatedUserMixin, TemplateView):
         )  # Get the 5 most recent threads
 
         # Get threads where the user is mentioned
+        # Get all mentions, prioritizing unread ones
+        # Don't filter by is_read to show all mentions
         mentions = (
             user.mentions_received.filter(
-                is_read=False,
                 thread__is_deleted=False,
             )
-            .select_related("thread")
-            .order_by("-created_at")[:5]
-        )  # Get the 5 most recent mentions
+            .select_related("thread", "thread__author")
+            .order_by("-created_at")[:10]  # Show more mentions
+        )
 
         # Determine if this is a new account with no threads (even deleted)
         account_age = timezone.now() - user.created_at
         has_any_threads = user.threads.exists()
         is_new_account = account_age < timedelta(days=7) and not has_any_threads
 
+        # Convert mentions queryset to list for template
+        mentions_list = list(mentions)
+
         context.update(
             {
                 "user_threads": user_threads,
-                "mentions": mentions,
+                "mentions": mentions_list,
                 "thread_count": user_threads.count(),
-                "mention_count": mentions.count(),
+                "mention_count": len(mentions_list),
                 "new_account": is_new_account,
             }
         )

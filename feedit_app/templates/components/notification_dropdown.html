@@ -1,0 +1,79 @@
+{% load notification_tags %}
+{% load mention_tags %}
+
+<div class="dropdown dropdown-end">
+    <label tabindex="0" class="btn btn-ghost btn-circle">
+        <div class="indicator">
+            <i class="fas fa-bell text-lg"></i>
+            {% unread_notifications_count user as notification_count %}
+            {% unread_mentions_count user as mention_count %}
+            {% with total_count=notification_count|add:mention_count %}
+                {% if total_count > 0 %}
+                <span class="badge badge-xs badge-primary indicator-item">{{ total_count }}</span>
+                {% endif %}
+            {% endwith %}
+        </div>
+    </label>
+    <div tabindex="0" class="dropdown-menu dropdown-content mt-3 z-[1] card card-compact rounded-box w-80 shadow bg-base-100">
+        <div class="card-body">
+            <h3 class="font-bold text-lg">Notifications</h3>
+            <div class="divider my-0"></div>
+
+            {% unread_notifications_count user as notification_count %}
+            {% if notification_count > 0 %}
+            <div class="py-2">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="font-semibold">Notifications</span>
+                    <span class="badge badge-primary badge-sm">{{ notification_count }}</span>
+                </div>
+                <a href="{% url 'notifications:list' %}" class="block p-2 hover:bg-base-200 rounded-lg">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-bell text-primary"></i>
+                        <div>
+                            <p class="text-sm">You have {{ notification_count }} new notification{{ notification_count|pluralize }}</p>
+                            <p class="text-xs text-gray-500">Click to view all notifications</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endif %}
+
+            {% unread_mentions_count user as mention_count %}
+            {% if mention_count > 0 %}
+            <div class="py-2">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="font-semibold">Mentions</span>
+                    <span class="badge badge-primary badge-sm">{{ mention_count }}</span>
+                </div>
+                <a href="{% url 'account_mentions' %}" class="block p-2 hover:bg-base-200 rounded-lg">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-at text-primary"></i>
+                        <div>
+                            <p class="text-sm">You have {{ mention_count }} new mention{{ mention_count|pluralize }}</p>
+                            <p class="text-xs text-gray-500">Click to view all mentions</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endif %}
+
+            {% with total_count=notification_count|add:mention_count %}
+                {% if total_count == 0 %}
+                <p class="text-sm text-gray-500 py-2">You have no new notifications</p>
+                {% endif %}
+            {% endwith %}
+
+            <div class="card-actions justify-end mt-2">
+                <a href="{% url 'notifications:list' %}" class="btn btn-sm btn-outline">View All</a>
+                {% if notification_count > 0 %}
+                <form method="post" action="{% url 'notifications:mark_all_read' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-ghost">
+                        <i class="fas fa-check-double"></i>
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
