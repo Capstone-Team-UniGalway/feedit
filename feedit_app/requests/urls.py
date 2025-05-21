@@ -13,6 +13,7 @@ urlpatterns = [
     ),
     path("<int:pk>/", views.RequestDetailView.as_view(), name="detail"),
     path("<int:pk>/process/", views.ProcessRequestView.as_view(), name="process"),
+    path("<int:pk>/cancel/", views.CancelRequestView.as_view(), name="cancel"),
     path(
         "<int:request_id>/reply/", views.CreateRequestReplyView.as_view(), name="reply"
     ),

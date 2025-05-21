@@ -13,7 +13,16 @@ class RequestForm(forms.ModelForm):
     class Meta:
         model = Request
         fields = ["type", "title", "content"]
-        widgets = {"content": forms.Textarea(attrs={"class": "textarea"})}
+        widgets = {
+            "title": forms.TextInput(
+                attrs={
+                    "class": "input input-bordered w-full",
+                    "placeholder": "Enter a descriptive title",
+                    "required": True,
+                }
+            ),
+            "content": forms.Textarea(attrs={"class": "textarea w-full", "rows": "3"}),
+        }
 
     def __init__(self, *args, **kwargs):
         # Get user and type from kwargs
@@ -32,3 +41,6 @@ class RequestReplyForm(forms.ModelForm):
     class Meta:
         model = RequestReply
         fields = ["content"]
+        widgets = {
+            "content": forms.Textarea(attrs={"class": "textarea w-full", "rows": "3"}),
+        }

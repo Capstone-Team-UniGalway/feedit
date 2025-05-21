@@ -38,7 +38,24 @@ class Request(BaseModel):
 
     def get_absolute_url(self):
         from django.urls import reverse
-        return reverse('requests:detail', kwargs={'pk': self.pk})
+
+        return reverse("requests:detail", kwargs={"pk": self.pk})
+
+    def can_be_processed_by(self, user):
+        if not user.is_authenticated:
+            return False
+
+        if self.type in [
+            Request.RequestType.JOIN,
+            Request.RequestType.OTHER,
+        ]:
+            return self.company and self.company.employer == user
+
+        if self.type == self.RequestType.CLAIM:
+            return user.is_superuser
+
+        # optionally extend to other types if needed
+        return False
 
 
 # Replies to private employee requests

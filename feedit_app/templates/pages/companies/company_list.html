@@ -21,7 +21,12 @@
                 </div>
             </form>
             {% if user.is_authenticated and not user.workplace %}
+            {#
             <a href="{% url 'claim_company' %}" class="btn btn-primary">
+                <i class="fas fa-plus mr-1"></i> Create Company
+            </a>
+            #}
+            <a href="{% url 'companies:create' %}" class="btn btn-primary">
                 <i class="fas fa-plus mr-1"></i> Create Company
             </a>
             {% endif %}
@@ -150,7 +155,12 @@
         {% endif %}
 
         {% if user.is_authenticated and not user.workplace %}
+        {#
         <a href="{% url 'claim_company' %}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i> Create a Company
+        </a>
+        #}
+        <a href="{% url 'companies:create' %}" class="btn btn-primary">
             <i class="fas fa-plus mr-2"></i> Create a Company
         </a>
         {% endif %}

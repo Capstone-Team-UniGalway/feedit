@@ -34,11 +34,12 @@ class CreateRequestView(FullyActivatedUserMixin, CreateView):
         return super().dispatch(request, *args, **kwargs)
 
     def determine_request_type(self):
-        if "company_id" in self.kwargs:
-            if self.request.user.type == "employer":
-                return Request.RequestType.CLAIM
-            return Request.RequestType.JOIN
-        return Request.RequestType.OTHER
+        if self.request.user.type == "employer":
+            return Request.RequestType.CLAIM
+        else:
+            if "company_id" in self.kwargs:
+                return Request.RequestType.JOIN
+            return Request.RequestType.OTHER
 
     def user_test_func(self):
         user = self.request.user
@@ -46,24 +47,32 @@ class CreateRequestView(FullyActivatedUserMixin, CreateView):
         if not user.is_authenticated or not user.is_fully_activated:
             return False
 
-        # Block if no associated company (only applies to 'other')
-        if not self.company:
+        # Block if the request is of type OTHER but the user has no linked company
+        if self.request_type == Request.RequestType.OTHER and not self.company:
             self.permission_denied_message = (
                 "You need to join a company before making requests."
             )
             self.permission_denied_redirect_url = "companies:list"
             return False
 
-        # Block multiple pending requests (only for 'join' and 'claim')
-        if self.request_type in [Request.RequestType.JOIN, Request.RequestType.CLAIM]:
-            if user.has_company:
-                self.permission_denied_message = (
-                    f"You cannot make {self.request_type} requests while you are "
-                    "already part of a company."
-                )
-                self.permission_denied_redirect_url = "dashboard"
-                return False
+        # Block CLAIM requests if the employer already owns a company
+        if self.request_type == Request.RequestType.CLAIM and user.has_company:
+            self.permission_denied_message = (
+                "You already own a company and cannot submit a claim request."
+            )
+            self.permission_denied_redirect_url = "dashboard"
+            return False
 
+        # Block JOIN requests if the user is already part of a company
+        if self.request_type == Request.RequestType.JOIN and user.has_company:
+            self.permission_denied_message = (
+                "You are already part of a company and cannot submit a join request."
+            )
+            self.permission_denied_redirect_url = "dashboard"
+            return False
+
+        # Block if the user has a pending request of this type
+        if self.request_type in [Request.RequestType.JOIN, Request.RequestType.CLAIM]:
             existing = Request.objects.filter(
                 author=user,
                 type=self.request_type,
@@ -174,23 +183,13 @@ class RequestDetailView(FullyActivatedUserMixin, DetailView):
         request_obj = self.object
         user = self.request.user
 
-        # Check if user can process this request
-        can_process = False
-        if user.is_authenticated:
-            # For join requests, only company employer can process
-            if request_obj.type == Request.RequestType.JOIN:
-                if request_obj.company.employer == user:
-                    can_process = True
-            # For claim requests, only superusers can process
-            elif request_obj.type == Request.RequestType.CLAIM:
-                if user.is_superuser:
-                    can_process = True
-
         # Get attached files
         content_type = ContentType.objects.get_for_model(Request)
         files = SecureFile.objects.filter(
             content_type=content_type, object_id=request_obj.id, is_deleted=False
         )
+
+        can_process = request_obj.can_be_processed_by(user)
 
         context["can_process_request"] = can_process
         context["can_reply"] = can_process or user == request_obj.author
@@ -256,26 +255,22 @@ class RequestListView(FullyActivatedUserMixin, ListView):
 
 
 class ProcessRequestView(FullyActivatedUserMixin, View):
+    @cached_property
+    def request_obj(self):
+        return get_object_or_404(Request, pk=self.kwargs.get("pk"), is_deleted=False)
+
+    def user_test_func(self):
+        # Store custom denial reason
+        self.permission_denied_message = (
+            "You do not have permission to process this request."
+        )
+        self.permission_denied_redirect_url = "requests:list"
+
+        return self.request_obj.can_be_processed_by(self.request.user)
+
     def post(self, request, **kwargs):
-        request_obj = get_object_or_404(Request, pk=kwargs.get("pk"), is_deleted=False)
-
-        # Check if user is authorized to process this request
-        # Only company employers can process join requests
-        if request_obj.type == Request.RequestType.JOIN:
-            if request.user != request_obj.company.employer:
-                messages.error(
-                    request, "You don't have permission to process this request."
-                )
-                return redirect("dashboard")
-        # Only superusers can process claim requests
-        elif request_obj.type == Request.RequestType.CLAIM:
-            if not request.user.is_superuser:
-                messages.error(
-                    request, "Only administrators can process claim requests."
-                )
-                return redirect("dashboard")
-
         action = request.POST.get("action")
+        request_obj = self.request_obj
 
         if action == "approve":
             # Update request status
@@ -284,9 +279,15 @@ class ProcessRequestView(FullyActivatedUserMixin, View):
 
             # If it's a join request, update the user's workplace
             if request_obj.type == Request.RequestType.JOIN and request_obj.author:
-                request_obj.author.workplace = request_obj.company
-                request_obj.author.save()
-                messages.success(request, "Join request approved successfully.")
+                if request_obj.author.type == "employee":
+                    request_obj.author.workplace = request_obj.company
+                    request_obj.author.save()
+                    messages.success(request, "Join request approved successfully.")
+                else:
+                    messages.warning(
+                        request, "Request type is not valid for this author."
+                    )
+
             # If it's a claim request, update the company's employer
             elif request_obj.type == Request.RequestType.CLAIM and request_obj.author:
                 if request_obj.author.type == "employer":
@@ -295,7 +296,7 @@ class ProcessRequestView(FullyActivatedUserMixin, View):
                     if company.employer:
                         old_employer = company.employer
                         # Notify the old employer about the ownership change
-                        # (In a real app, you might want to send an email here)
+                        # TODO: send notification to old employer
 
                         # Create a system message or notification for the old employer
                         messages.info(
@@ -303,25 +304,6 @@ class ProcessRequestView(FullyActivatedUserMixin, View):
                             f"The previous owner ({old_employer.get_full_name()}) "
                             f"has been notified of this ownership change.",
                         )
-
-                        # The relationship will be automatically removed when
-                        # we set a new employer
-
-                    # Check if the new employer is already associated with a company
-                    try:
-                        existing_company = request_obj.author.company
-                        if existing_company and existing_company != company:
-                            # Remove the employer from their current company
-                            existing_company.employer = None
-                            existing_company.save()
-                            messages.info(
-                                request,
-                                f"{request_obj.author.get_full_name()} has been removed"
-                                f" as the employer of {existing_company.name}.",
-                            )
-                    except Exception:
-                        # No existing company or error accessing it, continue
-                        pass
 
                     # Set the new employer
                     company.employer = request_obj.author
@@ -334,7 +316,7 @@ class ProcessRequestView(FullyActivatedUserMixin, View):
                     )
                 else:
                     messages.warning(
-                        request, "Claim approved but the user is not an employer type."
+                        request, "Request type is not valid for this author."
                     )
             else:
                 messages.success(request, "Request approved successfully.")
@@ -352,26 +334,48 @@ class CreateRequestReplyView(FullyActivatedUserMixin, CreateView):
     model = RequestReply
     form_class = RequestReplyForm
 
+    @cached_property
+    def request_obj(self):
+        return get_object_or_404(
+            Request, pk=self.kwargs.get("request_id"), is_deleted=False
+        )
+
+    def user_test_func(self):
+        user = self.request.user
+
+        self.permission_denied_message = (
+            "You do not have permission to reply to this request."
+        )
+        self.permission_denied_redirect_url = "requests:list"
+
+        return (
+            user == self.request_obj.author or user == self.request_obj.company.employer
+        )
+
     def get_success_url(self):
         return reverse("requests:detail", kwargs={"pk": self.kwargs.get("request_id")})
 
     def form_valid(self, form):
-        request_obj = get_object_or_404(
-            Request, pk=self.kwargs.get("request_id"), is_deleted=False
-        )
-
-        # Check if user can reply (either the author or the company employer)
-        if (
-            self.request.user != request_obj.author
-            and self.request.user != request_obj.company.employer
-        ):
-            messages.error(
-                self.request, "You don't have permission to reply to this request."
-            )
-            return redirect("dashboard")
-
-        form.instance.request = request_obj
+        form.instance.request = self.request_obj
         form.instance.author = self.request.user
 
         messages.success(self.request, "Your reply has been posted successfully.")
         return super().form_valid(form)
+
+
+class CancelRequestView(FullyActivatedUserMixin, View):
+    @cached_property
+    def request_obj(self):
+        return get_object_or_404(Request, pk=self.kwargs.get("pk"), is_deleted=False)
+
+    def user_test_func(self):
+        self.permission_denied_message = (
+            "You do not have permission to cancel this request."
+        )
+        self.permission_denied_redirect_url = "requests:list"
+        return self.request.user == self.request_obj.author
+
+    def post(self, request, *args, **kwargs):
+        self.request_obj.delete()  # uses your model's soft delete
+        messages.success(request, "Your request has been cancelled.")
+        return redirect("requests:list")
