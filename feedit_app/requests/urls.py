@@ -22,4 +22,12 @@ urlpatterns = [
         views.RequestListView.as_view(),
         name="company",
     ),
+    path(
+        "manage-claims/", views.ManageClaimsView.as_view(), name="manage_claims"
+    ),  # /requests/manage-claims/
+    path(
+        "manage-unclaimed/",
+        views.ManageUnclaimedRequestsView.as_view(),
+        name="manage_unclaimed",
+    ),  # /requests/manage-unclaimed/
 ]

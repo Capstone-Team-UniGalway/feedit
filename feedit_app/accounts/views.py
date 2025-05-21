@@ -41,6 +41,7 @@ from .forms import (
 )
 from django.http import Http404
 from app.mixins import FullyActivatedUserMixin
+from requests.models import Request
 
 User = get_user_model()
 
@@ -323,37 +324,23 @@ class DashboardView(FullyActivatedUserMixin, TemplateView):
     template_name = "pages/dashboard.html"  # Template for the actual dashboard
 
     def get_context_data(self, **kwargs):
-        """
-        Prepares context data for rendering the dashboard template.
-        This method is called only when the profile is considered complete.
-        """
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        # Get user's threads (excluding replies and deleted threads)
+        # Thread & mention data (existing logic)
         user_threads = (
-            user.threads.filter(
-                parent__isnull=True,  # Exclude replies
-                is_deleted=False,  # Only non-deleted
-            )
+            user.threads.filter(parent__isnull=True, is_deleted=False)
             .select_related("company")
             .order_by("-created_at")[:5]
-        )  # Get the 5 most recent threads
-
-        # Get threads where the user is mentioned
+        )
         mentions = (
-            user.mentions_received.filter(
-                is_read=False,
-                thread__is_deleted=False,
-            )
+            user.mentions_received.filter(is_read=False, thread__is_deleted=False)
             .select_related("thread")
             .order_by("-created_at")[:5]
-        )  # Get the 5 most recent mentions
+        )
 
-        # Determine if this is a new account with no threads (even deleted)
         account_age = timezone.now() - user.created_at
-        has_any_threads = user.threads.exists()
-        is_new_account = account_age < timedelta(days=7) and not has_any_threads
+        is_new_account = account_age < timedelta(days=7) and not user.threads.exists()
 
         context.update(
             {
@@ -364,6 +351,49 @@ class DashboardView(FullyActivatedUserMixin, TemplateView):
                 "new_account": is_new_account,
             }
         )
+
+        # === Request Summary ===
+        if user.type == "employee":
+            user_requests = Request.objects.filter(author=user, is_deleted=False)
+            context["my_requests"] = {
+                "pending": user_requests.filter(status="pending").count(),
+                "approved": user_requests.filter(status="approved").count(),
+                "rejected": user_requests.filter(status="rejected").count(),
+            }
+
+        elif user.type == "employer":
+            user_requests = Request.objects.filter(author=user, is_deleted=False)
+            company_requests = (
+                Request.objects.filter(
+                    company=user.company, status="pending", is_deleted=False
+                )
+                if getattr(user, "company", None)
+                else Request.objects.none()
+            )
+            context["my_requests"] = {
+                "pending": user_requests.filter(status="pending").count(),
+                "approved": user_requests.filter(status="approved").count(),
+                "rejected": user_requests.filter(status="rejected").count(),
+            }
+            context["company_requests_count"] = company_requests.count()
+
+        if user.is_superuser:
+            claim_requests = Request.objects.filter(
+                type="claim", status="pending", is_deleted=False
+            ).count()
+
+            unclaimed_requests = Request.objects.filter(
+                type__in=["join", "other"],
+                status="pending",
+                company__employer__isnull=True,
+                is_deleted=False,
+            ).count()
+
+            context["admin_requests"] = {
+                "claims": claim_requests,
+                "unclaimed": unclaimed_requests,
+            }
+
         return context
 
 

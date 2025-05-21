@@ -37,13 +37,18 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {% for company in companies %}
         <div
-            class="card {% if user.workplace == company %}bg-base-100 shadow-xl border-2 border-success hover:shadow-2xl transition-all{% else %}bg-base-100 shadow-xl hover:shadow-2xl transition-all{% endif %}">
+            class="card {% if user.workplace == company or user.company == company %}bg-base-100 shadow-xl border-2 border-success hover:shadow-2xl transition-all{% else %}bg-base-100 shadow-xl hover:shadow-2xl transition-all{% endif %}">
             <figure>
                 <img src="{{ company.profile_picture }}" alt="{{ company.name }} logo"
                     class="h-36 w-full object-cover" />
-                {% if user.workplace == company %}
+                {% if user.workplace == company or user.company == company %}
                 <div class="absolute top-2 right-2 badge badge-success gap-1">
-                    <i class="fas fa-briefcase"></i> Current Workplace
+                    <i class="fas fa-briefcase"></i>
+                    {% if user.workplace %}
+                    Current Workplace
+                    {% elif user.company %}
+                    You Own This
+                    {% endif %}
                 </div>
                 {% endif %}
             </figure>
@@ -68,15 +73,12 @@
                     <button class="btn btn-sm btn-error" onclick="leave_company_modal.showModal()">
                         <i class="fas fa-sign-out-alt mr-1"></i> Leave Company
                     </button>
-                    {% elif company.employer == user %}
-                    <button class="btn btn-sm btn-disabled">
-                        <i class="fas fa-check mr-1"></i> You Own This
-                    </button>
                     {% elif company.id in pending_requests %}
                     <button class="btn btn-sm btn-disabled">
                         <i class="fas fa-clock mr-1"></i> Request Pending
                     </button>
                     {% else %}
+                    {% if not user.has_company %}
                     <a href="{% url 'requests:create_with_id' company.id %}" class="btn btn-sm btn-primary">
                         {% if user.type == 'employer' %}
                         <i class="fas fa-flag mr-1"></i> Claim
@@ -84,6 +86,7 @@
                         <i class="fas fa-plus mr-1"></i> Join
                         {% endif %}
                     </a>
+                    {% endif %}
                     {% endif %}
                     {% endif %}
                 </div>

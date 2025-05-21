@@ -31,6 +31,17 @@ class CreateRequestView(FullyActivatedUserMixin, CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         self.request_type = self.determine_request_type()
+
+        # 🔐 Block all access if no company is resolvable
+        if self.company is None:
+            if self.request.user.type == "employer":
+                message = "Find and claim your company! Create it if not in the list."
+            else:
+                message = "You must join a company before making a request."
+
+            messages.warning(request, message)
+            return redirect("companies:list")
+
         return super().dispatch(request, *args, **kwargs)
 
     def determine_request_type(self):
@@ -295,6 +306,8 @@ class ProcessRequestView(FullyActivatedUserMixin, View):
                     # If the company already has an employer, handle ownership transfer
                     if company.employer:
                         old_employer = company.employer
+                        old_employer.company = None
+                        old_employer.save()
                         # Notify the old employer about the ownership change
                         # TODO: send notification to old employer
 
@@ -379,3 +392,70 @@ class CancelRequestView(FullyActivatedUserMixin, View):
         self.request_obj.delete()  # uses your model's soft delete
         messages.success(request, "Your request has been cancelled.")
         return redirect("requests:list")
+
+
+class ManageClaimsView(FullyActivatedUserMixin, ListView):
+    """View for admins to manage company claim requests"""
+
+    template_name = "pages/requests/manage_claims.html"
+    context_object_name = "requests"
+    paginate_by = 10
+
+    def user_test_func(self):
+        # Only superusers can access this view
+        self.permission_denied_message = (
+            "You do not have permission to view these requests."
+        )
+        self.permission_denied_redirect_url = "requests:list"
+        return self.request.user.is_superuser
+
+    def get_queryset(self):
+        # Get all claim requests
+        return Request.objects.filter(
+            type="claim",  # Using string value instead of enum
+            status="pending",  # Only show pending requests
+            is_deleted=False,
+        ).order_by("-created_at")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = "Manage Company Claims"
+        context["description"] = (
+            "Review and process requests to claim company ownership"
+        )
+        return context
+
+
+class ManageUnclaimedRequestsView(FullyActivatedUserMixin, ListView):
+    """View for admins to manage join/other requests sent to unclaimed companies."""
+
+    template_name = "pages/requests/manage_unclaimed.html"
+    context_object_name = "requests"
+    paginate_by = 10
+
+    def user_test_func(self):
+        self.permission_denied_message = (
+            "You do not have permission to view these requests."
+        )
+        self.permission_denied_redirect_url = "dashboard"
+        return self.request.user.is_superuser
+
+    def get_queryset(self):
+        return (
+            Request.objects.filter(
+                type__in=["join", "other"],
+                status="pending",
+                company__employer__isnull=True,
+                is_deleted=False,
+            )
+            .select_related("author", "company")
+            .order_by("-created_at")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = "Unclaimed Join & Other Requests"
+        context["description"] = (
+            "Manage requests sent to companies that are not yet claimed by an employer."
+        )
+        return context
