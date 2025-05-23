@@ -52,6 +52,7 @@ class Company(BaseModel):
     @property
     def profile_picture(self):
         from secure_files.models import SecureFile
+        from secure_files.utils import get_secure_file_url
 
         ct = ContentType.objects.get_for_model(self.__class__)
         secure_file = SecureFile.objects.filter(
@@ -59,7 +60,7 @@ class Company(BaseModel):
         ).first()
 
         if secure_file and secure_file.file:
-            return secure_file.file.url
+            return get_secure_file_url(secure_file)
 
         return static("images/company_placeholder.png")
 
