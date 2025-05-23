@@ -35,14 +35,15 @@
                 </div>
 
                 <!-- Attached Files -->
-                {% load secure_files_tags %}
-                {% get_object_files request as files %}
-                {% if files %}
+                {% with request as request_instance %}
+                {% get_object_files request_instance as request_files %}
+                {% if request_files %}
                 <div class="mt-4">
                     <h3 class="text-lg font-semibold mb-2">Attached Documents</h3>
-                    <c-secure-files.list :files="{{ files }}" :show_delete="false" />
+                    {% include "components/secure_files/list.html" with files=request_files show_delete=False %}
                 </div>
                 {% endif %}
+                {% endwith %}
 
                 <div class="card-actions justify-end mt-6">
                     {% if can_process_request and request.status == 'pending' %}
@@ -120,6 +121,16 @@
                             <div class="mt-2 prose max-w-none">
                                 {{ reply.content|safe }}
                             </div>
+
+                            {% with reply as reply_instance %}
+                            {% get_object_files reply_instance as reply_files %}
+                            {% if reply_files %}
+                            <div class="mt-4">
+                                <h3 class="text-lg font-semibold mb-2">Attached Documents</h3>
+                                {% include "components/secure_files/list.html" with files=reply_files show_delete=False %}
+                            </div>
+                            {% endif %}
+                            {% endwith %}
                         </div>
                     </div>
                 </div>
@@ -133,12 +144,22 @@
         <div class="card bg-base-100 shadow-md">
             <div class="card-body">
                 <h3 class="card-title">Add Reply</h3>
-                <form method="post" action="{% url 'requests:reply' request.id %}">
+                <form method="post" action="{% url 'requests:reply' request.id %}" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="form-control">
                         {{ reply_form.content }}
                         {% if reply_form.content.errors %}
                         <p class="text-red-500 text-sm mt-1">{{ reply_form.content.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <!-- Verification Document -->
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text font-semibold">Upload Document (optional)</span>
+                        </label>
+                        {{ reply_form.upload_document }}
+                        {% if reply_form.upload_document.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ reply_form.upload_document.errors.0 }}</p>
                         {% endif %}
                     </div>
                     <div class="card-actions justify-end mt-4">

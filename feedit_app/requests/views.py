@@ -373,7 +373,24 @@ class CreateRequestReplyView(FullyActivatedUserMixin, CreateView):
         form.instance.author = self.request.user
 
         messages.success(self.request, "Your reply has been posted successfully.")
-        return super().form_valid(form)
+        response = super().form_valid(form)
+
+        print(
+            "Attached to:",
+            ContentType.objects.get_for_model(RequestReply).model,
+            self.object.id,
+        )
+        file = self.request.FILES.get("upload_document")
+        if file:
+            SecureFile.objects.create(
+                content_type=ContentType.objects.get_for_model(RequestReply),
+                object_id=self.object.id,
+                file=file,
+                uploaded_by=self.request.user,
+            )
+            messages.success(self.request, "Document uploaded successfully.")
+
+        return response
 
 
 class CancelRequestView(FullyActivatedUserMixin, View):

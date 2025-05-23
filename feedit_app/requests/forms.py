@@ -38,6 +38,13 @@ class RequestForm(forms.ModelForm):
 
 
 class RequestReplyForm(forms.ModelForm):
+    upload_document = forms.FileField(
+        required=False,
+        widget=forms.FileInput(
+            attrs={"class": "file-input file-input-bordered w-full"}
+        ),
+    )
+
     class Meta:
         model = RequestReply
         fields = ["content"]

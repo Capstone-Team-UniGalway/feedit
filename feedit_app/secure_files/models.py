@@ -4,10 +4,17 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
+from requests.models import Request, RequestReply
+from companies.models import Company
+from threads.models import Thread
+from django.contrib.auth import get_user_model
 from app.base_model import BaseModel
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
-ALLOWED_CONTENT_TYPES = ["user", "company", "thread", "request", "request_reply"]
+ALLOWED_MODELS = [get_user_model(), Company, Thread, Request, RequestReply]
+ALLOWED_CONTENT_TYPES = [
+    ContentType.objects.get_for_model(model).model for model in ALLOWED_MODELS
+]
 IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp"]
 
 
@@ -32,7 +39,7 @@ def upload_to(instance, filename):
         return f"attachments/company/{obj.company_id}/{model}/{obj.id}/{filename}"
 
     # Request reply files
-    if model == "request_reply" and hasattr(obj, "request"):
+    if model == "requestreply" and hasattr(obj, "request"):
         company_id = getattr(obj.request.company, "id", "unknown")
         return (
             f"attachments/company/{company_id}/request/{obj.request.id}/"
@@ -89,7 +96,7 @@ class SecureFile(BaseModel):
         # ✅ Only allow image files except for request/request_reply
         extension = self.file.name.rsplit(".", 1)[-1].lower()
         if (
-            model not in ["request", "request_reply"]
+            model not in ["request", "requestreply"]
             and extension not in IMAGE_EXTENSIONS
         ):
             raise ValidationError(
