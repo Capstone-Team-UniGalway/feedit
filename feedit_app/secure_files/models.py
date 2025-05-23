@@ -17,7 +17,30 @@ def validate_file_size(file):
 
 
 def upload_to(instance, filename):
-    return f"attachments/{instance.content_type.model}/{filename}"
+    model = instance.content_type.model
+    obj = instance.content_object
+
+    if not obj:
+        return f"unresolved/{model}/unsaved/{filename}"
+
+    # User and company profile pictures
+    if model in ["user", "company"]:
+        return f"attachments/{model}/{obj.id}/{filename}"
+
+    # Thread or request files under a company
+    if model in ["thread", "request"] and hasattr(obj, "company_id"):
+        return f"attachments/company/{obj.company_id}/{model}/{obj.id}/{filename}"
+
+    # Request reply files
+    if model == "request_reply" and hasattr(obj, "request"):
+        company_id = getattr(obj.request.company, "id", "unknown")
+        return (
+            f"attachments/company/{company_id}/request/{obj.request.id}/"
+            f"replies/{obj.id}/{filename}"
+        )
+
+    # Fallback
+    return f"unresolved/{model}/{obj.id or 'unsaved'}/{filename}"
 
 
 class SecureFile(BaseModel):

@@ -54,6 +54,10 @@ urlpatterns = [
     path("requests/", include("requests.urls")),
     path("uploads/", include("secure_files.urls")),
     path("upload/", include("django_ckeditor_5.urls")),
-    # Serve media files in development
-    path("media/<path:path>", serve, {"document_root": settings.MEDIA_ROOT}),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# 👇 Only serve /media in development
+if settings.ENVIRONMENT == "development":
+    urlpatterns += [
+        path("media/<path:path>", serve, {"document_root": settings.MEDIA_ROOT}),
+    ]
