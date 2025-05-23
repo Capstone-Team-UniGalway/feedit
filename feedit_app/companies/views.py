@@ -225,21 +225,36 @@ class DeleteCompanyView(FullyActivatedUserMixin, View):
 
 
 class LeaveCompanyView(FullyActivatedUserMixin, View):
-    """View for users to leave their current company"""
+    """Allows both employees and employers to leave their current company"""
+
+    def user_test_func(self):
+        self.permission_denied_message = (
+            "You are not currently associated with any company."
+        )
+        self.permission_denied_redirect_url = "dashboard"
+        user = self.request.user
+
+        return user.workplace or hasattr(user, "company")
 
     def post(self, request, *args, **kwargs):
-        # Check if user has a workplace
-        if not request.user.workplace:
-            messages.error(
-                request, "You are not currently associated with any company."
+        user = request.user
+
+        # Case 1: Employee leaving workplace
+        if user.type == "employee" and user.workplace:
+            name = user.workplace.name
+            user.workplace = None
+            user.save()
+            messages.success(request, f"You have successfully left {name}.")
+
+        # Case 2: Employer relinquishing their owned company
+        elif user.type == "employer" and hasattr(user, "company") and user.company:
+            company = user.company
+            company_name = company.name
+            company.employer = None
+            company.save()
+            # Optional: user.is_approved = False  # if you want to reset approval
+            messages.success(
+                request, f"You have successfully unlinked from {company_name}."
             )
-            return redirect("dashboard")
 
-        company_name = request.user.workplace.name
-
-        # Remove the workplace association
-        request.user.workplace = None
-        request.user.save()
-
-        messages.success(request, f"You have successfully left {company_name}.")
         return redirect("dashboard")

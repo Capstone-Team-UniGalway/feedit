@@ -26,15 +26,40 @@
     </a>
 </li>
 {% endif %}
-{% if user.company %}
+{% if user.company or user.is_superuser %}
 <li>
     <div class="dropdown dropdown-bottom dropdown-center nav-link">
         <div tabindex="0" role="button">
             <i class="fas fa-clipboard-list mr-1"></i> Requests
         </div>
         <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-t-none rounded-box z-1 w-52 p-2 shadow-sm">
-            <li><a href="{% url 'requests:list' %}">My Requests</a></li>
-            <li><a href="{% url 'requests:company' company_id=user.company.id %}">Company Requests</a></li>
+            {% if user.company %}
+            <li>
+                <a href="{% url 'requests:list' %}">
+                    <i class="fas fa-clipboard-user mr-1"></i> My Requests
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'requests:company' company_id=user.company.id %}">
+                    <i class="fas fa-building-flag mr-1"></i> Company Requests
+                </a>
+            </li>
+            {% endif %}
+            {% if user.company and user.is_superuser %}
+            <div class="divider"></div>
+            {% endif %}
+            {% if user.is_superuser %}
+            <li>
+                <a href="{% url 'requests:manage_claims' %}">
+                    <i class="fas fa-building-circle-exclamation mr-1"></i> Company Claims
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'requests:manage_unclaimed' %}">
+                    <i class="fas fa-clipboard-question mr-1"></i> Unclaimed Requests
+                </a>
+            </li>
+            {% endif %}
         </ul>
     </div>
 </li>

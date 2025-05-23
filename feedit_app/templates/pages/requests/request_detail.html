@@ -18,7 +18,16 @@
                     <span class="badge badge-lg badge-{{ request.status|get_status_badge_color }}">{{
                         request.get_status_display }}</span>
                 </div>
-
+                {% if request.type == 'claim' and request.company.employer %}
+                <div class="alert alert-warning alert-outline text-sm">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    <div>
+                        <strong>Dispute:</strong> This company is already owned by
+                        <span class="font-semibold">{{ request.company.employer.get_full_name }}</span>.
+                        This claim will replace the current employer if approved.
+                    </div>
+                </div>
+                {% endif %}
                 <div class="divider"></div>
 
                 <div class="prose max-w-none">
@@ -35,8 +44,8 @@
                 </div>
                 {% endif %}
 
-                {% if can_process_request and request.status == 'pending' %}
                 <div class="card-actions justify-end mt-6">
+                    {% if can_process_request and request.status == 'pending' %}
                     <button class="btn btn-success"
                         onclick="openRequestModal('approve', '{{ request.id }}', '{{ request.title|escapejs }}')">
                         <i class="fas fa-check mr-1"></i> Approve
@@ -45,16 +54,14 @@
                         onclick="openRequestModal('reject', '{{ request.id }}', '{{ request.title|escapejs }}')">
                         <i class="fas fa-times mr-1"></i> Reject
                     </button>
-                </div>
-                {% endif %}
-                {% if user == request.author and request.status == 'pending' %}
-                <div class="card-actions justify-end mt-6">
+                    {% endif %}
+                    {% if user == request.author and request.status == 'pending' %}
                     <button class="btn btn-warning"
                         onclick="openRequestModal('cancel', '{{ request.id }}', '{{ request.title|escapejs }}')">
                         <i class="fas fa-ban mr-1"></i> Cancel
                     </button>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </div>
 
