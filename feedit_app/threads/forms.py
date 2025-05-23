@@ -18,7 +18,8 @@ class ThreadForm(forms.ModelForm):
                 }
             ),
             "content": CKEditor5Widget(
-                attrs={"class": "django_ckeditor_5 w-full"}, config_name="extends"
+                attrs={"class": "django_ckeditor_5 w-full textarea"},
+                config_name="extends",
             ),
             "type": forms.Select(attrs={"class": "select select-bordered w-full"}),
             "visibility": forms.Select(
@@ -41,6 +42,7 @@ class ThreadReplyForm(forms.ModelForm):
         fields = ["content"]
         widgets = {
             "content": CKEditor5Widget(
-                attrs={"class": "django_ckeditor_5"}, config_name="extends"
+                attrs={"class": "django_ckeditor_5 w-full textarea", "rows": "3"},
+                config_name="extends",
             )
         }
