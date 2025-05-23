@@ -118,7 +118,7 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
 
         ct = ContentType.objects.get_for_model(self.__class__)
         secure_file = SecureFile.objects.filter(
-            content_type=ct, object_id=self.id
+            content_type=ct, object_id=self.id, is_deleted=False
         ).first()
 
         if secure_file and secure_file.file:

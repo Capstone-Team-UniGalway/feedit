@@ -2,7 +2,7 @@
 Secure File List Component
 
 Usage:
-{% include "components/secure_file_list.html" with files=files %}
+<c-secure-files.list :files="{{ files }}" :show_delete="true" />
 
 Parameters:
 - files: QuerySet of SecureFile objects

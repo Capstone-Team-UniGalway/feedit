@@ -2,7 +2,8 @@
 Secure File Upload Component
 
 Usage:
-{% include "components/secure_file_upload.html" with content_type_id=content_type.id object_id=object.id %}
+<c-secure-files.upload :content_type_id="{{ content_type_id }}" :object_id="{{ user.id }}"
+    label="Upload Profile Picture" help_text="Upload an image for your profile (JPG, PNG, WEBP)" accept="image/*" />
 
 Parameters:
 - content_type_id: ID of the ContentType for the object
@@ -17,10 +18,10 @@ Parameters:
 {% load static %}
 
 <div class="secure-file-upload">
-    <form method="post" action="{% url 'secure_files:upload' content_type_id=content_type_id object_id=object_id %}" 
-          enctype="multipart/form-data" class="space-y-4">
+    <form method="post" action="{% url 'secure_files:new' content_type_id=content_type_id object_id=object_id %}"
+        enctype="multipart/form-data" class="space-y-4">
         {% csrf_token %}
-        
+
         <div class="form-control">
             <label class="label">
                 <span class="label-text">{{ label|default:"Upload File" }}</span>
@@ -28,12 +29,10 @@ Parameters:
                 <span class="label-text-alt">{{ help_text }}</span>
                 {% endif %}
             </label>
-            <input type="file" name="file" 
-                   class="file-input file-input-bordered w-full" 
-                   {% if required %}required{% endif %}
-                   {% if accept %}accept="{{ accept }}"{% endif %} />
+            <input type="file" name="file" class="file-input file-input-bordered w-full"
+                {% if required %}required{% endif %} {% if accept %}accept="{{ accept }}" {% endif %} />
         </div>
-        
+
         <div class="flex justify-end">
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-upload mr-2"></i> {{ button_text|default:"Upload" }}

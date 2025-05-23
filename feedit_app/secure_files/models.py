@@ -50,14 +50,21 @@ class SecureFile(BaseModel):
     def save(self, *args, **kwargs):
         model = self.content_type.model
 
+        # 🔒 Skip validation if part of soft-deletion
+        if getattr(self, "_suppress_validation", False):
+            return super().save(*args, **kwargs)
+
         # ✅ Enforce allowed content types
         if model not in ALLOWED_CONTENT_TYPES:
             raise ValidationError(
                 f"Attachments to '{self.content_type.name}' are not allowed."
             )
 
+        if not self.file or not getattr(self.file, "name", None):
+            raise ValidationError("Uploaded file is missing or invalid.")
+
         # ✅ Only allow image files except for request/request_reply
-        extension = self.file.name.split(".")[-1].lower()
+        extension = self.file.name.rsplit(".", 1)[-1].lower()
         if (
             model not in ["request", "request_reply"]
             and extension not in IMAGE_EXTENSIONS
@@ -81,19 +88,26 @@ class SecureFile(BaseModel):
             if existing:
                 if existing.file:
                     existing.file.delete(save=False)
+                # 🛡️ Suppress validation when soft-deleting
+                existing._suppress_validation = True
                 existing.delete()
 
-        if self.file:
-            self.size = self.file.size
-            self.filename = self.file.name
+        self.size = self.file.size
+        self.filename = self.file.name
 
         self.full_clean()
-        super().save(*args, **kwargs)
+        return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        if self.file:
-            self.file.delete(save=False)  # Delete the actual file
-        super().delete(*args, **kwargs)  # Mark is_deleted
+        if self.file and hasattr(self.file, "delete"):
+            try:
+                self.file.delete(save=False)  # Remove from storage
+            except Exception:
+                pass  # Optional: log failure
+
+        # 🛡️ Trigger validation bypass on re-entry
+        self._suppress_validation = True
+        return super().delete(*args, **kwargs)
 
     def __str__(self):
         return f"{self.filename} attached to {self.content_type} {self.object_id}"
