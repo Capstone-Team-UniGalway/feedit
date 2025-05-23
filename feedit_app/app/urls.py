@@ -16,6 +16,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
+from django.contrib.auth.decorators import login_required
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
@@ -24,23 +25,26 @@ from django.views.static import serve
 from accounts.views import DashboardView
 from .views import WelcomeView
 
+
+admin.site.login = login_required(admin.site.login)
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("companies/", include("companies.urls")),
     path("", WelcomeView.as_view(), name="home"),
-    path("dashboard", DashboardView.as_view(), name="dashboard"),
+    path("dashboard/", DashboardView.as_view(), name="dashboard"),
     path(
-        "privacy",
+        "privacy/",
         TemplateView.as_view(template_name="pages/privacy.html"),
         name="privacy",
     ),
     path(
-        "report_bug",
+        "report_bug/",
         TemplateView.as_view(template_name="pages/report_bug.html"),
         name="report_bug",
     ),
     path(
-        "secure_file_demo",
+        "secure_file_demo/",
         TemplateView.as_view(template_name="pages/secure_file_demo.html"),
         name="secure_file_demo",
     ),

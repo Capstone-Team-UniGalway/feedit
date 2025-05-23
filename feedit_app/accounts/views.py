@@ -33,6 +33,7 @@ from allauth.account.views import (
     PasswordResetView,
 )
 from allauth.account.forms import ChangePasswordForm
+from allauth.mfa.base.views import AuthenticateView
 from .forms import (
     CustomLoginForm,
     CustomSignupForm,
@@ -105,6 +106,7 @@ class AuthView(TemplateView):
                 except Exception:
                     # Reset corrupted session data
                     request.session["account_login"] = {}
+
                 return perform_login(request, user, redirect_url=self.success_url)
 
             context = {
@@ -142,8 +144,19 @@ class LogoutView(LoginRequiredMixin, TemplateView):
     success_url = reverse_lazy("account_auth")
 
     def get(self, request, *args, **kwargs):
+        request.session.pop(
+            "account_mfa_authenticated", None
+        )  # ✅ Clear MFA session flag
         auth_logout(request)
         return redirect(self.success_url)
+
+
+class CustomAuthenticateView(AuthenticateView):
+    def form_valid(self, form):
+        # ✅ Mark MFA as verified in session
+        self.request.session["account_mfa_authenticated"] = True
+        # Continue normal flow
+        return super().form_valid(form)
 
 
 class EmailConfirmView(ConfirmEmailView):
