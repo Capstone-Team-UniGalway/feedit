@@ -1,4 +1,6 @@
 {% load static %}
+{% load mention_tags %}
+{% load notification_tags %}
 <header class="sticky top-0 z-50 bg-base-100 shadow-md">
     <div class="drawer">
         <input id="my-drawer-3" type="checkbox" class="drawer-toggle" />
@@ -31,25 +33,7 @@
                     </div>
                     {% if user.is_authenticated %}
                     <!-- Notifications -->
-                    <div class="dropdown dropdown-end">
-                        <label tabindex="0" class="btn btn-ghost btn-circle">
-                            <div class="indicator">
-                                <i class="fas fa-bell text-lg"></i>
-                                <span class="badge badge-xs badge-primary indicator-item"></span>
-                            </div>
-                        </label>
-                        <div tabindex="0"
-                            class="dropdown-menu dropdown-content mt-3 z-[1] card card-compact rounded-box w-80 shadow bg-base-100">
-                            <div class="card-body">
-                                <h3 class="font-bold text-lg">Notifications</h3>
-                                <div class="divider my-0"></div>
-                                <p class="text-sm text-gray-500">You have no new notifications</p>
-                                <div class="card-actions justify-end mt-2">
-                                    <button class="btn btn-primary btn-sm">View all</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    {% include "components/notification_dropdown.html" %}
 
                     <!-- User Profile -->
                     <div class="dropdown dropdown-end">
@@ -74,6 +58,20 @@
                             <div class="divider my-0"></div>
                             <li><a href="{% url 'account_profile' %}">
                                     <i class="fas fa-user mr-2"></i> View Profile
+                                </a></li>
+                            <li><a href="{% url 'notifications:list' %}">
+                                    <i class="fas fa-bell mr-2"></i> Notifications
+                                    {% unread_notifications_count user as count %}
+                                    {% if count > 0 %}
+                                    <span class="badge badge-primary badge-sm ml-auto">{{ count }}</span>
+                                    {% endif %}
+                                </a></li>
+                            <li><a href="{% url 'account_mentions' %}">
+                                    <i class="fas fa-at mr-2"></i> Your Mentions
+                                    {% unread_mentions_count user as count %}
+                                    {% if count > 0 %}
+                                    <span class="badge badge-primary badge-sm ml-auto">{{ count }}</span>
+                                    {% endif %}
                                 </a></li>
                             <li><a href="{% url 'account_edit' %}">
                                     <i class="fas fa-cog mr-2"></i> Account Settings

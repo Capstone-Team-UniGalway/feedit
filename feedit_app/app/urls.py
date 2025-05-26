@@ -74,6 +74,7 @@ urlpatterns = [
     path("threads/", include("threads.urls")),
     path("reviews/", include("reviews.urls")),
     path("requests/", include("requests.urls")),
+    path("notifications/", include("notifications.urls")),
     path("secure-files/", include("secure_files.urls")),
     path("upload/", include("django_ckeditor_5.urls")),
     # Serve media files in development

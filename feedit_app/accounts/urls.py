@@ -18,6 +18,7 @@ from .views import (
     CustomPasswordResetFromKeyView,
     CustomPasswordResetView,
     UserSearchView,
+    MentionsListView,
 )
 
 urlpatterns = [
@@ -82,4 +83,5 @@ urlpatterns = [
     ),
     path("mfa/authenticate/", AuthenticateView.as_view(), name="mfa_authenticate"),
     path("api/search-users/", UserSearchView.as_view(), name="api_search_users"),
+    path("mentions/", MentionsListView.as_view(), name="account_mentions"),
 ]

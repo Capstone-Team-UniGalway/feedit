@@ -320,8 +320,20 @@ CKEDITOR_5_CONFIGS = {
             "horizontalLine",
             "pageBreak",
             "|",
+            "mention",
+            "|",
             "sourceEditing",
         ],
+        "mention": {
+            "feeds": [
+                {
+                    "marker": '@',
+                    "feed": '/account/api/search-users/',
+                    "minimumCharacters": 2,
+                    "itemRenderer": "customMentionItemRenderer"
+                }
+            ]
+        },
         "image": {
             "toolbar": [
                 "imageTextAlternative",

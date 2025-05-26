@@ -2,7 +2,6 @@ import pytest
 from companies.models import Company
 from .factories import CompanyFactory
 from accounts.tests.factories import UserFactory
-from unittest import mock
 
 pytestmark = pytest.mark.django_db
 
@@ -30,8 +29,15 @@ def test_company_employer_link():
 def test_profile_picture_property_returns_file_or_none():
     company = CompanyFactory()
 
-    with mock.patch("secure_files.models.SecureFile.objects.filter") as mocked_filter:
-        mocked_filter.return_value.first.return_value = "mocked_file"
-        result = company.profile_picture
-        assert result == "mocked_file"
-        mocked_filter.assert_called_once()
+    # Test when no file exists
+    result = company.profile_picture
+    assert result == "/assets/images/company_placeholder.png"
+
+    # Test when file exists - just verify it doesn't return the placeholder
+    from secure_files.tests.factories import SecureFileFactory
+    SecureFileFactory(content_object=company)
+
+    result = company.profile_picture
+    # Should return the file URL, not the placeholder
+    assert result != "/assets/images/company_placeholder.png"
+    assert "profile" in result and ".jpg" in result

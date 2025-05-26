@@ -1,3 +1,5 @@
+{% load mention_tags %}
+
 <c-layouts.base>
     <div class="max-w-5xl mx-auto">
         <!-- Header -->
@@ -77,8 +79,8 @@
                 <div class="p-4">
                     <div class="flex justify-between items-start">
                         <h2 class="text-xl font-bold mb-2">
-                            <a href="{% url 'thread_detail' thread.pk %}"
-                                class="hover:text-primary">{{ thread.title }}</a>
+                            <a href="{% url 'thread_detail' thread.pk %}" class="hover:text-primary">{{ thread.title
+                                }}</a>
                         </h2>
                         <div class="badge badge-{{ thread.type }}">{{ thread.get_type_display }}</div>
                     </div>
@@ -92,7 +94,7 @@
                         {% endif %}
                     </div>
                     <div class="prose max-w-none line-clamp-3 mb-4">
-                        {{ thread.content|safe|truncatewords_html:30 }}
+                        {{ thread.content|render_mentions|safe|truncatewords_html:30 }}
                     </div>
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-2">
@@ -165,6 +167,22 @@
         .badge-announcement {
             background-color: hsl(var(--s));
             color: hsl(var(--sc));
+        }
+
+        /* Mention styling */
+        a.mention {
+            color: hsl(var(--p));
+            font-weight: 500;
+            background-color: rgba(var(--p), 0.1);
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+
+        a.mention:hover {
+            background-color: rgba(var(--p), 0.2);
+            text-decoration: none;
         }
     </style>
 </c-layouts.base>

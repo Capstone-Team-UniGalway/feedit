@@ -57,6 +57,11 @@ class SecureFile(BaseModel):
             )
 
         # ✅ Only allow image files except for request/request_reply
+        # Skip validation if file is None (e.g., during soft delete)
+        if not self.file or not self.file.name:
+            super().save(*args, **kwargs)
+            return
+
         extension = self.file.name.split(".")[-1].lower()
         if (
             model not in ["request", "request_reply"]
