@@ -110,6 +110,11 @@ class ThreadDetailView(FullyActivatedUserMixin, DetailView):
         self.object = self.get_object()
 
         user = request.user
+
+        # Check if user is authenticated before accessing attributes
+        if not user.is_authenticated:
+            return super().dispatch(request, *args, **kwargs)
+
         is_employer = getattr(user, "company", None)
         same_company = (user.workplace and user.workplace == self.object.company) or (
             is_employer and user.company == self.object.company
