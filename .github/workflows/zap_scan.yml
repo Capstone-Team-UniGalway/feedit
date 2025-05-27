@@ -1,0 +1,20 @@
+name: OWASP ZAP Baseline Scan
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  zap_scan:
+    runs-on: ubuntu-latest
+    name: ZAP Scan
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.11.0
+        with:
+          target: 'http://127.0.0.1:8000'
