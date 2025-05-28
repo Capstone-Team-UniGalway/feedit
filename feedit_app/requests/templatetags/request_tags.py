@@ -3,6 +3,7 @@ from requests.models import Request
 
 register = template.Library()
 
+
 @register.filter
 def get_type_badge_color(request_type):
     """Returns the appropriate badge color for a request type."""
@@ -12,6 +13,7 @@ def get_type_badge_color(request_type):
         Request.RequestType.OTHER: "accent",
     }
     return colors.get(request_type, "neutral")
+
 
 @register.filter
 def get_status_badge_color(status):

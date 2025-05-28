@@ -16,10 +16,7 @@ def get_files_for_object(obj, include_deleted=False):
     """
     content_type = ContentType.objects.get_for_model(obj)
 
-    queryset = SecureFile.objects.filter(
-        content_type=content_type,
-        object_id=obj.id
-    )
+    queryset = SecureFile.objects.filter(content_type=content_type, object_id=obj.id)
 
     if not include_deleted:
         queryset = queryset.filter(is_deleted=False)
@@ -42,7 +39,8 @@ def get_content_type_for_model(model_class):
 
 def get_secure_file_url(secure_file):
     """
-    Get the appropriate URL for a secure file based on its content object type.
+    Returns the unified secure download URL for a SecureFile instance.
+    All access control is handled in the view.
 
     Args:
         secure_file: The SecureFile instance
@@ -50,30 +48,4 @@ def get_secure_file_url(secure_file):
     Returns:
         URL string for accessing the file with proper permissions
     """
-    # Get the content object
-    content_object = secure_file.content_object
-
-    # Check if content object is a Request
-    if content_object and hasattr(content_object, 'type'):
-        # Import Request model to check request types
-        from django.apps import apps
-        Request = apps.get_model('requests', 'Request')
-
-        # Check if content object is a Request
-        if isinstance(content_object, Request):
-            # Check request type
-            if content_object.type == Request.RequestType.JOIN:
-                # Join request file
-                return reverse('secure_files:download_join_request_file', kwargs={
-                    'join_request_id': content_object.id,
-                    'secure_file_id': secure_file.id
-                })
-            elif content_object.type == Request.RequestType.CLAIM:
-                # Claim request file
-                return reverse('secure_files:download_claim_request_file', kwargs={
-                    'claim_request_id': content_object.id,
-                    'secure_file_id': secure_file.id
-                })
-
-    # Default to standard secure file download URL
-    return reverse('secure_files:download', kwargs={'file_id': secure_file.id})
+    return reverse("secure_files:download", kwargs={"file_id": secure_file.id})

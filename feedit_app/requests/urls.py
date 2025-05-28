@@ -1,13 +1,33 @@
 from django.urls import path
 from . import views
 
-app_name = 'requests'
+app_name = "requests"
 
 urlpatterns = [
-    path('create/<int:company_id>/', views.CreateRequestView.as_view(), name='create'),
-    path('<int:pk>/', views.RequestDetailView.as_view(), name='detail'),
-    path('list/', views.RequestListView.as_view(), name='list'),
-    path('process/<int:pk>/', views.ProcessRequestView.as_view(), name='process'),
-    path('reply/<int:request_id>/', views.CreateRequestReplyView.as_view(), name='reply'),
-    path('company/<int:company_id>/', views.CompanyRequestListView.as_view(), name='company_requests'),
+    path("", views.RequestListView.as_view(), name="list"),
+    path("create/", views.CreateRequestView.as_view(), name="create"),
+    path(
+        "create/<int:company_id>/",
+        views.CreateRequestView.as_view(),
+        name="create_with_id",
+    ),
+    path("<int:pk>/", views.RequestDetailView.as_view(), name="detail"),
+    path("<int:pk>/process/", views.ProcessRequestView.as_view(), name="process"),
+    path("<int:pk>/cancel/", views.CancelRequestView.as_view(), name="cancel"),
+    path(
+        "<int:request_id>/reply/", views.CreateRequestReplyView.as_view(), name="reply"
+    ),
+    path(
+        "company/<int:company_id>/",
+        views.RequestListView.as_view(),
+        name="company",
+    ),
+    path(
+        "manage-claims/", views.ManageClaimsView.as_view(), name="manage_claims"
+    ),  # /requests/manage-claims/
+    path(
+        "manage-unclaimed/",
+        views.ManageUnclaimedRequestsView.as_view(),
+        name="manage_unclaimed",
+    ),  # /requests/manage-unclaimed/
 ]

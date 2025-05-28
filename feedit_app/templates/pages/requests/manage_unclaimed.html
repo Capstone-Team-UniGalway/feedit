@@ -4,14 +4,9 @@
         <!-- Header -->
         <div class="flex justify-between items-center mb-8">
             <div>
-                <h1 class="text-3xl font-bold mb-2">{{ title|default:"Requests" }}</h1>
-                <p class="text-gray-500">{{ description|default:"View and manage requests" }}</p>
+                <h1 class="text-3xl font-bold mb-2">{{ title }}</h1>
+                <p class="text-gray-500">{{ description }}</p>
             </div>
-            {% if user.has_company %}
-            <a href="{% url 'requests:create' %}" class="btn btn-primary">
-                <i class="fas fa-plus mr-2"></i> New Request
-            </a>
-            {% endif %}
         </div>
 
         {% if requests %}
@@ -22,60 +17,58 @@
                     <div class="flex justify-between items-start">
                         <div>
                             <h3 class="card-title">
-                                <span
-                                    class="badge badge-{{ request.type|get_type_badge_color }}">{{ request.get_type_display }}</span>
+                                <span class="badge badge-{{ request.type|get_type_badge_color }}">
+                                    {{ request.get_type_display }}
+                                </span>
                                 {{ request.title }}
                             </h3>
                             <p class="text-sm text-gray-500">
-                                Submitted by {{ request.author.get_full_name }} on
-                                {{ request.created_at|date:"M d, Y" }}
+                                {{ request.author.get_full_name }} ({{ request.author.email }}) →
+                                {{ request.company.name }}
+                            </p>
+                            <p class="text-xs text-gray-400 italic">
+                                Submitted {{ request.created_at|date:"M d, Y" }} ({{ request.created_at|timesince }}
+                                ago)
                             </p>
                         </div>
-                        <span
-                            class="badge badge-{{ request.status|get_status_badge_color }}">{{ request.get_status_display }}</span>
+                        <span class="badge badge-{{ request.status|get_status_badge_color }}">
+                            {{ request.get_status_display }}
+                        </span>
                     </div>
 
-                    <div class="mt-4">
-                        {{ request.content|safe|truncatewords_html:50 }}
+                    <div class="mt-4 text-sm">
+                        {% if request.content %}
+                        {{ request.content|safe|truncatechars:150 }}
+                        {% else %}
+                        <span class="text-gray-400">No message provided</span>
+                        {% endif %}
                     </div>
 
                     <div class="card-actions justify-end mt-4">
                         <a href="{% url 'requests:detail' request.id %}" class="btn btn-sm btn-outline">
-                            View Details
+                            <i class="fas fa-eye mr-1"></i> View Details
                         </a>
-
-                        {% if company and request.status == "pending" and request.type in "join,other" %}
-                        {% if user == company.employer or user.is_superuser %}
-                        <!-- Approve -->
                         <button type="button" class="btn btn-sm btn-success ml-2"
                             onclick="openRequestModal('approve', '{{ request.id }}', '{{ request.title|escapejs }}')">
                             <i class="fas fa-check mr-1"></i> Approve
                         </button>
-                        <!-- Reject -->
                         <button type="button" class="btn btn-sm btn-error ml-1"
                             onclick="openRequestModal('reject', '{{ request.id }}', '{{ request.title|escapejs }}')">
                             <i class="fas fa-times mr-1"></i> Reject
                         </button>
-                        {% endif %}
-                        {% elif not company and request.status == "pending" and request.author == user %}
-                        <!-- Cancel -->
-                        <button type="button" class="btn btn-sm btn-warning ml-2"
-                            onclick="openRequestModal('cancel', '{{ request.id }}', '{{ request.title|escapejs }}')">
-                            <i class="fas fa-ban mr-1"></i> Cancel Request
-                        </button>
-                        {% endif %}
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
-        <!-- Single dialog for all request actions -->
+
+        <!-- Modal -->
         <dialog id="request_modal" class="modal">
             <div class="modal-box">
                 <h3 class="font-bold text-lg" id="modal-title">Confirm Action</h3>
                 <div class="alert alert-warning my-3" id="modal-alert">
                     <i class="fas fa-exclamation-triangle"></i>
-                    <span id="modal-warning-text">This action cannot be undone!</span>
+                    <span>This action cannot be undone!</span>
                 </div>
                 <p class="py-1 text-sm text-gray-600" id="modal-message">Are you sure?</p>
                 <div class="modal-action">
@@ -98,14 +91,10 @@
         {% if is_paginated %}
         <div class="join mt-10 justify-center flex">
             {% if page_obj.has_previous %}
-            <a href="?page=1" class="join-item btn">
-                <i class="fas fa-angles-left"></i>
-            </a>
-            <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn">
-                <i class="fas fa-angle-left"></i>
-            </a>
+            <a href="?page=1" class="join-item btn"><i class="fas fa-angles-left"></i></a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn"><i
+                    class="fas fa-angle-left"></i></a>
             {% endif %}
-
             {% for num in page_obj.paginator.page_range %}
             {% if page_obj.number == num %}
             <a href="?page={{ num }}" class="join-item btn btn-active">{{ num }}</a>
@@ -113,14 +102,10 @@
             <a href="?page={{ num }}" class="join-item btn">{{ num }}</a>
             {% endif %}
             {% endfor %}
-
             {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}" class="join-item btn">
-                <i class="fas fa-angle-right"></i>
-            </a>
-            <a href="?page={{ page_obj.paginator.num_pages }}" class="join-item btn">
-                <i class="fas fa-angles-right"></i>
-            </a>
+            <a href="?page={{ page_obj.next_page_number }}" class="join-item btn"><i class="fas fa-angle-right"></i></a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="join-item btn"><i
+                    class="fas fa-angles-right"></i></a>
             {% endif %}
         </div>
         {% endif %}
@@ -129,7 +114,7 @@
             <div class="card-body text-center py-12">
                 <i class="fas fa-inbox text-5xl text-gray-300 mb-3"></i>
                 <h3 class="text-xl font-bold">No Requests Found</h3>
-                <p class="text-gray-500">There are no requests to display at this time.</p>
+                <p class="text-gray-500">There are no pending join or other requests for unclaimed companies.</p>
                 <a href="{% url 'dashboard' %}" class="btn btn-primary">
                     <i class="fas fa-home mr-2"></i> Back to Dashboard
                 </a>
@@ -137,6 +122,7 @@
         </div>
         {% endif %}
     </div>
+
     <script>
         function openRequestModal(type, reqId, reqTitle) {
             const form = document.getElementById("modalForm");
@@ -148,18 +134,8 @@
             const submitBtn = document.getElementById("modal-submit-btn");
             const submitLabel = document.getElementById("modal-submit-label");
             const icon = document.getElementById("modal-icon");
-            const alertBox = document.getElementById("modal-alert");
 
-            // Setup content dynamically
-            if (type === "cancel") {
-                form.action = `/requests/${reqId}/cancel/`;
-                title.innerText = "Cancel Request";
-                message.innerHTML = `Are you sure you want to cancel <strong>“${reqTitle}”</strong>?`;
-                submitLabel.innerText = "Yes, Cancel Request";
-                icon.className = "fas fa-ban mr-2";
-                submitBtn.className = "btn btn-warning";
-                actionInput.removeAttribute("name"); // cancel doesn't need "action" param
-            } else if (type === "approve") {
+            if (type === "approve") {
                 form.action = `/requests/${reqId}/process/`;
                 title.innerText = "Approve Request";
                 message.innerHTML = `Are you sure you want to approve <strong>“${reqTitle}”</strong>?`;

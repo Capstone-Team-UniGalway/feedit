@@ -4,7 +4,7 @@ import re
 from django.utils import timezone
 from django.contrib import messages
 from django.db import models
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.views.generic import TemplateView, View, DetailView, ListView
 from django.shortcuts import render
 from django.contrib.auth import (
@@ -34,6 +34,7 @@ from allauth.account.views import (
     PasswordResetView,
 )
 from allauth.account.forms import ChangePasswordForm
+from allauth.mfa.base.views import AuthenticateView
 from .forms import (
     CustomLoginForm,
     CustomSignupForm,
@@ -42,6 +43,7 @@ from .forms import (
 )
 from django.http import Http404
 from app.mixins import FullyActivatedUserMixin
+from requests.models import Request
 
 User = get_user_model()
 
@@ -105,6 +107,7 @@ class AuthView(TemplateView):
                 except Exception:
                     # Reset corrupted session data
                     request.session["account_login"] = {}
+
                 return perform_login(request, user, redirect_url=self.success_url)
 
             context = {
@@ -142,8 +145,19 @@ class LogoutView(LoginRequiredMixin, TemplateView):
     success_url = reverse_lazy("account_auth")
 
     def get(self, request, *args, **kwargs):
+        request.session.pop(
+            "account_mfa_authenticated", None
+        )  # ✅ Clear MFA session flag
         auth_logout(request)
         return redirect(self.success_url)
+
+
+class CustomAuthenticateView(AuthenticateView):
+    def form_valid(self, form):
+        # ✅ Mark MFA as verified in session
+        self.request.session["account_mfa_authenticated"] = True
+        # Continue normal flow
+        return super().form_valid(form)
 
 
 class EmailConfirmView(ConfirmEmailView):
@@ -187,8 +201,8 @@ class ProfileView(FullyActivatedUserMixin, DetailView):
 
     def get_object(self):
         # Check if a user ID is provided in the URL
-        user_id = self.request.GET.get('user')
-        user_name = self.request.GET.get('user_name')
+        user_id = self.request.GET.get("user")
+        user_name = self.request.GET.get("user_name")
 
         if user_id:
             try:
@@ -201,20 +215,19 @@ class ProfileView(FullyActivatedUserMixin, DetailView):
             # Try to find the user by name
             # This is less reliable but needed for backward compatibility
             try:
-                if ' ' in user_name:
-                    first_name, last_name = user_name.split(' ', 1)
+                if " " in user_name:
+                    first_name, last_name = user_name.split(" ", 1)
                     user = User.objects.filter(
                         first_name__iexact=first_name,
                         last_name__iexact=last_name,
-                        is_active=True
+                        is_active=True,
                     ).first()
                     if user:
                         return user
                 else:
                     # Try first name only
                     user = User.objects.filter(
-                        first_name__iexact=user_name,
-                        is_active=True
+                        first_name__iexact=user_name, is_active=True
                     ).first()
                     if user:
                         return user
@@ -362,19 +375,12 @@ class DashboardView(FullyActivatedUserMixin, TemplateView):
     template_name = "pages/dashboard.html"  # Template for the actual dashboard
 
     def get_context_data(self, **kwargs):
-        """
-        Prepares context data for rendering the dashboard template.
-        This method is called only when the profile is considered complete.
-        """
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        # Get user's threads (excluding replies and deleted threads)
+        # Thread & mention data (existing logic)
         user_threads = (
-            user.threads.filter(
-                parent__isnull=True,  # Exclude replies
-                is_deleted=False,  # Only non-deleted
-            )
+            user.threads.filter(parent__isnull=True, is_deleted=False)
             .select_related("company")
             .order_by("-created_at")[:5]
         )  # Get the 5 most recent threads
@@ -390,7 +396,6 @@ class DashboardView(FullyActivatedUserMixin, TemplateView):
             .order_by("-created_at")[:10]  # Show more mentions
         )
 
-        # Determine if this is a new account with no threads (even deleted)
         account_age = timezone.now() - user.created_at
         has_any_threads = user.threads.exists()
         is_new_account = account_age < timedelta(days=7) and not has_any_threads
@@ -407,22 +412,66 @@ class DashboardView(FullyActivatedUserMixin, TemplateView):
                 "new_account": is_new_account,
             }
         )
+
+        # === Request Summary ===
+        if user.type == "employee":
+            user_requests = Request.objects.filter(author=user, is_deleted=False)
+            context["my_requests"] = {
+                "pending": user_requests.filter(status="pending").count(),
+                "approved": user_requests.filter(status="approved").count(),
+                "rejected": user_requests.filter(status="rejected").count(),
+            }
+
+        elif user.type == "employer":
+            user_requests = Request.objects.filter(author=user, is_deleted=False)
+            company_requests = (
+                Request.objects.filter(
+                    company=user.company, status="pending", is_deleted=False
+                )
+                if getattr(user, "company", None)
+                else Request.objects.none()
+            )
+            context["my_requests"] = {
+                "pending": user_requests.filter(status="pending").count(),
+                "approved": user_requests.filter(status="approved").count(),
+                "rejected": user_requests.filter(status="rejected").count(),
+            }
+            context["company_requests_count"] = company_requests.count()
+
+        if user.is_superuser:
+            claim_requests = Request.objects.filter(
+                type="claim", status="pending", is_deleted=False
+            ).count()
+
+            unclaimed_requests = Request.objects.filter(
+                type__in=["join", "other"],
+                status="pending",
+                company__employer__isnull=True,
+                is_deleted=False,
+            ).count()
+
+            context["admin_requests"] = {
+                "claims": claim_requests,
+                "unclaimed": unclaimed_requests,
+            }
+
         return context
 
 
 class MentionsListView(FullyActivatedUserMixin, ListView):
     """View for displaying all mentions for the current user."""
+
     template_name = "pages/account/mentions.html"
     context_object_name = "mentions"
     paginate_by = 20
 
     def get_queryset(self):
         # Get all mentions for the current user
-        return self.request.user.mentions_received.filter(
-            thread__is_deleted=False
-        ).select_related(
-            'thread', 'thread__author'
-        ).order_by('-created_at')
+        return (
+            self.request.user.mentions_received.filter(thread__is_deleted=False)
+            .select_related("thread", "thread__author")
+            .order_by("-created_at")
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -441,29 +490,37 @@ class UserSearchView(FullyActivatedUserMixin, View):
         raw_query = request.GET.get("q", "").strip()
 
         # Sanitize the query to prevent SQL injection
-        query = re.sub(r'[^\w\s@\.-]', '', raw_query)
+        query = re.sub(r"[^\w\s@\.-]", "", raw_query)
 
         # Log if sanitization changed the query (potential attack)
         if query != raw_query:
-            print(f"WARNING: Query was sanitized from '{raw_query}' to '{query}' - possible injection attempt")
+            print(
+                f"WARNING: Query was sanitized from '{raw_query}' to '{query}' - "
+                "possible injection attempt"
+            )
 
         selected_user_id = request.GET.get("selected_user")
         if selected_user_id:
             # Ensure selected_user_id is numeric
             if not selected_user_id.isdigit():
-                print(f"WARNING: Invalid selected_user_id: '{selected_user_id}' - possible injection attempt")
+                print(
+                    f"WARNING: Invalid selected_user_id: '{selected_user_id}' - "
+                    "possible injection attempt"
+                )
                 selected_user_id = None
 
         selected_name = request.GET.get("selected_name")
         if selected_name:
             # Sanitize selected_name
-            selected_name = re.sub(r'[^\w\s@\.-]', '', selected_name)
+            selected_name = re.sub(r"[^\w\s@\.-]", "", selected_name)
 
         # If a user was selected, return an empty response (handled by JavaScript)
         if selected_user_id and selected_name and request.headers.get("HX-Request"):
-            # Just return an empty div - the selection is handled by JavaScript in the client
+            # Just return an empty div
+            # the selection is handled by JavaScript in the client
             return HttpResponse(
-                f'<div id="mention-results-{request.GET.get("id", "content")}" class="hidden"></div>'
+                f'<div id="mention-results-{request.GET.get("id", "content")}" '
+                'class="hidden"></div>'
             )
 
         # Get the current user's company to limit search to company members
@@ -500,7 +557,7 @@ class UserSearchView(FullyActivatedUserMixin, View):
         if query:
             print(f"Using direct query: '{query}'")
             # Remove @ symbol if present at the beginning
-            if query.startswith('@'):
+            if query.startswith("@"):
                 query = query[1:]
 
             # Search by name or email
@@ -508,41 +565,48 @@ class UserSearchView(FullyActivatedUserMixin, View):
                 models.Q(first_name__icontains=query)
                 | models.Q(last_name__icontains=query)
                 | models.Q(email__icontains=query)
-            ).exclude(id=request.user.id)[:10]  # Limit to 10 results, exclude current user
+            ).exclude(id=request.user.id)[
+                :10
+            ]  # Limit to 10 results, exclude current user
         else:
             # Try to extract from full text
             raw_full_text = request.GET.get(textarea_id, "")
 
             # Sanitize the full text to prevent SQL injection
-            full_text = re.sub(r'[^\w\s@\.\-,;:\'\"?!()]', '', raw_full_text)
+            full_text = re.sub(r"[^\w\s@\.\-,;:\'\"?!()]", "", raw_full_text)
 
             # Log if sanitization changed the text (potential attack)
             if full_text != raw_full_text:
-                print(f"WARNING: Full text was sanitized - possible injection attempt")
+                print("WARNING: Full text was sanitized - possible injection attempt")
                 print(f"Original: '{raw_full_text}'")
                 print(f"Sanitized: '{full_text}'")
 
             print(f"Full text: '{full_text}'")
 
             # Check if there's an @ symbol in the text
-            at_index = full_text.rfind('@')
+            at_index = full_text.rfind("@")
             if at_index >= 0:
                 # Extract the text after the @ symbol
                 cursor_pos = len(full_text)  # Assume cursor is at the end
-                raw_mention_text = full_text[at_index+1:cursor_pos].strip()
+                raw_mention_text = full_text[at_index + 1 : cursor_pos].strip()
 
                 # Sanitize the mention text
-                mention_text = re.sub(r'[^\w\s@\.-]', '', raw_mention_text)
+                mention_text = re.sub(r"[^\w\s@\.-]", "", raw_mention_text)
 
                 # Only search if we have an @ symbol
-                print(f"Found @ symbol at position {at_index}, mention text: '{mention_text}'")
+                print(
+                    f"Found @ symbol at position {at_index}, mention text: "
+                    f"'{mention_text}'"
+                )
 
                 # Search by name or email
                 users = users_qs.filter(
                     models.Q(first_name__icontains=mention_text)
                     | models.Q(last_name__icontains=mention_text)
                     | models.Q(email__icontains=mention_text)
-                ).exclude(id=request.user.id)[:10]  # Limit to 10 results, exclude current user
+                ).exclude(id=request.user.id)[
+                    :10
+                ]  # Limit to 10 results, exclude current user
 
                 # Set query for the template
                 query = mention_text
@@ -564,7 +628,7 @@ class UserSearchView(FullyActivatedUserMixin, View):
         print(f"Users: {[user.get_full_name() for user in users]}")
 
         # Check if the query starts with @
-        if query and query.startswith('@'):
+        if query and query.startswith("@"):
             query = query[1:]  # Remove the @ symbol
 
         # Always render the HTML template

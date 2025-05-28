@@ -1,7 +1,7 @@
 {% load mention_tags %}
 
 <c-layouts.base>
-    <div class="max-w-4xl mx-auto">
+    <div class="container mx-auto">
         <!-- Breadcrumbs -->
         <div class="text-sm breadcrumbs mb-4">
             <ul>
@@ -84,7 +84,7 @@
                                     </button>
                                 </form>
                                 <form method="dialog">
-                                    <button class="btn">Cancel</button>
+                                    <button class="btn">No</button>
                                 </form>
                             </div>
                         </div>
@@ -98,7 +98,8 @@
         <!-- Two-column layout for reply form and replies -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <!-- Reply Form - Left column on desktop -->
-            <div class="bg-base-100 rounded-lg shadow-md overflow-hidden sticky top-4 self-start h-fit max-h-[calc(100vh-2rem)]">
+            <div
+                class="bg-base-100 rounded-lg shadow-md overflow-hidden sticky top-4 self-start h-fit max-h-[calc(100vh-2rem)]">
                 <div class="p-4 bg-base-200 border-b border-base-300">
                     <h3 class="font-bold">Add a Reply</h3>
                 </div>
@@ -107,6 +108,9 @@
                         {% csrf_token %}
                         <div class="form-control mb-4">
                             {% mention_input name="content" id="reply_content_top" css_class="min-h-32" placeholder="Write your reply here..." required=True %}
+                            {% if reply_form.content.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ reply_form.content.errors.0 }}</p>
+                            {% endif %}
                         </div>
                         <div class="flex justify-end">
                             <button type="submit" class="btn btn-primary">
@@ -116,7 +120,7 @@
                     </form>
                 </div>
             </div>
-            
+
             {% if replies %}
             <!-- Replies - Right column on desktop -->
             <div class="overflow-y-auto max-h-[calc(100vh-8rem)]">
@@ -129,7 +133,7 @@
                 <div class="space-y-4 pr-2" id="replies-container">
                     {% with total_replies=replies|length %}
                     {% with display_count=3 %}
-                    
+
                     <!-- Initial visible replies (max 3) -->
                     {% for reply in replies|slice:":3" %}
                     <div class="bg-base-100 rounded-lg shadow-md overflow-hidden" id="reply-{{ reply.id }}">
@@ -161,15 +165,16 @@
                         </div>
                     </div>
                     {% endfor %}
-                    
+
                     <!-- Show more/less replies button -->
                     {% if total_replies > display_count %}
                     <div class="text-center py-4 border-t border-base-200 mt-4" id="show-more-container">
                         <button id="toggle-replies-btn" class="btn btn-primary btn-sm" onclick="toggleReplies()">
-                            <i class="fas fa-chevron-down mr-2"></i> Show More Replies ({{ total_replies|add:"-3" }} more)
+                            <i class="fas fa-chevron-down mr-2"></i> Show More Replies ({{ total_replies|add:"-3" }}
+                            more)
                         </button>
                     </div>
-                    
+
                     <!-- Hidden replies (beyond the first 3) -->
                     <div id="hidden-replies" class="hidden space-y-4">
                         {% for reply in replies|slice:"3:" %}
@@ -202,7 +207,7 @@
                             </div>
                         </div>
                         {% endfor %}
-                        
+
                         <!-- Show less button (only visible when expanded) -->
                         <div class="text-center py-4 border-t border-base-200 mt-4">
                             <button class="btn btn-primary btn-sm" onclick="toggleReplies()">
@@ -211,10 +216,10 @@
                         </div>
                     </div>
                     {% endif %}
-                    
+
                     {% endwith %}
                     {% endwith %}
-                    
+
                     <!-- Single delete modal for all replies -->
                     <dialog id="delete_reply_modal" class="modal">
                         <div class="modal-box">
@@ -249,20 +254,20 @@
 
     <style>
         .badge-forum {
-            background-color: hsl(var(--p));
-            color: hsl(var(--pc));
+            background-color: var(--color-primary);
+            color: var(--color-primary-content);
         }
 
         .badge-announcement {
-            background-color: hsl(var(--s));
-            color: hsl(var(--sc));
+            background-color: var(--color-secondary);
+            color: var(--color-secondary-content);
         }
 
         /* Mention styling */
         a.mention {
-            color: hsl(var(--p));
+            color: var(--color-primary);
             font-weight: 500;
-            background-color: rgba(var(--p), 0.1);
+            background-color: rgba(var(--color-primary), 0.1);
             padding: 0.125rem 0.25rem;
             border-radius: 0.25rem;
             text-decoration: none;
@@ -270,7 +275,23 @@
         }
 
         a.mention:hover {
-            background-color: rgba(var(--p), 0.2);
+            background-color: rgba(var(--color-primary), 0.2);
+            text-decoration: none;
+        }
+
+        /* Mention styling */
+        a.mention {
+            color: var(--color-primary);
+            font-weight: 500;
+            background-color: rgba(var(--color-primary), 0.1);
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+
+        a.mention:hover {
+            background-color: rgba(var(--color-primary), 0.2);
             text-decoration: none;
         }
     </style>

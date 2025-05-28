@@ -1,0 +1,185 @@
+{% load request_tags secure_files_tags %}
+<c-layouts.base>
+    <div class="container mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold mb-2">Manage Company Claims</h1>
+                <p class="text-gray-500">Review and process requests to claim company ownership</p>
+            </div>
+        </div>
+
+        {% if requests %}
+        <div class="grid grid-cols-1 gap-4">
+            {% for request in requests %}
+            <div class="card bg-base-100 shadow-md">
+                <div class="card-body">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="card-title">{{ request.company.name }}</h3>
+                            <p class="text-sm text-gray-500">
+                                Requested by {{ request.author.get_full_name }} ({{ request.author.email }}) on
+                                {{ request.created_at|date:"M d, Y" }}
+                            </p>
+                            <p class="text-xs text-gray-400 italic">{{ request.created_at|timesince }} ago</p>
+                            <div class="mt-2">
+                                {% if request.company.employer %}
+                                <div class="text-warning text-sm">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                                    Ownership dispute — Initially claimed by
+                                    {{ request.company.employer.get_full_name }}
+                                </div>
+                                {% else %}
+                                <div class="text-info text-sm">
+                                    <i class="fas fa-info-circle mr-1"></i> Unclaimed company
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <span class="badge badge-{{ request.status|get_status_badge_color }}">
+                            {{ request.get_status_display }}
+                        </span>
+                    </div>
+
+                    <div class="mt-4 text-sm">
+                        {% if request.content %}
+                        {{ request.content|safe|truncatechars:150 }}
+                        {% else %}
+                        <span class="text-gray-400">No message provided</span>
+                        {% endif %}
+                    </div>
+
+                    {% get_object_files request as files %}
+                    {% if files %}
+                    <div class="mt-3">
+                        <a href="{% url 'requests:detail' request.id %}" class="btn btn-sm btn-outline">
+                            <i class="fas fa-file-alt mr-1"></i> View Files ({{ files|length }})
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <div class="card-actions justify-end mt-4">
+                        <a href="{% url 'requests:detail' request.id %}" class="btn btn-sm btn-outline">
+                            <i class="fas fa-eye mr-1"></i> View Details
+                        </a>
+                        {% if request.status == "pending" %}
+                        <button type="button" class="btn btn-sm btn-success ml-2"
+                            onclick="openRequestModal('approve', '{{ request.id }}', '{{ request.company.name|escapejs }}')">
+                            <i class="fas fa-check mr-1"></i> Approve
+                        </button>
+                        <button type="button" class="btn btn-sm btn-error ml-1"
+                            onclick="openRequestModal('reject', '{{ request.id }}', '{{ request.company.name|escapejs }}')">
+                            <i class="fas fa-times mr-1"></i> Reject
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="join mt-10 justify-center flex">
+            {% if page_obj.has_previous %}
+            <a href="?page=1" class="join-item btn">
+                <i class="fas fa-angles-left"></i>
+            </a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn">
+                <i class="fas fa-angle-left"></i>
+            </a>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <a href="?page={{ num }}" class="join-item btn btn-active">{{ num }}</a>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <a href="?page={{ num }}" class="join-item btn">{{ num }}</a>
+            {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="join-item btn">
+                <i class="fas fa-angle-right"></i>
+            </a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="join-item btn">
+                <i class="fas fa-angles-right"></i>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="card bg-base-100 shadow-md">
+            <div class="card-body text-center py-12">
+                <i class="fas fa-building text-5xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-bold">No pending claim requests</h3>
+                <p class="text-gray-500 mb-6">When users request to claim companies, they'll appear here.</p>
+                <a href="{% url 'dashboard' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Shared Confirmation Modal -->
+    <dialog id="request_modal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg" id="modal-title">Confirm Action</h3>
+            <div class="alert alert-warning my-3" id="modal-alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="modal-warning-text">This action cannot be undone!</span>
+            </div>
+            <p class="py-1 text-sm text-gray-600" id="modal-message">Are you sure?</p>
+            <div class="modal-action">
+                <form method="post" id="modalForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" id="modal-action-input">
+                    <button type="submit" class="btn" id="modal-submit-btn">
+                        <i class="fas mr-2" id="modal-icon"></i>
+                        <span id="modal-submit-label">Confirm</span>
+                    </button>
+                </form>
+                <form method="dialog">
+                    <button type="button" class="btn" onclick="request_modal.close()">Cancel</button>
+                </form>
+            </div>
+        </div>
+    </dialog>
+
+    <script>
+        function openRequestModal(type, reqId, reqTitle) {
+            const form = document.getElementById("modalForm");
+            const modal = document.getElementById("request_modal");
+            const actionInput = document.getElementById("modal-action-input");
+
+            const title = document.getElementById("modal-title");
+            const message = document.getElementById("modal-message");
+            const submitBtn = document.getElementById("modal-submit-btn");
+            const submitLabel = document.getElementById("modal-submit-label");
+            const icon = document.getElementById("modal-icon");
+
+            if (type === "approve") {
+                form.action = `/requests/${reqId}/process/`;
+                title.innerText = "Approve Request";
+                message.innerHTML = `Are you sure you want to approve the claim for <strong>“${reqTitle}”</strong>?`;
+                submitLabel.innerText = "Yes, Approve";
+                icon.className = "fas fa-check mr-2";
+                submitBtn.className = "btn btn-success";
+                actionInput.setAttribute("name", "action");
+                actionInput.value = "approve";
+            } else if (type === "reject") {
+                form.action = `/requests/${reqId}/process/`;
+                title.innerText = "Reject Request";
+                message.innerHTML = `Are you sure you want to reject the claim for <strong>“${reqTitle}”</strong>?`;
+                submitLabel.innerText = "Yes, Reject";
+                icon.className = "fas fa-times mr-2";
+                submitBtn.className = "btn btn-error";
+                actionInput.setAttribute("name", "action");
+                actionInput.value = "reject";
+            }
+
+            modal.showModal();
+        }
+    </script>
+</c-layouts.base>

@@ -1,5 +1,5 @@
+{% load request_tags secure_files_tags %}
 <c-layouts.base>
-
     <div class="container mx-auto max-w-4xl">
         <!-- Request Details -->
         <div class="card bg-base-100 shadow-xl mb-6">
@@ -7,7 +7,7 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <h2 class="card-title text-2xl">
-                            <span class="badge badge-{{ request.get_type_badge_color }}">{{ request.get_type_display
+                            <span class="badge badge-{{ request.type|get_type_badge_color }}">{{ request.get_type_display
                                 }}</span>
                             {{ request.title }}
                         </h2>
@@ -15,10 +15,19 @@
                             Submitted by {{ request.author.get_full_name }} on {{ request.created_at|date:"M d, Y" }}
                         </p>
                     </div>
-                    <span class="badge badge-lg badge-{{ request.get_status_badge_color }}">{{
+                    <span class="badge badge-lg badge-{{ request.status|get_status_badge_color }}">{{
                         request.get_status_display }}</span>
                 </div>
-
+                {% if request.type == 'claim' and request.company.employer %}
+                <div class="alert alert-warning alert-outline text-sm">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    <div>
+                        <strong>Dispute:</strong> This company is already owned by
+                        <span class="font-semibold">{{ request.company.employer.get_full_name }}</span>.
+                        This claim will replace the current employer if approved.
+                    </div>
+                </div>
+                {% endif %}
                 <div class="divider"></div>
 
                 <div class="prose max-w-none">
@@ -26,41 +35,67 @@
                 </div>
 
                 <!-- Attached Files -->
-                {% load secure_files_tags %}
-                {% get_object_files request as files %}
-                {% if files %}
+                {% with request as request_instance %}
+                {% get_object_files request_instance as request_files %}
+                {% if request_files %}
                 <div class="mt-4">
                     <h3 class="text-lg font-semibold mb-2">Attached Documents</h3>
-                    {% include "components/secure_file_list.html" with files=files show_delete=False %}
+                    <c-secure-files.list :files="request_files" :show_delete="False" />
                 </div>
                 {% endif %}
+                {% endwith %}
 
-                {% if can_process_request and request.status == 'pending' %}
                 <div class="card-actions justify-end mt-6">
-                    <form method="post" action="{% url 'requests:process' request.id %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="approve">
-                        <button type="submit" class="btn btn-success">
-                            <i class="fas fa-check mr-1"></i> Approve
-                        </button>
-                    </form>
-                    <form method="post" action="{% url 'requests:process' request.id %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="reject">
-                        <button type="submit" class="btn btn-error">
-                            <i class="fas fa-times mr-1"></i> Reject
-                        </button>
-                    </form>
+                    {% if can_process_request and request.status == 'pending' %}
+                    <button class="btn btn-success"
+                        onclick="openRequestModal('approve', '{{ request.id }}', '{{ request.title|escapejs }}')">
+                        <i class="fas fa-check mr-1"></i> Approve
+                    </button>
+                    <button class="btn btn-error"
+                        onclick="openRequestModal('reject', '{{ request.id }}', '{{ request.title|escapejs }}')">
+                        <i class="fas fa-times mr-1"></i> Reject
+                    </button>
+                    {% endif %}
+                    {% if user == request.author and request.status == 'pending' %}
+                    <button class="btn btn-warning"
+                        onclick="openRequestModal('cancel', '{{ request.id }}', '{{ request.title|escapejs }}')">
+                        <i class="fas fa-ban mr-1"></i> Cancel
+                    </button>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </div>
 
+        <dialog id="request_modal" class="modal">
+            <div class="modal-box">
+                <h3 class="font-bold text-lg" id="modal-title">Confirm Action</h3>
+                <div class="alert alert-warning my-3" id="modal-alert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="modal-warning-text">This action cannot be undone!</span>
+                </div>
+                <p class="py-1 text-sm text-gray-600" id="modal-message">Are you sure?</p>
+                <p class="py-1 text-sm text-gray-600 hidden" id="modal-extra-note"></p>
+                <div class="modal-action">
+                    <form method="post" id="modalForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" id="modal-action-input">
+                        <button type="submit" class="btn" id="modal-submit-btn">
+                            <i class="fas mr-2" id="modal-icon"></i>
+                            <span id="modal-submit-label">Confirm</span>
+                        </button>
+                    </form>
+                    <form method="dialog">
+                        <button type="button" class="btn" onclick="request_modal.close()">Cancel</button>
+                    </form>
+                </div>
+            </div>
+        </dialog>
+
         <!-- Replies -->
-        {% if request.replies.exists %}
+        {% if replies.exists %}
         <h3 class="text-xl font-bold mb-4">Replies</h3>
         <div class="space-y-4 mb-6">
-            {% for reply in request.replies.all %}
+            {% for reply in replies.all %}
             <div class="card bg-base-100 shadow-md">
                 <div class="card-body">
                     <div class="flex items-start gap-4">
@@ -86,6 +121,16 @@
                             <div class="mt-2 prose max-w-none">
                                 {{ reply.content|safe }}
                             </div>
+
+                            {% with reply as reply_instance %}
+                            {% get_object_files reply_instance as reply_files %}
+                            {% if reply_files %}
+                            <div class="mt-4">
+                                <h3 class="text-lg font-semibold mb-2">Attached Documents</h3>
+                                <c-secure-files.list :files="reply_files" :show_delete="False" />
+                            </div>
+                            {% endif %}
+                            {% endwith %}
                         </div>
                     </div>
                 </div>
@@ -99,12 +144,22 @@
         <div class="card bg-base-100 shadow-md">
             <div class="card-body">
                 <h3 class="card-title">Add Reply</h3>
-                <form method="post" action="{% url 'requests:reply' request.id %}">
+                <form method="post" action="{% url 'requests:reply' request.id %}" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="form-control">
                         {{ reply_form.content }}
                         {% if reply_form.content.errors %}
                         <p class="text-red-500 text-sm mt-1">{{ reply_form.content.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <!-- Verification Document -->
+                    <div class="form-control mb-4">
+                        <label class="label">
+                            <span class="label-text font-semibold">Upload Document (optional)</span>
+                        </label>
+                        {{ reply_form.upload_document }}
+                        {% if reply_form.upload_document.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ reply_form.upload_document.errors.0 }}</p>
                         {% endif %}
                     </div>
                     <div class="card-actions justify-end mt-4">
@@ -117,5 +172,58 @@
         </div>
         {% endif %}
     </div>
+    <script>
+        function openRequestModal(type, reqId, reqTitle) {
+            const modal = document.getElementById("request_modal");
+            const form = document.getElementById("modalForm");
+            const actionInput = document.getElementById("modal-action-input");
 
+            const title = document.getElementById("modal-title");
+            const message = document.getElementById("modal-message");
+            const extra = document.getElementById("modal-extra-note");
+            const submitBtn = document.getElementById("modal-submit-btn");
+            const submitLabel = document.getElementById("modal-submit-label");
+            const icon = document.getElementById("modal-icon");
+
+            if (type === "cancel") {
+                form.action = `/requests/${reqId}/cancel/`;
+                title.innerText = "Cancel Request";
+                message.innerHTML = `Are you sure you want to cancel <strong>“${reqTitle}”</strong>?`;
+                extra.innerText = "This will also delete all replies to this request.";
+                extra.classList.remove("hidden");
+
+                submitLabel.innerText = "Yes, Cancel Request";
+                icon.className = "fas fa-ban mr-2";
+                submitBtn.className = "btn btn-warning";
+
+                actionInput.removeAttribute("name");
+            } else if (type === "approve") {
+                form.action = `/requests/${reqId}/process/`;
+                title.innerText = "Approve Request";
+                message.innerHTML = `Are you sure you want to approve <strong>“${reqTitle}”</strong>?`;
+                extra.classList.add("hidden");
+
+                submitLabel.innerText = "Yes, Approve Request";
+                icon.className = "fas fa-check mr-2";
+                submitBtn.className = "btn btn-success";
+
+                actionInput.setAttribute("name", "action");
+                actionInput.value = "approve";
+            } else if (type === "reject") {
+                form.action = `/requests/${reqId}/process/`;
+                title.innerText = "Reject Request";
+                message.innerHTML = `Are you sure you want to reject <strong>“${reqTitle}”</strong>?`;
+                extra.classList.add("hidden");
+
+                submitLabel.innerText = "Yes, Reject Request";
+                icon.className = "fas fa-times mr-2";
+                submitBtn.className = "btn btn-error";
+
+                actionInput.setAttribute("name", "action");
+                actionInput.value = "reject";
+            }
+
+            modal.showModal();
+        }
+    </script>
 </c-layouts.base>

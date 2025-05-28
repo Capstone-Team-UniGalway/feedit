@@ -12,17 +12,29 @@
                     <div class="form-control mb-4">
                         <label class="label font-semibold">Request Type</label>
                         <div class="bg-base-200 p-3 rounded-lg">
-                            {% if request.user.type == 'employer' %}
+                            {% if form.fields.type.initial == 'claim' %}
+                            {% if company.employer %}
+                            <div class="flex items-center">
+                                <i class="fas fa-gavel text-primary mr-2"></i>
+                                <span class="font-medium">Dispute Ownership</span>
+                            </div>
+                            {% else %}
                             <div class="flex items-center">
                                 <i class="fas fa-flag text-primary mr-2"></i>
                                 <span class="font-medium">Claim Request</span>
                                 <span class="ml-2 text-sm text-gray-500">(Employers can only claim companies)</span>
                             </div>
-                            {% else %}
+                            {% endif %}
+                            {% elif form.fields.type.initial == 'join' %}
                             <div class="flex items-center">
                                 <i class="fas fa-user-plus text-primary mr-2"></i>
                                 <span class="font-medium">Join Request</span>
                                 <span class="ml-2 text-sm text-gray-500">(Employees can only join companies)</span>
+                            </div>
+                            {% else %}
+                            <div class="flex items-center">
+                                <i class="fas fa-question-circle text-primary mr-2"></i>
+                                <span class="font-medium">Other Request</span>
                             </div>
                             {% endif %}
                         </div>

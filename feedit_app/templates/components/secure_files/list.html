@@ -2,7 +2,7 @@
 Secure File List Component
 
 Usage:
-{% include "components/secure_file_list.html" with files=files %}
+<c-secure-files.list :files="files" :show_delete="true" />
 
 Parameters:
 - files: QuerySet of SecureFile objects
@@ -31,8 +31,20 @@ Parameters:
                 <tr>
                     <td>
                         {% get_file_url file as file_url %}
-                        <a href="{{ file_url }}" class="link link-primary flex items-center">
-                            <i class="fas fa-file mr-2"></i> {{ file.filename }}
+                        <a href="{{ file_url }}" target="_blank" class="link link-primary flex items-center gap-2">
+                            {% with file.filename|lower|slice:'-4:' as ext %}
+                            {% if ext in ".jpg,.png,.gif,.webp,.jpeg" %}
+                            <img src="{{ file_url }}" alt="{{ file.filename }}" class="w-8 h-8 rounded object-cover" />
+                            {% else %}
+                            <i class="fas {% if ext == '.pdf' %}fa-file-pdf
+                                      {% elif ext in '.docx.doc' %}fa-file-word
+                                      {% elif ext in '.xlsx.xls' %}fa-file-excel
+                                      {% elif ext in '.pptx.ppt' %}fa-file-powerpoint
+                                      {% elif ext in '.zip.rar' %}fa-file-archive
+                                      {% else %}fa-file{% endif %} text-lg"></i>
+                            {% endif %}
+                            {% endwith %}
+                            <span>{{ file.filename }}</span>
                         </a>
                     </td>
                     <td>{{ file.size|filesizeformat }}</td>

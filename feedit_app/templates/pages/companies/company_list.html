@@ -21,7 +21,12 @@
                 </div>
             </form>
             {% if user.is_authenticated and not user.workplace %}
+            {#
             <a href="{% url 'claim_company' %}" class="btn btn-primary">
+                <i class="fas fa-plus mr-1"></i> Create Company
+            </a>
+            #}
+            <a href="{% url 'companies:create' %}" class="btn btn-primary">
                 <i class="fas fa-plus mr-1"></i> Create Company
             </a>
             {% endif %}
@@ -31,51 +36,50 @@
     <!-- Grid of Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {% for company in companies %}
-        <!-- Example Card -->
         <div
-            class="card {% if user.workplace == company %}bg-base-100 shadow-xl border-2 border-success{% else %}bg-base-100 shadow-xl{% endif %}">
+            class="card {% if user.workplace == company or user.company == company %}bg-base-100 shadow-xl border-2 border-success hover:shadow-2xl transition-all{% else %}bg-base-100 shadow-xl hover:shadow-2xl transition-all{% endif %}">
             <figure>
                 <img src="{{ company.profile_picture }}" alt="{{ company.name }} logo"
                     class="h-36 w-full object-cover" />
-                {% if user.workplace == company %}
+                {% if user.workplace == company or user.company == company %}
                 <div class="absolute top-2 right-2 badge badge-success gap-1">
-                    <i class="fas fa-briefcase"></i> Current Workplace
+                    <i class="fas fa-briefcase"></i>
+                    {% if user.workplace %}
+                    Current Workplace
+                    {% elif user.company %}
+                    You Own This
+                    {% endif %}
                 </div>
                 {% endif %}
             </figure>
             <div class="card-body">
-                <h2 class="card-title truncate">{{ company.name }}</h2>
+                <h2 class="card-title">{{ company.name }}</h2>
                 {% if company.industry %}
                 <p class="text-sm text-gray-700">{{ company.industry }}</p>
                 {% endif %}
-                <p class="text-sm text-gray-500">{{ company.city }}, {{ company.country }}</p>
+                <p class="text-sm text-gray-500">{{ company.city }}{% if company.city and company.country %},
+                    {% endif %}{{ company.country }}</p>
                 {% if company.average_rating %}
-                <p class="text-sm text-gray-500">
-                    Rating: {{ company.average_rating }} ★
-                </p>
+                <div class="flex items-center text-yellow-400">
+                    <span class="mr-1">{{ company.average_rating }}</span>
+                    <i class="fas fa-star text-sm"></i>
+                </div>
                 {% endif %}
                 <div class="card-actions justify-end mt-2">
                     <a href="{% url 'companies:detail' company.id %}" class="btn btn-sm btn-outline">View Profile</a>
-
                     {% if user.is_authenticated %}
                     {% if user.workplace == company %}
                     <!-- Leave current workplace -->
                     <button class="btn btn-sm btn-error" onclick="leave_company_modal.showModal()">
                         <i class="fas fa-sign-out-alt mr-1"></i> Leave Company
                     </button>
-                    {% elif company.employer == user %}
-                    <!-- User owns this company -->
-                    <button class="btn btn-sm btn-disabled">
-                        <i class="fas fa-check mr-1"></i> You Own This
-                    </button>
-                    {% elif not user.workplace and company.id in pending_requests %}
-                    <!-- User has a pending request -->
+                    {% elif company.id in pending_requests %}
                     <button class="btn btn-sm btn-disabled">
                         <i class="fas fa-clock mr-1"></i> Request Pending
                     </button>
-                    {% elif not user.workplace %}
-                    <!-- User can join/claim this company based on their type -->
-                    <a href="{% url 'requests:create' company.id %}" class="btn btn-sm btn-primary">
+                    {% else %}
+                    {% if not user.has_company %}
+                    <a href="{% url 'requests:create_with_id' company.id %}" class="btn btn-sm btn-primary">
                         {% if user.type == 'employer' %}
                         <i class="fas fa-flag mr-1"></i> Claim
                         {% else %}
@@ -84,21 +88,45 @@
                     </a>
                     {% endif %}
                     {% endif %}
+                    {% endif %}
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
     <!-- Pagination -->
+    <!-- Pagination -->
     {% if is_paginated %}
     <div class="join mt-10 justify-center flex">
         {% if page_obj.has_previous %}
-        <a href="?q={{ request.GET.q }}&page={{ page_obj.previous_page_number }}" class="join-item btn">« Prev</a>
+        <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="join-item btn">
+            <i class="fas fa-angles-left"></i>
+        </a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+            class="join-item btn">
+            <i class="fas fa-angle-left"></i>
+        </a>
         {% endif %}
-        <button class="join-item btn btn-disabled">Page {{ page_obj.number }} of
-            {{ page_obj.paginator.num_pages }}</button>
+
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <a href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+            class="join-item btn btn-active">{{ num }}</a>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %} <a
+            href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="join-item btn">{{ num
+                }}</a>
+        {% endif %}
+        {% endfor %}
+
         {% if page_obj.has_next %}
-        <a href="?q={{ request.GET.q }}&page={{ page_obj.next_page_number }}" class="join-item btn">Next »</a>
+        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+            class="join-item btn">
+            <i class="fas fa-angle-right"></i>
+        </a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+            class="join-item btn">
+            <i class="fas fa-angles-right"></i>
+        </a>
         {% endif %}
     </div>
     {% endif %}
@@ -118,7 +146,7 @@
                 <h3 class="card-title">Would you like to create "{{ request.GET.q }}"?</h3>
                 <p class="text-gray-600">You can be the first to add this company to our platform.</p>
                 <div class="card-actions justify-end mt-4">
-                    <a href="{% url 'claim_company' %}?name={{ request.GET.q }}" class="btn btn-primary">
+                    <a href="{% url 'companies:create' %}?name={{ request.GET.q }}" class="btn btn-primary">
                         <i class="fas fa-plus mr-2"></i> Create "{{ request.GET.q }}"</a>
                 </div>
             </div>
@@ -130,7 +158,12 @@
         {% endif %}
 
         {% if user.is_authenticated and not user.workplace %}
+        {#
         <a href="{% url 'claim_company' %}" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i> Create a Company
+        </a>
+        #}
+        <a href="{% url 'companies:create' %}" class="btn btn-primary">
             <i class="fas fa-plus mr-2"></i> Create a Company
         </a>
         {% endif %}
