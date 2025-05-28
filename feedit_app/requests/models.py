@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django_ckeditor_5.fields import CKEditor5Field
 from app.base_model import BaseModel
@@ -38,7 +39,24 @@ class Request(BaseModel):
 
     def get_absolute_url(self):
         from django.urls import reverse
-        return reverse('requests:detail', kwargs={'pk': self.pk})
+
+        return reverse("requests:detail", kwargs={"pk": self.pk})
+
+    def can_be_processed_by(self, user):
+        if not user.is_authenticated:
+            return False
+
+        if user.is_superuser:
+            return True
+
+        if self.type in [
+            Request.RequestType.JOIN,
+            Request.RequestType.OTHER,
+        ]:
+            return self.company and self.company.employer == user
+
+        # optionally extend to other types if needed
+        return False
 
 
 # Replies to private employee requests
@@ -54,6 +72,13 @@ class RequestReply(BaseModel):
         related_name="request_replies",
     )
     content = CKEditor5Field()
+
+    attachments = GenericRelation(
+        "secure_files.SecureFile",
+        content_type_field="content_type",
+        object_id_field="object_id",
+        related_query_name="requestreply_attachments",
+    )
 
     class Meta:
         verbose_name = "Request Reply"

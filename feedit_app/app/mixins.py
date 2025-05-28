@@ -45,12 +45,20 @@ class FullyActivatedUserMixin(SuperuserBypassMixin):
         return user.is_fully_activated
 
     def handle_no_permission(self):
-        if not self.request.user.is_authenticated:
-            # Let LoginRequiredMixin or default handler manage guests
+        if (
+            not self.request.user.is_authenticated
+            or not self.request.user.is_fully_activated
+        ):
             return super().handle_no_permission()
 
         messages.warning(
             self.request,
-            "Please complete your profile to access this feature.",
+            getattr(
+                self,
+                "permission_denied_message",
+                "Please complete your profile to access this feature.",
+            ),
         )
-        return redirect(self.redirect_url)
+        return redirect(
+            getattr(self, "permission_denied_redirect_url", self.redirect_url)
+        )

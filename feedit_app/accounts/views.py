@@ -33,6 +33,7 @@ from allauth.account.views import (
     PasswordResetView,
 )
 from allauth.account.forms import ChangePasswordForm
+from allauth.mfa.base.views import AuthenticateView
 from .forms import (
     CustomLoginForm,
     CustomSignupForm,
@@ -41,6 +42,7 @@ from .forms import (
 )
 from django.http import Http404
 from app.mixins import FullyActivatedUserMixin
+from requests.models import Request
 
 User = get_user_model()
 
@@ -104,6 +106,7 @@ class AuthView(TemplateView):
                 except Exception:
                     # Reset corrupted session data
                     request.session["account_login"] = {}
+
                 return perform_login(request, user, redirect_url=self.success_url)
 
             context = {
@@ -141,8 +144,19 @@ class LogoutView(LoginRequiredMixin, TemplateView):
     success_url = reverse_lazy("account_auth")
 
     def get(self, request, *args, **kwargs):
+        request.session.pop(
+            "account_mfa_authenticated", None
+        )  # ✅ Clear MFA session flag
         auth_logout(request)
         return redirect(self.success_url)
+
+
+class CustomAuthenticateView(AuthenticateView):
+    def form_valid(self, form):
+        # ✅ Mark MFA as verified in session
+        self.request.session["account_mfa_authenticated"] = True
+        # Continue normal flow
+        return super().form_valid(form)
 
 
 class EmailConfirmView(ConfirmEmailView):
@@ -323,37 +337,23 @@ class DashboardView(FullyActivatedUserMixin, TemplateView):
     template_name = "pages/dashboard.html"  # Template for the actual dashboard
 
     def get_context_data(self, **kwargs):
-        """
-        Prepares context data for rendering the dashboard template.
-        This method is called only when the profile is considered complete.
-        """
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        # Get user's threads (excluding replies and deleted threads)
+        # Thread & mention data (existing logic)
         user_threads = (
-            user.threads.filter(
-                parent__isnull=True,  # Exclude replies
-                is_deleted=False,  # Only non-deleted
-            )
+            user.threads.filter(parent__isnull=True, is_deleted=False)
             .select_related("company")
             .order_by("-created_at")[:5]
-        )  # Get the 5 most recent threads
-
-        # Get threads where the user is mentioned
+        )
         mentions = (
-            user.mentions_received.filter(
-                is_read=False,
-                thread__is_deleted=False,
-            )
+            user.mentions_received.filter(is_read=False, thread__is_deleted=False)
             .select_related("thread")
             .order_by("-created_at")[:5]
-        )  # Get the 5 most recent mentions
+        )
 
-        # Determine if this is a new account with no threads (even deleted)
         account_age = timezone.now() - user.created_at
-        has_any_threads = user.threads.exists()
-        is_new_account = account_age < timedelta(days=7) and not has_any_threads
+        is_new_account = account_age < timedelta(days=7) and not user.threads.exists()
 
         context.update(
             {
@@ -364,6 +364,49 @@ class DashboardView(FullyActivatedUserMixin, TemplateView):
                 "new_account": is_new_account,
             }
         )
+
+        # === Request Summary ===
+        if user.type == "employee":
+            user_requests = Request.objects.filter(author=user, is_deleted=False)
+            context["my_requests"] = {
+                "pending": user_requests.filter(status="pending").count(),
+                "approved": user_requests.filter(status="approved").count(),
+                "rejected": user_requests.filter(status="rejected").count(),
+            }
+
+        elif user.type == "employer":
+            user_requests = Request.objects.filter(author=user, is_deleted=False)
+            company_requests = (
+                Request.objects.filter(
+                    company=user.company, status="pending", is_deleted=False
+                )
+                if getattr(user, "company", None)
+                else Request.objects.none()
+            )
+            context["my_requests"] = {
+                "pending": user_requests.filter(status="pending").count(),
+                "approved": user_requests.filter(status="approved").count(),
+                "rejected": user_requests.filter(status="rejected").count(),
+            }
+            context["company_requests_count"] = company_requests.count()
+
+        if user.is_superuser:
+            claim_requests = Request.objects.filter(
+                type="claim", status="pending", is_deleted=False
+            ).count()
+
+            unclaimed_requests = Request.objects.filter(
+                type__in=["join", "other"],
+                status="pending",
+                company__employer__isnull=True,
+                is_deleted=False,
+            ).count()
+
+            context["admin_requests"] = {
+                "claims": claim_requests,
+                "unclaimed": unclaimed_requests,
+            }
+
         return context
 
 

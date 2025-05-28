@@ -109,16 +109,21 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         )
 
     @property
+    def has_company(self):
+        return bool(self.workplace or getattr(self, "company", None))
+
+    @property
     def profile_picture(self):
         from secure_files.models import SecureFile
+        from secure_files.utils import get_secure_file_url
 
         ct = ContentType.objects.get_for_model(self.__class__)
         secure_file = SecureFile.objects.filter(
-            content_type=ct, object_id=self.id
+            content_type=ct, object_id=self.id, is_deleted=False
         ).first()
 
         if secure_file and secure_file.file:
-            return secure_file.file.url
+            return get_secure_file_url(secure_file)
 
         return static("images/user_placeholder.png")
 

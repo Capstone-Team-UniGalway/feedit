@@ -1,5 +1,5 @@
+{% load secure_files_tags %}
 <c-layouts.base>
-    {% load secure_files_tags %}
 
     <div class="container mx-auto p-4">
         <h1 class="text-2xl font-bold mb-4">Secure File Upload Demo</h1>
@@ -11,13 +11,9 @@
                     <h2 class="card-title">Upload File</h2>
 
                     {% get_content_type_id user as content_type_id %}
-                    {% include "components/secure_file_upload.html" with
-                    content_type_id=content_type_id
-                    object_id=user.id
-                    label="Upload Profile Picture"
-                    help_text="Upload an image for your profile (JPG, PNG, WEBP)"
-                    accept="image/*"
-                    %}
+                    <c-secure-files.upload :content_type_id="content_type_id" :object_id="user.id"
+                        label="Upload Profile Picture" help_text="Upload an image for your profile (JPG, PNG, WEBP)"
+                        accept="image/*" />
                 </div>
             </div>
 
@@ -27,7 +23,7 @@
                     <h2 class="card-title">Your Files</h2>
 
                     {% get_object_files user as files %}
-                    {% include "components/secure_file_list.html" with files=files show_delete=True %}
+                    <c-secure-files.list :files="{{ files }}" :show_delete="true" />
                 </div>
             </div>
         </div>

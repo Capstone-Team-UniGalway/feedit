@@ -1,10 +1,10 @@
 from django.urls import path, include
 from allauth.mfa import urls as allauth_mfa_urls
 from allauth.account.views import ReauthenticateView
-from allauth.mfa.base.views import AuthenticateView
 from .views import (
     AuthView,
     AuthRedirectView,
+    CustomAuthenticateView,
     LogoutView,
     EmailConfirmView,
     ConfirmSuccessView,
@@ -23,15 +23,15 @@ from .views import (
 urlpatterns = [
     path("", ProfileView.as_view(), name="account_profile"),
     path("<int:pk>/", PublicProfileView.as_view(), name="account_public_profile"),
-    path("edit", EditProfileView.as_view(), name="account_edit"),
-    path("auth", AuthView.as_view(), name="account_auth"),  # canonical
+    path("edit/", EditProfileView.as_view(), name="account_edit"),
+    path("auth/", AuthView.as_view(), name="account_auth"),  # canonical
     path(
-        "login", AuthRedirectView.as_view(), name="account_login"
+        "login/", AuthRedirectView.as_view(), name="account_login"
     ),  # required by Allauth
     path(
-        "signup", AuthRedirectView.as_view(), name="account_signup"
+        "signup/", AuthRedirectView.as_view(), name="account_signup"
     ),  # required by Allauth
-    path("logout", LogoutView.as_view(), name="account_logout"),
+    path("logout/", LogoutView.as_view(), name="account_logout"),
     path(
         "confirm-email/success/",
         ConfirmSuccessView.as_view(),
@@ -74,12 +74,14 @@ urlpatterns = [
         "password/reset/key/<uidb36>/<key>/",
         CustomPasswordResetFromKeyView.as_view(),
     ),
+    path(
+        "mfa/authenticate/", CustomAuthenticateView.as_view(), name="mfa_authenticate"
+    ),
     path("mfa/", include(allauth_mfa_urls)),
     path(
         "reauthenticate/",
         ReauthenticateView.as_view(),
         name="account_reauthenticate",
     ),
-    path("mfa/authenticate/", AuthenticateView.as_view(), name="mfa_authenticate"),
     path("api/search-users/", UserSearchView.as_view(), name="api_search_users"),
 ]

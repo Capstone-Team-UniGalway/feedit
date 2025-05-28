@@ -82,7 +82,7 @@
                                     </button>
                                 </form>
                                 <form method="dialog">
-                                    <button class="btn">Cancel</button>
+                                    <button class="btn">No</button>
                                 </form>
                             </div>
                         </div>
@@ -158,18 +158,18 @@
         {% endif %}
 
         <!-- Reply Form -->
-        <div class="bg-base-100 rounded-lg shadow-md overflow-hidden">
-            <div class="p-4 bg-base-200 border-b border-base-300">
-                <h3 class="font-bold">Add a Reply</h3>
-            </div>
-            <div class="p-6">
+        <div class="card bg-base-100 rounded-lg shadow-md overflow-hidden">
+            <div class="card-body">
+                <h3 class="card-title">Add Reply</h3>
                 <form method="post" action="{% url 'thread_reply' thread.pk %}">
                     {% csrf_token %}
-                    <div class="form-control mb-4">
-                        <textarea name="content" id="reply_content" class="textarea textarea-bordered min-h-32"
-                            placeholder="Write your reply..." required></textarea>
+                    <div class="form-control">
+                        {{ reply_form.content }}
+                        {% if reply_form.content.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ reply_form.content.errors.0 }}</p>
+                        {% endif %}
                     </div>
-                    <div class="flex justify-end">
+                    <div class="card-actions justify-end mt-4">
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-paper-plane mr-2"></i> Post Reply
                         </button>
@@ -183,13 +183,13 @@
 
     <style>
         .badge-forum {
-            background-color: hsl(var(--p));
-            color: hsl(var(--pc));
+            background-color: var(--color-primary);
+            color: var(--color-primary-content);
         }
 
         .badge-announcement {
-            background-color: hsl(var(--s));
-            color: hsl(var(--sc));
+            background-color: var(--color-secondary);
+            color: var(--color-secondary-content);
         }
     </style>
     <script>
