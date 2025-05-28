@@ -3,8 +3,7 @@ name: OWASP ZAP Baseline Scan
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   zap_scan:
@@ -14,7 +13,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Wait for app to be ready
+        run: sleep 30  # Adjust timing based on deployment speed
+
       - name: Run ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.11.0
         with:
-          target: 'http://127.0.0.1:8000'
+          target: 'https://feedit.online'
