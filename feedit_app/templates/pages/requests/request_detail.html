@@ -40,7 +40,7 @@
                 {% if request_files %}
                 <div class="mt-4">
                     <h3 class="text-lg font-semibold mb-2">Attached Documents</h3>
-                    {% include "components/secure_files/list.html" with files=request_files show_delete=False %}
+                    <c-secure-files.list :files="request_files" :show_delete="False" />
                 </div>
                 {% endif %}
                 {% endwith %}
@@ -92,10 +92,10 @@
         </dialog>
 
         <!-- Replies -->
-        {% if request.replies.exists %}
+        {% if replies.exists %}
         <h3 class="text-xl font-bold mb-4">Replies</h3>
         <div class="space-y-4 mb-6">
-            {% for reply in request.replies.all %}
+            {% for reply in replies.all %}
             <div class="card bg-base-100 shadow-md">
                 <div class="card-body">
                     <div class="flex items-start gap-4">
@@ -127,7 +127,7 @@
                             {% if reply_files %}
                             <div class="mt-4">
                                 <h3 class="text-lg font-semibold mb-2">Attached Documents</h3>
-                                {% include "components/secure_files/list.html" with files=reply_files show_delete=False %}
+                                <c-secure-files.list :files="reply_files" :show_delete="False" />
                             </div>
                             {% endif %}
                             {% endwith %}

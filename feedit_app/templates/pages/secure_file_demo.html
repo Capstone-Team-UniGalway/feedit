@@ -11,7 +11,7 @@
                     <h2 class="card-title">Upload File</h2>
 
                     {% get_content_type_id user as content_type_id %}
-                    <c-secure-files.upload :content_type_id="{{ content_type_id }}" :object_id="{{ user.id }}"
+                    <c-secure-files.upload :content_type_id="content_type_id" :object_id="user.id"
                         label="Upload Profile Picture" help_text="Upload an image for your profile (JPG, PNG, WEBP)"
                         accept="image/*" />
                 </div>

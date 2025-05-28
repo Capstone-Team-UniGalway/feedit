@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django_ckeditor_5.fields import CKEditor5Field
 from app.base_model import BaseModel
@@ -71,6 +72,13 @@ class RequestReply(BaseModel):
         related_name="request_replies",
     )
     content = CKEditor5Field()
+
+    attachments = GenericRelation(
+        "secure_files.SecureFile",
+        content_type_field="content_type",
+        object_id_field="object_id",
+        related_query_name="requestreply_attachments",
+    )
 
     class Meta:
         verbose_name = "Request Reply"

@@ -202,6 +202,11 @@ class RequestDetailView(FullyActivatedUserMixin, DetailView):
 
         can_process = request_obj.can_be_processed_by(user)
 
+        # Prefetch replies and their attachments
+        context["replies"] = request_obj.replies.select_related(
+            "author"
+        ).prefetch_related("attachments")
+
         context["can_process_request"] = can_process
         context["can_reply"] = can_process or user == request_obj.author
         context["reply_form"] = RequestReplyForm()
