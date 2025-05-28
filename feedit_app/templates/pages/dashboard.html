@@ -83,10 +83,15 @@
                 <a href="{% url 'thread_detail' mention.thread.pk %}" class="font-medium hover:text-primary">
                   {{ mention.thread.title }}
                 </a>
-                <div class="badge badge-accent badge-sm">Mention</div>
+                <div class="flex gap-1">
+                  {% if not mention.is_read %}
+                  <div class="badge badge-primary badge-sm">New</div>
+                  {% endif %}
+                  <div class="badge badge-accent badge-sm">Mention</div>
+                </div>
               </div>
               <div class="text-xs text-gray-500 mt-1">
-                <span>Mentioned by {{ mention.mentioned_by.get_full_name }}</span>
+                <span>Mentioned by {{ mention.thread.author.get_full_name }}</span>
                 <span class="mx-1">•</span>
                 <span>{{ mention.created_at|date:"M d, Y" }}</span>
               </div>
@@ -94,7 +99,7 @@
             {% endfor %}
           </div>
           <div class="mt-4 text-center">
-            <a href="{% url 'thread_list' %}" class="btn btn-sm btn-outline">View All Mentions</a>
+            <a href="{% url 'account_mentions' %}" class="btn btn-sm btn-outline">View All Mentions</a>
           </div>
           {% else %}
           <div class="text-center py-6">

@@ -12,7 +12,7 @@ from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.db.models import Count, Q, Prefetch
 
-from .models import Thread, Mention
+from .models import Thread
 from .forms import ThreadForm, ThreadReplyForm
 from app.mixins import FullyActivatedUserMixin
 
@@ -142,13 +142,13 @@ class ThreadDetailView(FullyActivatedUserMixin, DetailView):
         thread = self.object
 
         # Replies already prefetched → no extra query
+        # Sort by created_at in ascending order (oldest first)
         context["replies"] = thread.replies.order_by("created_at")
         context["reply_form"] = ThreadReplyForm()
 
-        if self.request.user.is_authenticated:
-            Mention.objects.filter(
-                thread=thread, mentioned_user=self.request.user, is_read=False
-            ).update(is_read=True)
+        # We're no longer automatically marking mentions as read when viewing a thread
+        # This allows mentions to remain visible on the dashboard
+        # Users can mark mentions as read by clicking on them or visiting the mentions page
 
         return context
 

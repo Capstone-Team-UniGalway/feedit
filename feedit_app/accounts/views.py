@@ -1,10 +1,11 @@
 from enum import Enum
 from datetime import timedelta
+import re
 from django.utils import timezone
 from django.contrib import messages
 from django.db import models
-from django.http import JsonResponse
-from django.views.generic import TemplateView, View, DetailView
+from django.http import HttpResponse
+from django.views.generic import TemplateView, View, DetailView, ListView
 from django.shortcuts import render
 from django.contrib.auth import (
     logout as auth_logout,
@@ -196,13 +197,50 @@ class ConfirmSuccessView(TemplateView):
 class ProfileView(FullyActivatedUserMixin, DetailView):
     template_name = "pages/account/user_profile.html"
     context_object_name = "user"
+    model = User
 
     def get_object(self):
+        # Check if a user ID is provided in the URL
+        user_id = self.request.GET.get("user")
+        user_name = self.request.GET.get("user_name")
+
+        if user_id:
+            try:
+                # Try to get the user by ID
+                return User.objects.get(id=user_id)
+            except (User.DoesNotExist, ValueError):
+                pass
+
+        if user_name:
+            # Try to find the user by name
+            # This is less reliable but needed for backward compatibility
+            try:
+                if " " in user_name:
+                    first_name, last_name = user_name.split(" ", 1)
+                    user = User.objects.filter(
+                        first_name__iexact=first_name,
+                        last_name__iexact=last_name,
+                        is_active=True,
+                    ).first()
+                    if user:
+                        return user
+                else:
+                    # Try first name only
+                    user = User.objects.filter(
+                        first_name__iexact=user_name, is_active=True
+                    ).first()
+                    if user:
+                        return user
+            except Exception:
+                pass
+
+        # Default to the current user
         return self.request.user
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["is_own_profile"] = True
+        # Check if this is the user's own profile
+        context["is_own_profile"] = self.object == self.request.user
         return context
 
 
@@ -345,22 +383,32 @@ class DashboardView(FullyActivatedUserMixin, TemplateView):
             user.threads.filter(parent__isnull=True, is_deleted=False)
             .select_related("company")
             .order_by("-created_at")[:5]
-        )
+        )  # Get the 5 most recent threads
+
+        # Get threads where the user is mentioned
+        # Get all mentions, prioritizing unread ones
+        # Don't filter by is_read to show all mentions
         mentions = (
-            user.mentions_received.filter(is_read=False, thread__is_deleted=False)
-            .select_related("thread")
-            .order_by("-created_at")[:5]
+            user.mentions_received.filter(
+                thread__is_deleted=False,
+            )
+            .select_related("thread", "thread__author")
+            .order_by("-created_at")[:10]  # Show more mentions
         )
 
         account_age = timezone.now() - user.created_at
-        is_new_account = account_age < timedelta(days=7) and not user.threads.exists()
+        has_any_threads = user.threads.exists()
+        is_new_account = account_age < timedelta(days=7) and not has_any_threads
+
+        # Convert mentions queryset to list for template
+        mentions_list = list(mentions)
 
         context.update(
             {
                 "user_threads": user_threads,
-                "mentions": mentions,
+                "mentions": mentions_list,
                 "thread_count": user_threads.count(),
-                "mention_count": mentions.count(),
+                "mention_count": len(mentions_list),
                 "new_account": is_new_account,
             }
         )
@@ -410,26 +458,77 @@ class DashboardView(FullyActivatedUserMixin, TemplateView):
         return context
 
 
+class MentionsListView(FullyActivatedUserMixin, ListView):
+    """View for displaying all mentions for the current user."""
+
+    template_name = "pages/account/mentions.html"
+    context_object_name = "mentions"
+    paginate_by = 20
+
+    def get_queryset(self):
+        # Get all mentions for the current user
+        return (
+            self.request.user.mentions_received.filter(thread__is_deleted=False)
+            .select_related("thread", "thread__author")
+            .order_by("-created_at")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Mark all unread mentions as read when the user views this page
+        unread_mentions = self.request.user.mentions_received.filter(is_read=False)
+        for mention in unread_mentions:
+            mention.mark_as_read()
+        return context
+
+
 class UserSearchView(FullyActivatedUserMixin, View):
     """HTMX-compatible view for searching users (for @mentions)."""
 
     def get(self, request):
-        query = request.GET.get("q", "").strip()
-        selected_user_id = request.GET.get("selected_user")
-        selected_name = request.GET.get("selected_name")
+        # Get and sanitize query parameter
+        raw_query = request.GET.get("q", "").strip()
 
-        # If a user was selected, return the mention tag
+        # Sanitize the query to prevent SQL injection
+        query = re.sub(r"[^\w\s@\.-]", "", raw_query)
+
+        # Log if sanitization changed the query (potential attack)
+        if query != raw_query:
+            print(
+                f"WARNING: Query was sanitized from '{raw_query}' to '{query}' - "
+                "possible injection attempt"
+            )
+
+        selected_user_id = request.GET.get("selected_user")
+        if selected_user_id:
+            # Ensure selected_user_id is numeric
+            if not selected_user_id.isdigit():
+                print(
+                    f"WARNING: Invalid selected_user_id: '{selected_user_id}' - "
+                    "possible injection attempt"
+                )
+                selected_user_id = None
+
+        selected_name = request.GET.get("selected_name")
+        if selected_name:
+            # Sanitize selected_name
+            selected_name = re.sub(r"[^\w\s@\.-]", "", selected_name)
+
+        # If a user was selected, return an empty response (handled by JavaScript)
         if selected_user_id and selected_name and request.headers.get("HX-Request"):
-            return render(
-                request,
-                "components/mention_selected.html",
-                {"user_id": selected_user_id, "user_name": selected_name},
+            # Just return an empty div
+            # the selection is handled by JavaScript in the client
+            return HttpResponse(
+                f'<div id="mention-results-{request.GET.get("id", "content")}" '
+                'class="hidden"></div>'
             )
 
         # Get the current user's company to limit search to company members
         company = None
         if hasattr(request.user, "workplace") and request.user.workplace:
             company = request.user.workplace
+        elif hasattr(request.user, "company"):
+            company = request.user.company
 
         # Get the User model
         User = get_user_model()
@@ -439,13 +538,28 @@ class UserSearchView(FullyActivatedUserMixin, View):
 
         # Filter by company if available
         if company:
-            users_qs = users_qs.filter(workplace=company)
+            users_qs = users_qs.filter(
+                models.Q(workplace=company) | models.Q(company=company)
+            )
+            print(f"Filtering by company: {company}")
+            print(f"Users in company: {users_qs.count()}")
+        else:
+            print("No company found for user")
 
         # Initialize users as empty queryset
         users = User.objects.none()
 
-        # Only search if query is at least 2 characters
-        if query and len(query) >= 2:
+        # Get the textarea ID
+        textarea_id = request.GET.get("id", "content")
+        print(f"Textarea ID: {textarea_id}")
+
+        # Check if we have a direct query parameter
+        if query:
+            print(f"Using direct query: '{query}'")
+            # Remove @ symbol if present at the beginning
+            if query.startswith("@"):
+                query = query[1:]
+
             # Search by name or email
             users = users_qs.filter(
                 models.Q(first_name__icontains=query)
@@ -454,27 +568,72 @@ class UserSearchView(FullyActivatedUserMixin, View):
             ).exclude(id=request.user.id)[
                 :10
             ]  # Limit to 10 results, exclude current user
-
-        # Check if this is an HTMX request
-        if request.headers.get("HX-Request"):
-            # Return HTML for HTMX
-            return render(
-                request,
-                "components/user_search_results.html",
-                {"users": users, "query": query},
-            )
         else:
-            # For non-HTMX requests, return JSON
-            results = [
-                {
-                    "id": user.id,
-                    "name": user.get_full_name(),
-                    "email": user.email,
-                    "profile_url": f"{reverse('account_profile')}?user={user.id}",
-                    "has_profile_picture": hasattr(user, "profile_picture")
-                    and bool(user.profile_picture),
-                }
-                for user in users
-            ]
+            # Try to extract from full text
+            raw_full_text = request.GET.get(textarea_id, "")
 
-            return JsonResponse({"users": results})
+            # Sanitize the full text to prevent SQL injection
+            full_text = re.sub(r"[^\w\s@\.\-,;:\'\"?!()]", "", raw_full_text)
+
+            # Log if sanitization changed the text (potential attack)
+            if full_text != raw_full_text:
+                print("WARNING: Full text was sanitized - possible injection attempt")
+                print(f"Original: '{raw_full_text}'")
+                print(f"Sanitized: '{full_text}'")
+
+            print(f"Full text: '{full_text}'")
+
+            # Check if there's an @ symbol in the text
+            at_index = full_text.rfind("@")
+            if at_index >= 0:
+                # Extract the text after the @ symbol
+                cursor_pos = len(full_text)  # Assume cursor is at the end
+                raw_mention_text = full_text[at_index + 1 : cursor_pos].strip()
+
+                # Sanitize the mention text
+                mention_text = re.sub(r"[^\w\s@\.-]", "", raw_mention_text)
+
+                # Only search if we have an @ symbol
+                print(
+                    f"Found @ symbol at position {at_index}, mention text: "
+                    f"'{mention_text}'"
+                )
+
+                # Search by name or email
+                users = users_qs.filter(
+                    models.Q(first_name__icontains=mention_text)
+                    | models.Q(last_name__icontains=mention_text)
+                    | models.Q(email__icontains=mention_text)
+                ).exclude(id=request.user.id)[
+                    :10
+                ]  # Limit to 10 results, exclude current user
+
+                # Set query for the template
+                query = mention_text
+            else:
+                print("No @ symbol found in text")
+
+        # Always return at least some users for testing if no results found
+        if not users.exists():
+            print("No users found, returning some default users")
+            # Get some default users (excluding current user)
+            users = users_qs.exclude(id=request.user.id)[:5]
+            print(f"Found {users.count()} matching users")
+            for user in users:
+                print(f"- {user.get_full_name()} ({user.email})")
+
+        # Always return HTML for the dropdown
+        print(f"Headers: {dict(request.headers)}")
+        print(f"Query: {query}")
+        print(f"Users: {[user.get_full_name() for user in users]}")
+
+        # Check if the query starts with @
+        if query and query.startswith("@"):
+            query = query[1:]  # Remove the @ symbol
+
+        # Always render the HTML template
+        return render(
+            request,
+            "components/user_search_results_tailwind.html",
+            {"users": users, "query": query},
+        )

@@ -1,0 +1,50 @@
+<!-- Force the dropdown to be visible -->
+<div
+  class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-primary rounded-lg shadow-lg z-[9999] w-80">
+  <div class="p-2 bg-primary text-primary-content font-bold text-sm">
+    Select a user to mention
+  </div>
+
+  {% if users %}
+  <ul class="menu w-full p-0" id="mention-list-{{ request.GET.id|default:'content' }}">
+    {% for user in users %}
+    <li class="mention-item hover:bg-base-200 border-b border-base-200"
+      onclick="selectMention('{{ request.GET.id|default:'content' }}', '{{ user.id }}', '{{ user.get_full_name }}')">
+      <div class="flex items-center gap-2 p-2">
+        <!-- User avatar/initials -->
+        {% if user.profile_picture %}
+        <img src="{{ user.profile_picture }}" alt="{{ user.get_full_name }}" class="w-8 h-8 rounded-full">
+        {% else %}
+        <div
+          class="w-8 h-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-sm font-bold">
+          {{ user.get_initials|default:user.email.0|upper }}
+        </div>
+        {% endif %}
+
+        <!-- User info -->
+        <div class="flex flex-col">
+          <span class="font-medium">{{ user.get_full_name }}</span>
+          <span class="text-xs text-gray-500">{{ user.email }}</span>
+        </div>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% elif query and query|length >= 0 %}
+  <div class="p-4 text-center text-gray-500">No users found matching "{{ query }}"</div>
+  {% else %}
+  <div class="p-4 text-center text-gray-500">Type after @ to search users</div>
+  {% endif %}
+
+  <!-- Debug info -->
+  <div class="p-2 bg-gray-100 text-xs text-gray-500 border-t border-base-200">
+    Found {{ users|length }} users for query: "{{ query|default:'none' }}"
+  </div>
+</div>
+
+<!-- Minimal script for debugging -->
+<script>
+  console.log("User search results rendered");
+  console.log("Users found: {{ users|length }}");
+  console.log("Query: {{ query|default:'none' }}");
+</script>

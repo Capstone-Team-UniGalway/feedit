@@ -1,5 +1,7 @@
+{% load mention_tags %}
+
 <c-layouts.base>
-    <div class="max-w-4xl mx-auto">
+    <div class="container mx-auto">
         <!-- Breadcrumbs -->
         <div class="text-sm breadcrumbs mb-4">
             <ul>
@@ -41,7 +43,7 @@
             <!-- Thread Content -->
             <div class="p-6">
                 <div class="prose max-w-none">
-                    {{ thread.content|safe }}
+                    {{ thread.content|render_mentions|safe }}
                 </div>
             </div>
 
@@ -93,91 +95,160 @@
         </div>
 
         {% if thread.type == 'forum' %}
-        {% if replies %}
-        <!-- Replies -->
-        <div class="mb-8">
-            <h2 class="text-xl font-bold mb-4">Replies</h2>
-            <div class="space-y-4">
-                {% for reply in replies %}
-                <div class="bg-base-100 rounded-lg shadow-md overflow-hidden" id="reply-{{ reply.id }}">
-                    <div class="p-4">
-                        <div class="flex justify-between items-start">
-                            <div class="flex items-center gap-2 mb-2">
-                                {% if reply.author.profile_picture %}
-                                <img src="{{ reply.author.profile_picture }}" alt="{{ reply.get_author_name }}"
-                                    class="w-6 h-6 rounded-full">
-                                {% else %}
-                                <div
-                                    class="w-6 h-6 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs font-bold">
-                                    {{ reply.get_author_name|first }}
-                                </div>
-                                {% endif %}
-                                <span class="font-medium">{{ reply.get_author_name }}</span>
-                                <span class="text-xs text-gray-500">{{ reply.created_at|date:"M d, Y" }}</span>
-                            </div>
-                            {% if reply.author == request.user %}
-                            <button type="button" class="btn btn-xs btn-outline btn-error"
-                                onclick="openReplyDeleteModal('{{ reply.pk }}', '{{ reply.title|escapejs }}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
+        <!-- Two-column layout for reply form and replies -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <!-- Reply Form - Left column on desktop -->
+            <div
+                class="bg-base-100 rounded-lg shadow-md overflow-hidden sticky top-4 self-start h-fit max-h-[calc(100vh-2rem)]">
+                <div class="p-4 bg-base-200 border-b border-base-300">
+                    <h3 class="font-bold">Add a Reply</h3>
+                </div>
+                <div class="p-6">
+                    <form method="post" action="{% url 'thread_reply' thread.pk %}">
+                        {% csrf_token %}
+                        <div class="form-control mb-4">
+                            {% mention_input name="content" id="reply_content_top" css_class="min-h-32" placeholder="Write your reply here..." required=True %}
+                            {% if reply_form.content.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ reply_form.content.errors.0 }}</p>
                             {% endif %}
                         </div>
-                        <div class="prose max-w-none">
-                            {{ reply.content|safe }}
+                        <div class="flex justify-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane mr-2"></i> Post Reply
+                            </button>
                         </div>
-                    </div>
+                    </form>
                 </div>
-                {% endfor %}
-                <!-- Single delete modal for all replies -->
-                <dialog id="delete_reply_modal" class="modal">
-                    <div class="modal-box">
-                        <h3 class="font-bold text-lg">Confirm Reply Deletion</h3>
-                        <div class="alert alert-warning my-3">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <span>This action cannot be undone!</span>
-                        </div>
-                        <p class="py-1 text-sm text-gray-600">
-                            Are you sure you want to delete this reply?
-                        </p>
-                        <form method="post" id="deleteReplyForm">
-                            {% csrf_token %}
-                            <div class="modal-action">
-                                <button type="submit" class="btn btn-error">
-                                    <i class="fas fa-exclamation-triangle mr-2"></i> Yes, Delete Reply
-                                </button>
-                                <form method="dialog">
-                                    <button type="button" class="btn"
-                                        onclick="delete_reply_modal.close()">Cancel</button>
-                                </form>
-                            </div>
-                        </form>
-                    </div>
-                </dialog>
             </div>
-        </div>
-        {% endif %}
 
-        <!-- Reply Form -->
-        <div class="card bg-base-100 rounded-lg shadow-md overflow-hidden">
-            <div class="card-body">
-                <h3 class="card-title">Add Reply</h3>
-                <form method="post" action="{% url 'thread_reply' thread.pk %}">
-                    {% csrf_token %}
-                    <div class="form-control">
-                        {{ reply_form.content }}
-                        {% if reply_form.content.errors %}
-                        <p class="text-red-500 text-sm mt-1">{{ reply_form.content.errors.0 }}</p>
-                        {% endif %}
+            {% if replies %}
+            <!-- Replies - Right column on desktop -->
+            <div class="overflow-y-auto max-h-[calc(100vh-8rem)]">
+                <div class="sticky top-0 bg-base-100 z-10 py-2 mb-4 border-b border-base-300">
+                    <h2 class="text-xl font-bold">
+                        Replies
+                        <span class="text-sm font-normal text-gray-500">({{ replies|length }} total)</span>
+                    </h2>
+                </div>
+                <div class="space-y-4 pr-2" id="replies-container">
+                    {% with total_replies=replies|length %}
+                    {% with display_count=3 %}
+
+                    <!-- Initial visible replies (max 3) -->
+                    {% for reply in replies|slice:":3" %}
+                    <div class="bg-base-100 rounded-lg shadow-md overflow-hidden" id="reply-{{ reply.id }}">
+                        <div class="p-4">
+                            <div class="flex justify-between items-start">
+                                <div class="flex items-center gap-2 mb-2">
+                                    {% if reply.author.profile_picture %}
+                                    <img src="{{ reply.author.profile_picture }}" alt="{{ reply.get_author_name }}"
+                                        class="w-6 h-6 rounded-full">
+                                    {% else %}
+                                    <div
+                                        class="w-6 h-6 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs font-bold">
+                                        {{ reply.get_author_name|first }}
+                                    </div>
+                                    {% endif %}
+                                    <span class="font-medium">{{ reply.get_author_name }}</span>
+                                    <span class="text-xs text-gray-500">{{ reply.created_at|date:"M d, Y" }}</span>
+                                </div>
+                                {% if reply.author == request.user %}
+                                <button type="button" class="btn btn-xs btn-outline btn-error"
+                                    onclick="openReplyDeleteModal('{{ reply.pk }}', '{{ reply.title|escapejs }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                            <div class="prose max-w-none">
+                                {{ reply.content|render_mentions|safe }}
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-actions justify-end mt-4">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane mr-2"></i> Post Reply
+                    {% endfor %}
+
+                    <!-- Show more/less replies button -->
+                    {% if total_replies > display_count %}
+                    <div class="text-center py-4 border-t border-base-200 mt-4" id="show-more-container">
+                        <button id="toggle-replies-btn" class="btn btn-primary btn-sm" onclick="toggleReplies()">
+                            <i class="fas fa-chevron-down mr-2"></i> Show More Replies ({{ total_replies|add:"-3" }}
+                            more)
                         </button>
                     </div>
-                </form>
-            </div>
-        </div>
 
+                    <!-- Hidden replies (beyond the first 3) -->
+                    <div id="hidden-replies" class="hidden space-y-4">
+                        {% for reply in replies|slice:"3:" %}
+                        <div class="bg-base-100 rounded-lg shadow-md overflow-hidden" id="reply-{{ reply.id }}">
+                            <div class="p-4">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        {% if reply.author.profile_picture %}
+                                        <img src="{{ reply.author.profile_picture }}" alt="{{ reply.get_author_name }}"
+                                            class="w-6 h-6 rounded-full">
+                                        {% else %}
+                                        <div
+                                            class="w-6 h-6 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs font-bold">
+                                            {{ reply.get_author_name|first }}
+                                        </div>
+                                        {% endif %}
+                                        <span class="font-medium">{{ reply.get_author_name }}</span>
+                                        <span class="text-xs text-gray-500">{{ reply.created_at|date:"M d, Y" }}</span>
+                                    </div>
+                                    {% if reply.author == request.user %}
+                                    <button type="button" class="btn btn-xs btn-outline btn-error"
+                                        onclick="openReplyDeleteModal('{{ reply.pk }}', '{{ reply.title|escapejs }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                <div class="prose max-w-none">
+                                    {{ reply.content|render_mentions|safe }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <!-- Show less button (only visible when expanded) -->
+                        <div class="text-center py-4 border-t border-base-200 mt-4">
+                            <button class="btn btn-primary btn-sm" onclick="toggleReplies()">
+                                <i class="fas fa-chevron-up mr-2"></i> Show Less
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% endwith %}
+                    {% endwith %}
+
+                    <!-- Single delete modal for all replies -->
+                    <dialog id="delete_reply_modal" class="modal">
+                        <div class="modal-box">
+                            <h3 class="font-bold text-lg">Confirm Reply Deletion</h3>
+                            <div class="alert alert-warning my-3">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>This action cannot be undone!</span>
+                            </div>
+                            <p class="py-1 text-sm text-gray-600">
+                                Are you sure you want to delete this reply?
+                            </p>
+                            <form method="post" id="deleteReplyForm">
+                                {% csrf_token %}
+                                <div class="modal-action">
+                                    <button type="submit" class="btn btn-error">
+                                        <i class="fas fa-exclamation-triangle mr-2"></i> Yes, Delete Reply
+                                    </button>
+                                    <form method="dialog">
+                                        <button type="button" class="btn"
+                                            onclick="delete_reply_modal.close()">Cancel</button>
+                                    </form>
+                                </div>
+                            </form>
+                        </div>
+                    </dialog>
+                </div>
+            </div>
+            {% endif %}
+        </div>
         {% endif %}
     </div>
 
@@ -191,6 +262,38 @@
             background-color: var(--color-secondary);
             color: var(--color-secondary-content);
         }
+
+        /* Mention styling */
+        a.mention {
+            color: var(--color-primary);
+            font-weight: 500;
+            background-color: rgba(var(--color-primary), 0.1);
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+
+        a.mention:hover {
+            background-color: rgba(var(--color-primary), 0.2);
+            text-decoration: none;
+        }
+
+        /* Mention styling */
+        a.mention {
+            color: var(--color-primary);
+            font-weight: 500;
+            background-color: rgba(var(--color-primary), 0.1);
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+
+        a.mention:hover {
+            background-color: rgba(var(--color-primary), 0.2);
+            text-decoration: none;
+        }
     </style>
     <script>
         function openReplyDeleteModal(replyId, replyTitle) {
@@ -199,6 +302,33 @@
 
             const modal = document.getElementById('delete_reply_modal');
             modal.showModal();
+        }
+
+        function toggleReplies() {
+            const hiddenReplies = document.getElementById('hidden-replies');
+            const toggleButton = document.getElementById('toggle-replies-btn');
+            const showMoreContainer = document.getElementById('show-more-container');
+
+            if (hiddenReplies.classList.contains('hidden')) {
+                // Show more replies
+                hiddenReplies.classList.remove('hidden');
+                showMoreContainer.classList.add('hidden');
+
+                // Scroll to the first hidden reply
+                const firstHiddenReply = hiddenReplies.querySelector('.bg-base-100');
+                if (firstHiddenReply) {
+                    setTimeout(() => {
+                        firstHiddenReply.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                }
+            } else {
+                // Show fewer replies
+                hiddenReplies.classList.add('hidden');
+                showMoreContainer.classList.remove('hidden');
+
+                // Scroll back to the show more button
+                showMoreContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
     </script>
 </c-layouts.base>

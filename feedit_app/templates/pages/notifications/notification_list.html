@@ -1,0 +1,118 @@
+{% load notification_tags %}
+
+<c-layouts.base>
+    <div class="max-w-4xl mx-auto">
+        <!-- Breadcrumbs -->
+        <div class="text-sm breadcrumbs mb-4">
+            <ul>
+                <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li>Notifications</li>
+            </ul>
+        </div>
+
+        <!-- Page Header -->
+        <div class="mb-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold">Your Notifications</h1>
+                <p class="text-gray-600">Stay updated with what's happening</p>
+            </div>
+
+            {% if notifications %}
+            <form method="post" action="{% url 'notifications:mark_all_read' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline">
+                    <i class="fas fa-check-double mr-2"></i> Mark All as Read
+                </button>
+            </form>
+            {% endif %}
+        </div>
+
+        <!-- Notification List -->
+        <div class="space-y-4">
+            {% if notifications %}
+            {% for notification in notifications %}
+            <div
+                class="card bg-base-100 shadow-md hover:shadow-lg transition-shadow overflow-hidden {% if not notification.read_at %}border-l-4 border-primary{% endif %}">
+                <div class="card-body p-4">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-start gap-3">
+                            <!-- Icon -->
+                            <div
+                                class="w-10 h-10 rounded-full bg-base-200 flex items-center justify-center {{ notification|notification_color }}">
+                                <i class="fas {{ notification|notification_icon }} text-lg"></i>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="badge badge-sm">{{ notification.get_type_display }}</span>
+                                    <span class="text-xs text-gray-500">{{ notification|notification_timesince }}
+                                        ago</span>
+                                    {% if not notification.read_at %}
+                                    <span class="badge badge-primary badge-sm">New</span>
+                                    {% endif %}
+                                </div>
+                                <p class="text-sm mb-2">{{ notification.message }}</p>
+                                <a href="{{ notification.get_action_url }}" class="btn btn-sm btn-outline">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex gap-2">
+                            {% if not notification.read_at %}
+                            <form method="post" action="{% url 'notifications:mark_read' notification.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-ghost" title="Mark as read">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                            <form method="post" action="{% url 'notifications:delete' notification.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-ghost text-error"
+                                    title="Delete notification">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <div class="flex justify-center my-6">
+                <div class="btn-group">
+                    {% if page_obj.has_previous %}
+                    <a href="?page=1" class="btn btn-sm">«</a>
+                    <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-sm">‹</a>
+                    {% else %}
+                    <button class="btn btn-sm" disabled>«</button>
+                    <button class="btn btn-sm" disabled>‹</button>
+                    {% endif %}
+
+                    <button class="btn btn-sm">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</button>
+
+                    {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" class="btn btn-sm">›</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-sm">»</a>
+                    {% else %}
+                    <button class="btn btn-sm" disabled>›</button>
+                    <button class="btn btn-sm" disabled>»</button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="bg-base-100 rounded-lg shadow-md p-8 text-center">
+                <div class="text-4xl mb-4">🔔</div>
+                <h3 class="text-xl font-bold mb-2">No Notifications</h3>
+                <p class="text-gray-600">You don't have any notifications yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</c-layouts.base>
