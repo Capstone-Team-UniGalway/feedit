@@ -136,39 +136,38 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     def can_view_profile(self, viewer):
         """Returns True if `viewer` is allowed to see this user's profile."""
 
-        # Public profiles are always visible
+        # Admins can view everything
+        if viewer.is_authenticated and viewer.is_superuser:
+            return True
+
+        # Public profiles are open to all
         if self.privacy == User.PrivacyType.PUBLIC:
             return True
 
-        # Own profile is always visible
+        # Own profile is always accessible
         if self == viewer:
             return True
 
-        # Internal profiles — apply fine-grained rules
+        # Guests can only see public
+        if not viewer.is_authenticated:
+            return False
+
+        # Internal visibility: employee ↔ employee or employee ↔ employer
         if self.privacy == User.PrivacyType.INTERNAL:
-            # If either user lacks a company, deny
-            if not self.workplace and not hasattr(self, "company"):
-                return False
-            if not viewer.workplace and not hasattr(viewer, "company"):
-                return False
+            self_company = self.workplace or getattr(self, "company", None)
+            viewer_company = viewer.workplace or getattr(viewer, "company", None)
 
-            # Case: viewer is employer, user is employee at same company
-            if (
-                viewer.type == User.UserType.EMPLOYER
-                and self.type == User.UserType.EMPLOYEE
-            ):
-                return viewer.company and viewer.company == self.workplace
+            return (
+                self_company and viewer_company and self_company.id == viewer_company.id
+            )
 
-            # Case: viewer is employee, user is employer at same company
-            if (
-                viewer.type == User.UserType.EMPLOYEE
-                and self.type == User.UserType.EMPLOYER
-            ):
-                return self.company and viewer.workplace == self.company
+        # Private visibility: only employer of user's company can view
+        if self.privacy == User.PrivacyType.PRIVATE:
+            return (
+                self.workplace
+                and viewer.type == User.UserType.EMPLOYER
+                and getattr(viewer, "company", None)
+                and viewer.company.id == self.workplace.id
+            )
 
-            # Case: both employees at same company
-            if viewer.type == self.type == User.UserType.EMPLOYEE:
-                return viewer.workplace and viewer.workplace == self.workplace
-
-        # All other cases denied
         return False

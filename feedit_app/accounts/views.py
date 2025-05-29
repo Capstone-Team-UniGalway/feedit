@@ -37,6 +37,7 @@ from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.views.generic import DetailView, ListView, TemplateView, View
+from django.contrib.auth.mixins import UserPassesTestMixin
 
 from .forms import (
     CustomLoginForm,
@@ -194,7 +195,7 @@ class ConfirmSuccessView(TemplateView):
     template_name = "pages/account/email_confirm_success.html"
 
 
-class ProfileView(FullyActivatedUserMixin, DetailView):
+class ProfileView(UserPassesTestMixin, DetailView):
     template_name = "pages/account/user_profile.html"
     context_object_name = "user"
     model = User
@@ -233,16 +234,33 @@ class ProfileView(FullyActivatedUserMixin, DetailView):
         # Default fallback (safe): self-profile
         return self.request.user
 
-    def dispatch(self, request, *args, **kwargs):
+    def test_func(self):
         user = self.get_object()
+        viewer = self.request.user
 
-        # Only allow access if viewable or self
-        if user != request.user and not user.can_view_profile(request.user):
-            messages.warning(request, "This profile is private.")
-            return redirect("account_profile")
-
+        # Store object early for use in dispatch and context
         self.object = user
-        return super().dispatch(request, *args, **kwargs)
+
+        if user.can_view_profile(viewer):
+            return True
+
+        # Guest trying to view private/internal profile
+        if not viewer.is_authenticated:
+            messages.info(
+                self.request,
+                "This profile is not public. Sign up and join a company to "
+                "view coworkers' profiles.",
+            )
+            self.permission_denied_redirect_url = "account_login"
+        else:
+            messages.warning(self.request, "This profile is private.")
+
+        return False
+
+    def handle_no_permission(self):
+        return redirect(
+            getattr(self, "permission_denied_redirect_url", "account_profile")
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
