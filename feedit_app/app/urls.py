@@ -51,7 +51,8 @@ urlpatterns = [
     path("account/", include("accounts.urls")),
     path("threads/", include("threads.urls")),
     path("reviews/", include("reviews.urls")),
-    path("requests/", include("requests.urls")),
+    path("requests/", include("company_requests.urls")),
+    path("notifications/", include("notifications.urls")),
     path("uploads/", include("secure_files.urls")),
     path("upload/", include("django_ckeditor_5.urls")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

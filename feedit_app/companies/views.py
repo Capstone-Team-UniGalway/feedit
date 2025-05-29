@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView, View
 from reviews.models import ReviewReply
+from company_requests.models import Request
 
 from .forms import CompanyForm
 from .models import Company
@@ -38,8 +39,6 @@ class PublicCompanyListView(ListView):
         if user.is_authenticated and not user.workplace:
             # Import here to avoid circular import
             from django.apps import apps
-
-            Request = apps.get_model("requests", "Request")
 
             # Get IDs of companies where the user has pending join requests
             pending_requests = Request.objects.filter(
@@ -117,8 +116,6 @@ class CompanyDetailView(DetailView):
             if not user.workplace:
                 # Import here to avoid circular import
                 from django.apps import apps
-
-                Request = apps.get_model("requests", "Request")
 
                 # Check if user has a pending join request for this company
                 has_pending_request = Request.objects.filter(

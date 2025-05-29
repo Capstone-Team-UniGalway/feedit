@@ -1,5 +1,5 @@
 import pytest
-from requests.models import Request, RequestReply
+from company_requests.models import Request, RequestReply
 
 from .factories import RequestFactory, RequestReplyFactory
 

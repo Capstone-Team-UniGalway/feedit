@@ -51,7 +51,7 @@
                     <a href="{% url 'companies:edit' company.id %}" class="btn btn-sm btn-outline">
                         <i class="fas fa-edit mr-1"></i> Edit Profile
                     </a>
-                    <a href="{% url 'requests:company' company.id %}" class="btn btn-sm btn-primary">
+                    <a href="{% url 'company_requests:company' company.id %}" class="btn btn-sm btn-primary">
                         <i class="fas fa-users mr-1"></i> Manage Requests
                     </a>
 
@@ -68,14 +68,14 @@
 
                     {% elif user.type == 'employee' and not user.workplace %}
                     <!-- Eligible to join -->
-                    <a href="{% url 'requests:create_with_id' company.id %}" class="btn btn-sm btn-primary">
+                    <a href="{% url 'company_requests:create_with_id' company.id %}" class="btn btn-sm btn-primary">
                         <i class="fas fa-plus mr-1"></i> Request to Join
                     </a>
 
                     {% elif user.type == 'employer' and not user.company %}
                     {% if not company.employer %}
                     <!-- Eligible to claim -->
-                    <a href="{% url 'requests:create_with_id' company.id %}" class="btn btn-sm btn-primary">
+                    <a href="{% url 'company_requests:create_with_id' company.id %}" class="btn btn-sm btn-primary">
                         <i class="fas fa-flag mr-1"></i> Claim Company
                     </a>
                     {% else %}
@@ -261,8 +261,8 @@
             <p class="mb-4">If you believe you should be the rightful owner of this company, you can submit a dispute.
             </p>
 
-            <form method="post" action="{% url 'requests:create_with_id' company.id %}" enctype="multipart/form-data"
-                class="space-y-4">
+            <form method="post" action="{% url 'company_requests:create_with_id' company.id %}"
+                enctype="multipart/form-data" class="space-y-4">
                 {% csrf_token %}
 
                 <!-- Hidden fields to set request type and title -->

@@ -36,7 +36,7 @@ from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.views.generic import DetailView, ListView, TemplateView, View
-from requests.models import Request
+from company_requests.models import Request
 
 from .forms import (
     CustomLoginForm,

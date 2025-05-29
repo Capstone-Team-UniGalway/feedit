@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import models
-from requests.models import Request, RequestReply
+from company_requests.models import Request, RequestReply
 from threads.models import Thread
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB

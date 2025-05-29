@@ -144,7 +144,8 @@
         <div class="card bg-base-100 shadow-md">
             <div class="card-body">
                 <h3 class="card-title">Add Reply</h3>
-                <form method="post" action="{% url 'requests:reply' request.id %}" enctype="multipart/form-data">
+                <form method="post" action="{% url 'company_requests:reply' request.id %}"
+                    enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="form-control">
                         {{ reply_form.content }}

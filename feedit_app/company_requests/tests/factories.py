@@ -1,7 +1,7 @@
 import factory
 from accounts.tests.factories import UserFactory
 from companies.tests.factories import CompanyFactory
-from requests.models import Request, RequestReply
+from company_requests.models import Request, RequestReply
 
 
 class RequestFactory(factory.django.DjangoModelFactory):

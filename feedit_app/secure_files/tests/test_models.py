@@ -34,7 +34,7 @@ def test_secure_file_rejects_non_image_for_user():
 
 
 def test_secure_file_allows_non_image_for_request():
-    from requests.tests.factories import RequestFactory
+    from company_requests.tests.factories import RequestFactory
 
     file = SecureFileFactory.build(
         content_object=RequestFactory(),

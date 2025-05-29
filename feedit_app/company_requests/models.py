@@ -40,7 +40,7 @@ class Request(BaseModel):
     def get_absolute_url(self):
         from django.urls import reverse
 
-        return reverse("requests:detail", kwargs={"pk": self.pk})
+        return reverse("company_requests:detail", kwargs={"pk": self.pk})
 
     def can_be_processed_by(self, user):
         if not user.is_authenticated:

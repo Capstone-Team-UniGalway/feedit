@@ -102,7 +102,7 @@ INSTALLED_APPS = [
     "companies",
     "threads",
     "reviews",
-    "requests",
+    "company_requests",
     "notifications",
     "secure_files",
 ]
