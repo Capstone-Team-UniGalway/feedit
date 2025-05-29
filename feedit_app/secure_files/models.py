@@ -1,21 +1,25 @@
+from app.base_model import BaseModel
+from companies.models import Company
 from django.conf import settings
-from django.db import models
-from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
+from django.db import models
 from requests.models import Request, RequestReply
-from companies.models import Company
 from threads.models import Thread
-from django.contrib.auth import get_user_model
-from app.base_model import BaseModel
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 ALLOWED_MODELS = [get_user_model(), Company, Thread, Request, RequestReply]
-ALLOWED_CONTENT_TYPES = [
-    ContentType.objects.get_for_model(model).model for model in ALLOWED_MODELS
-]
+# ALLOWED_CONTENT_TYPES = [
+#     ContentType.objects.get_for_model(model).model for model in ALLOWED_MODELS
+# ]
 IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp"]
+
+
+def get_allowed_content_types():
+    return [ContentType.objects.get_for_model(model).model for model in ALLOWED_MODELS]
 
 
 def validate_file_size(file):
@@ -85,7 +89,7 @@ class SecureFile(BaseModel):
             return super().save(*args, **kwargs)
 
         # ✅ Enforce allowed content types
-        if model not in ALLOWED_CONTENT_TYPES:
+        if model not in get_allowed_content_types():
             raise ValidationError(
                 f"Attachments to '{self.content_type.name}' are not allowed."
             )

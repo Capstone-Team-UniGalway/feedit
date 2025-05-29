@@ -1,18 +1,20 @@
 import mimetypes
-from django.shortcuts import redirect, get_object_or_404
+
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import PermissionDenied
 from django.http import (
+    FileResponse,
     Http404,
     HttpResponseBadRequest,
     HttpResponseForbidden,
-    FileResponse,
 )
+from django.shortcuts import get_object_or_404, redirect
 from django.views import View
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib import messages
-from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import PermissionDenied
-from .models import SecureFile, ALLOWED_CONTENT_TYPES, IMAGE_EXTENSIONS
+
 from .forms import SecureFileForm
+from .models import IMAGE_EXTENSIONS, SecureFile, get_allowed_content_types
 
 
 class SecureFileUploadView(LoginRequiredMixin, View):
@@ -29,7 +31,7 @@ class SecureFileUploadView(LoginRequiredMixin, View):
 
         content_type = get_object_or_404(ContentType, id=content_type_id)
         model = content_type.model
-        if model not in ALLOWED_CONTENT_TYPES:
+        if model not in get_allowed_content_types():
             return HttpResponseBadRequest("Invalid or disallowed content type.")
 
         model_class = content_type.model_class()
@@ -98,7 +100,7 @@ class SecureFileDeleteView(LoginRequiredMixin, View):
         model = secure_file.content_type.model
         obj = secure_file.content_object
 
-        if model not in ALLOWED_CONTENT_TYPES or not obj:
+        if model not in get_allowed_content_types() or not obj:
             return False
 
         # 🔒 Only the user themselves can delete their own file

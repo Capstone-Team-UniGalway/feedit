@@ -1,22 +1,23 @@
-from django.urls import path, include
-from allauth.mfa import urls as allauth_mfa_urls
 from allauth.account.views import ReauthenticateView
+from allauth.mfa import urls as allauth_mfa_urls
+from django.urls import include, path
+
 from .views import (
-    AuthView,
-    AuthRedirectView,
-    CustomAuthenticateView,
-    LogoutView,
-    EmailConfirmView,
-    ConfirmSuccessView,
-    EmailVerificationSentView,
-    ResendEmailVerificationView,
-    ProfileView,
-    PublicProfileView,
-    EditProfileView,
-    CloseAccountView,
     AuthPasswordResetDonePartial,
+    AuthRedirectView,
+    AuthView,
+    CloseAccountView,
+    ConfirmSuccessView,
+    CustomAuthenticateView,
     CustomPasswordResetFromKeyView,
     CustomPasswordResetView,
+    EditProfileView,
+    EmailConfirmView,
+    EmailVerificationSentView,
+    LogoutView,
+    ProfileView,
+    PublicProfileView,
+    ResendEmailVerificationView,
     UserSearchView,
 )
 

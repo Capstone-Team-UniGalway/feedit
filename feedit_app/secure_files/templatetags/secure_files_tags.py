@@ -1,5 +1,6 @@
 from django import template
 from django.contrib.contenttypes.models import ContentType
+
 from ..utils import get_files_for_object, get_secure_file_url
 
 register = template.Library()

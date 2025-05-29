@@ -1,13 +1,12 @@
+from app.mixins import FullyActivatedUserMixin, SuperuserBypassMixin
+from companies.models import Company
 from django.contrib import messages
-from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views import View
 from django.views.generic.edit import CreateView
 
-from app.mixins import SuperuserBypassMixin, FullyActivatedUserMixin
-from companies.models import Company
 from .forms import ReviewForm, ReviewReplyForm
 from .models import Review, ReviewReply
 

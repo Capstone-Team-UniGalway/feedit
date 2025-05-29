@@ -1,8 +1,8 @@
-from django.conf import settings
-from django.db import models
 from app.base_model import BaseModel
-from django.core.validators import RegexValidator
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.core.validators import RegexValidator
+from django.db import models
 from django.templatetags.static import static
 
 

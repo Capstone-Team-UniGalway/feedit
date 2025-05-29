@@ -1,15 +1,16 @@
-from django.db.models import Q, Prefetch
+from app.mixins import FullyActivatedUserMixin
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.core.paginator import Paginator
+from django.db.models import Prefetch, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, View
-from django.contrib import messages
-from django.contrib.auth import get_user_model
-from .models import Company
+from django.views.generic import CreateView, DetailView, ListView, UpdateView, View
 from reviews.models import ReviewReply
-from app.mixins import FullyActivatedUserMixin
+
 from .forms import CompanyForm
-from django.core.paginator import Paginator
+from .models import Company
 
 
 class PublicCompanyListView(ListView):

@@ -1,14 +1,15 @@
-from django.views.generic import CreateView, ListView, DetailView, View
-from django.utils.functional import cached_property
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib import messages
-from django.urls import reverse
-from django.contrib.contenttypes.models import ContentType
 from app.mixins import FullyActivatedUserMixin
-from .models import Request, RequestReply
-from .forms import RequestForm, RequestReplyForm
-from secure_files.models import SecureFile
 from companies.models import Company
+from django.contrib import messages
+from django.contrib.contenttypes.models import ContentType
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
+from django.utils.functional import cached_property
+from django.views.generic import CreateView, DetailView, ListView, View
+from secure_files.models import SecureFile
+
+from .forms import RequestForm, RequestReplyForm
+from .models import Request, RequestReply
 
 
 class CreateRequestView(FullyActivatedUserMixin, CreateView):

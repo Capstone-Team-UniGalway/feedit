@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from .models import SecureFile, ALLOWED_CONTENT_TYPES
+
+from .models import SecureFile, get_allowed_content_types
 
 
 class SecureFileForm(forms.ModelForm):
@@ -34,7 +35,7 @@ class SecureFileForm(forms.ModelForm):
         content_type = ContentType.objects.get_for_model(self.content_object)
 
         # Check if content type is allowed
-        if content_type.model not in ALLOWED_CONTENT_TYPES:
+        if content_type.model not in get_allowed_content_types():
             raise ValidationError(
                 f"Attachments to '{content_type.name}' are not allowed"
             )

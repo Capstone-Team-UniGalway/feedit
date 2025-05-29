@@ -1,5 +1,6 @@
 import pytest
 from requests.models import Request, RequestReply
+
 from .factories import RequestFactory, RequestReplyFactory
 
 pytestmark = pytest.mark.django_db

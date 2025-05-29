@@ -1,49 +1,49 @@
-from enum import Enum
-from datetime import timedelta
 import re
-from django.utils import timezone
-from django.contrib import messages
-from django.db import models
-from django.http import HttpResponse
-from django.views.generic import TemplateView, View, DetailView, ListView
-from django.shortcuts import render
-from django.contrib.auth import (
-    logout as auth_logout,
-    update_session_auth_hash,
-)
-from django.contrib.auth.tokens import default_token_generator
-from django.contrib.auth.views import PasswordResetConfirmView
-from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import EmailMessage
-from django.shortcuts import redirect
-from django.template.loader import render_to_string
-from django.urls import reverse, reverse_lazy
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
-from django.contrib.auth.mixins import LoginRequiredMixin
+from datetime import timedelta
+from enum import Enum
+
+from allauth.account import app_settings as allauth_settings
+from allauth.account.forms import ChangePasswordForm
+from allauth.account.models import EmailConfirmationHMAC
 from allauth.account.utils import (
     complete_signup,
-    send_email_confirmation,
     get_user_model,
     perform_login,
+    send_email_confirmation,
 )
-from allauth.account import app_settings as allauth_settings
-from allauth.account.models import EmailConfirmationHMAC
 from allauth.account.views import (
     ConfirmEmailView,
     PasswordResetView,
 )
-from allauth.account.forms import ChangePasswordForm
 from allauth.mfa.base.views import AuthenticateView
+from app.mixins import FullyActivatedUserMixin
+from django.contrib import messages
+from django.contrib.auth import logout as auth_logout
+from django.contrib.auth import (
+    update_session_auth_hash,
+)
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.views import PasswordResetConfirmView
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.mail import EmailMessage
+from django.db import models
+from django.http import Http404, HttpResponse
+from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
+from django.urls import reverse, reverse_lazy
+from django.utils import timezone
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from django.views.generic import DetailView, ListView, TemplateView, View
+from requests.models import Request
+
 from .forms import (
     CustomLoginForm,
+    CustomResetPasswordForm,
     CustomSignupForm,
     UserProfileForm,
-    CustomResetPasswordForm,
 )
-from django.http import Http404
-from app.mixins import FullyActivatedUserMixin
-from requests.models import Request
 
 User = get_user_model()
 

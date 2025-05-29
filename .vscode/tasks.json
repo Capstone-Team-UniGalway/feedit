@@ -1,0 +1,44 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Lint All (flake8)",
+            "type": "shell",
+            "command": "flake8 .",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Format All (black)",
+            "type": "shell",
+            "command": "black .",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Sort Imports (isort)",
+            "type": "shell",
+            "command": "isort .",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Security Scan (bandit)",
+            "type": "shell",
+            "command": "bandit -r .",
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Tests (pytest)",
+            "type": "shell",
+            "command": "pytest",
+            "args": [
+                "--disable-warnings",
+                "--maxfail=5"
+            ],
+            "group": "test",
+            "problemMatcher": []
+        }
+    ]
+}

@@ -1,15 +1,18 @@
 # Connect the signal
+import re
+
+from django.contrib.auth import get_user_model
+from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.db import models
 from django.urls import reverse
-from .models import Thread, Mention
-from django.contrib.auth import get_user_model
-import re
+
+from .models import Mention, Thread
 
 # Import the Notification model if it exists
 try:
     from notifications.models import Notification
+
     NOTIFICATIONS_AVAILABLE = True
 except ImportError:
     NOTIFICATIONS_AVAILABLE = False
@@ -32,9 +35,13 @@ def mention_post_save(sender, instance, created, **kwargs):
             # Create notification
             Notification.objects.create(
                 recipient=mentioned_user,
-                type=Notification.NotificationType.NEW_THREAD if thread.parent is None else Notification.NotificationType.NEW_THREAD_REPLY,
+                type=(
+                    Notification.NotificationType.NEW_THREAD
+                    if thread.parent is None
+                    else Notification.NotificationType.NEW_THREAD_REPLY
+                ),
                 message=f"{author.get_full_name()} mentioned you in '{thread.title}'",
-                action_url=reverse('thread_detail', kwargs={'pk': thread.pk})
+                action_url=reverse("thread_detail", kwargs={"pk": thread.pk}),
             )
 
 
@@ -44,10 +51,15 @@ def process_mentions(sender, instance, created, **kwargs):
     # Always process mentions for new threads
     # For existing threads, only process if content has changed
     if not created and not instance.tracker.has_changed("content"):
-        print(f"Skipping mention processing for thread {instance.id} - content unchanged")
+        print(
+            f"Skipping mention processing for thread {instance.id} - content unchanged"
+        )
         return
 
-    print(f"Processing mentions for thread {instance.id} - {'new thread' if created else 'content changed'}")
+    print(
+        f"Processing mentions for thread {instance.id} - "
+        f"{'new thread' if created else 'content changed'}"
+    )
 
     # Delete existing mentions for this thread
     if not created:
@@ -77,7 +89,9 @@ def process_mentions(sender, instance, created, **kwargs):
     html_mention_pattern = r'data-mention-id="(\d+)"[^>]*>@([^<]+)<'
 
     # Match HTML mentions with class="mention"
-    html_class_mention_pattern = r'class="mention"[^>]*data-mention-id="(\d+)"[^>]*>@([^<]+)<'
+    html_class_mention_pattern = (
+        r'class="mention"[^>]*data-mention-id="(\d+)"[^>]*>@([^<]+)<'
+    )
 
     new_mentions = re.findall(new_mention_pattern, content)
     legacy_mentions = re.findall(legacy_mention_pattern, content)
@@ -85,7 +99,13 @@ def process_mentions(sender, instance, created, **kwargs):
     html_mentions = re.findall(html_mention_pattern, content)
     html_class_mentions = re.findall(html_class_mention_pattern, content)
 
-    print(f"Found mentions - New format: {len(new_mentions)}, Legacy format: {len(legacy_mentions)}, Legacy HTML: {len(legacy_html_mentions)}, HTML: {len(html_mentions)}, HTML class: {len(html_class_mentions)}")
+    print(
+        f"Found mentions - New format: {len(new_mentions)}, "
+        f"Legacy format: {len(legacy_mentions)}, "
+        f"Legacy HTML: {len(legacy_html_mentions)}, "
+        f"HTML: {len(html_mentions)}, "
+        f"HTML class: {len(html_class_mentions)}"
+    )
     if new_mentions:
         print(f"New format mentions: {new_mentions}")
     if legacy_mentions:
@@ -111,7 +131,10 @@ def process_mentions(sender, instance, created, **kwargs):
                 # Create mention
                 mention = Mention.objects.create(thread=instance, mentioned_user=user)
                 processed_user_ids.add(user.id)
-                print(f"Created mention (new format): {user.get_full_name()} (ID: {mention.id})")
+                print(
+                    f"Created mention (new format): {user.get_full_name()} "
+                    f"(ID: {mention.id})"
+                )
         except (ValueError, TypeError):
             # Skip invalid user IDs
             continue
@@ -130,7 +153,10 @@ def process_mentions(sender, instance, created, **kwargs):
                 # Create mention
                 mention = Mention.objects.create(thread=instance, mentioned_user=user)
                 processed_user_ids.add(user.id)
-                print(f"Created mention (HTML format): {user.get_full_name()} (ID: {mention.id})")
+                print(
+                    f"Created mention (HTML format): {user.get_full_name()} "
+                    f"(ID: {mention.id})"
+                )
         except (ValueError, TypeError):
             # Skip invalid user IDs
             continue
@@ -149,7 +175,10 @@ def process_mentions(sender, instance, created, **kwargs):
                 # Create mention
                 mention = Mention.objects.create(thread=instance, mentioned_user=user)
                 processed_user_ids.add(user.id)
-                print(f"Created mention (HTML class format): {user.get_full_name()} (ID: {mention.id})")
+                print(
+                    f"Created mention (HTML class format): {user.get_full_name()} "
+                    f"(ID: {mention.id})"
+                )
         except (ValueError, TypeError):
             # Skip invalid user IDs
             continue
@@ -178,27 +207,33 @@ def process_mentions(sender, instance, created, **kwargs):
                 # Try to find the user by full name
                 if " " in username:
                     first_name, last_name = username.split(" ", 1)
-                    user = User.objects.filter(
-                        first_name__iexact=first_name,
-                        last_name__iexact=last_name,
-                        is_active=True
-                    ).filter(
-                        models.Q(workplace=company) | models.Q(company=company)
-                    ).first()
+                    user = (
+                        User.objects.filter(
+                            first_name__iexact=first_name,
+                            last_name__iexact=last_name,
+                            is_active=True,
+                        )
+                        .filter(models.Q(workplace=company) | models.Q(company=company))
+                        .first()
+                    )
                 else:
                     # If no space, try by first name but only within company
-                    user = User.objects.filter(
-                        first_name__iexact=username,
-                        is_active=True
-                    ).filter(
-                        models.Q(workplace=company) | models.Q(company=company)
-                    ).first()
+                    user = (
+                        User.objects.filter(first_name__iexact=username, is_active=True)
+                        .filter(models.Q(workplace=company) | models.Q(company=company))
+                        .first()
+                    )
 
                 if user and user.id not in processed_user_ids:  # Allow self-mentions
                     # Create mention
-                    mention = Mention.objects.create(thread=instance, mentioned_user=user)
+                    mention = Mention.objects.create(
+                        thread=instance, mentioned_user=user
+                    )
                     processed_user_ids.add(user.id)
-                    print(f"Created mention (legacy HTML format): {user.get_full_name()} (ID: {mention.id})")
+                    print(
+                        f"Created mention (legacy HTML format): {user.get_full_name()} "
+                        f"(ID: {mention.id})"
+                    )
             except Exception as e:
                 # Skip any errors in mention processing
                 print(f"Error processing legacy HTML mention: {e}")
@@ -221,27 +256,33 @@ def process_mentions(sender, instance, created, **kwargs):
                 # Try to find the user by full name
                 if " " in username:
                     first_name, last_name = username.split(" ", 1)
-                    user = User.objects.filter(
-                        first_name__iexact=first_name,
-                        last_name__iexact=last_name,
-                        is_active=True
-                    ).filter(
-                        models.Q(workplace=company) | models.Q(company=company)
-                    ).first()
+                    user = (
+                        User.objects.filter(
+                            first_name__iexact=first_name,
+                            last_name__iexact=last_name,
+                            is_active=True,
+                        )
+                        .filter(models.Q(workplace=company) | models.Q(company=company))
+                        .first()
+                    )
                 else:
                     # If no space, try by first name but only within company
-                    user = User.objects.filter(
-                        first_name__iexact=username,
-                        is_active=True
-                    ).filter(
-                        models.Q(workplace=company) | models.Q(company=company)
-                    ).first()
+                    user = (
+                        User.objects.filter(first_name__iexact=username, is_active=True)
+                        .filter(models.Q(workplace=company) | models.Q(company=company))
+                        .first()
+                    )
 
                 if user and user.id not in processed_user_ids:  # Allow self-mentions
                     # Create mention
-                    mention = Mention.objects.create(thread=instance, mentioned_user=user)
+                    mention = Mention.objects.create(
+                        thread=instance, mentioned_user=user
+                    )
                     processed_user_ids.add(user.id)
-                    print(f"Created mention (legacy format): {user.get_full_name()} (ID: {mention.id})")
+                    print(
+                        f"Created mention (legacy format): {user.get_full_name()} "
+                        f"(ID: {mention.id})"
+                    )
             except Exception as e:
                 # Skip any errors in mention processing
                 print(f"Error processing legacy mention: {e}")

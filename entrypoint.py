@@ -1,8 +1,9 @@
-import boto3
 import json
 import os
 import subprocess
 import sys
+
+import boto3
 
 
 def fetch_secrets(secret_name, region_name="en-north-1"):

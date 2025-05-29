@@ -1,12 +1,12 @@
 import pytest
-from django.urls import reverse
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import PermissionDenied
-from requests.models import Request
 from accounts.models import User
 from accounts.tests.factories import UserFactory
 from companies.tests.factories import CompanyFactory
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import PermissionDenied
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.urls import reverse
+from requests.models import Request
 from requests.tests.factories import RequestFactory
 from secure_files.tests.factories import SecureFileFactory
 

@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import CreateReviewView, CreateReviewReplyView, ToggleGuestNameFieldView
+
+from .views import CreateReviewReplyView, CreateReviewView, ToggleGuestNameFieldView
 
 app_name = "reviews"
 

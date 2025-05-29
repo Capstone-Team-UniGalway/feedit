@@ -1,8 +1,8 @@
+from app.base_model import BaseModel
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from django_ckeditor_5.fields import CKEditor5Field
-from app.base_model import BaseModel
 from model_utils import FieldTracker
 
 

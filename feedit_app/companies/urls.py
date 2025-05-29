@@ -1,12 +1,13 @@
 from django.urls import path
+
 from .views import (
-    PublicCompanyListView,
     CompanyDetailView,
-    CreateCompanyView,
-    EditCompanyView,
-    DeleteCompanyView,
-    LeaveCompanyView,
     CompanyEmployeeDirectoryView,
+    CreateCompanyView,
+    DeleteCompanyView,
+    EditCompanyView,
+    LeaveCompanyView,
+    PublicCompanyListView,
 )
 
 app_name = "companies"

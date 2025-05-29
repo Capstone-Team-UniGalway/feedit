@@ -1,20 +1,20 @@
-from django import forms
-from django.shortcuts import get_object_or_404, redirect
-from django.views.generic import (
-    ListView,
-    DetailView,
-    CreateView,
-    UpdateView,
-    DeleteView,
-)
-from django.urls import reverse_lazy
-from django.contrib import messages
-from django.http import HttpResponseRedirect
-from django.db.models import Count, Q, Prefetch
-
-from .models import Thread
-from .forms import ThreadForm, ThreadReplyForm
 from app.mixins import FullyActivatedUserMixin
+from django import forms
+from django.contrib import messages
+from django.db.models import Count, Prefetch, Q
+from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse_lazy
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    ListView,
+    UpdateView,
+)
+
+from .forms import ThreadForm, ThreadReplyForm
+from .models import Thread
 
 
 class ThreadListView(FullyActivatedUserMixin, ListView):
@@ -148,7 +148,8 @@ class ThreadDetailView(FullyActivatedUserMixin, DetailView):
 
         # We're no longer automatically marking mentions as read when viewing a thread
         # This allows mentions to remain visible on the dashboard
-        # Users can mark mentions as read by clicking on them or visiting the mentions page
+        # Users can mark mentions as read by clicking on them or visiting the
+        # mentions page
 
         return context
 

@@ -1,5 +1,6 @@
 import json
 from enum import Enum
+
 from django.contrib.sessions.serializers import JSONSerializer
 from django.utils.functional import Promise
 

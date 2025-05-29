@@ -1,8 +1,8 @@
+from app.base_model import BaseModel
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django_ckeditor_5.fields import CKEditor5Field
-from app.base_model import BaseModel
 
 
 # Requests made by employees to employers with status tracking
