@@ -26,4 +26,9 @@ urlpatterns = [
     path(
         "directory/", CompanyEmployeeDirectoryView.as_view(), name="directory"
     ),  # /companies/directory/
+    path(
+        "<int:pk>/directory/",
+        CompanyEmployeeDirectoryView.as_view(),
+        name="company_directory",
+    ),  # /companies/123/directory/
 ]
