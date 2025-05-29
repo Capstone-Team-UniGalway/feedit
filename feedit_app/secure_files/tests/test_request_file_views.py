@@ -2,12 +2,12 @@ import pytest
 from accounts.models import User
 from accounts.tests.factories import UserFactory
 from companies.tests.factories import CompanyFactory
+from company_requests.models import Request
+from company_requests.tests.factories import RequestFactory
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
-from company_requests.models import Request
-from company_requests.tests.factories import RequestFactory
 from secure_files.tests.factories import SecureFileFactory
 
 pytestmark = pytest.mark.django_db

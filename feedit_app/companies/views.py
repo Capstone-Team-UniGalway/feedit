@@ -1,4 +1,5 @@
 from app.mixins import FullyActivatedUserMixin
+from company_requests.models import Request
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
@@ -8,7 +9,6 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView, View
 from reviews.models import ReviewReply
-from company_requests.models import Request
 
 from .forms import CompanyForm
 from .models import Company
@@ -37,9 +37,6 @@ class PublicCompanyListView(ListView):
 
         # Add pending requests context for authenticated users
         if user.is_authenticated and not user.workplace:
-            # Import here to avoid circular import
-            from django.apps import apps
-
             # Get IDs of companies where the user has pending join requests
             pending_requests = Request.objects.filter(
                 author=user,
@@ -114,9 +111,6 @@ class CompanyDetailView(DetailView):
 
             # Add pending requests context for authenticated users without a workplace
             if not user.workplace:
-                # Import here to avoid circular import
-                from django.apps import apps
-
                 # Check if user has a pending join request for this company
                 has_pending_request = Request.objects.filter(
                     author=user,

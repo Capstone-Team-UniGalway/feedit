@@ -17,6 +17,7 @@ from allauth.account.views import (
 )
 from allauth.mfa.base.views import AuthenticateView
 from app.mixins import FullyActivatedUserMixin
+from company_requests.models import Request
 from django.contrib import messages
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth import (
@@ -36,7 +37,6 @@ from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.views.generic import DetailView, ListView, TemplateView, View
-from company_requests.models import Request
 
 from .forms import (
     CustomLoginForm,

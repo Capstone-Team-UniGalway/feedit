@@ -1,11 +1,11 @@
+from company_requests.models import (
+    Request,
+    RequestReply,
+)
 from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
-from company_requests.models import (  # Django app name, not the Python requests library
-    Request,
-    RequestReply,
-)
 
 # Import models
 from reviews.models import Review, ReviewReply

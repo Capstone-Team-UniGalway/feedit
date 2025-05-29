@@ -34,6 +34,7 @@
             "type": "shell",
             "command": "pytest",
             "args": [
+                "feedit_app",
                 "--disable-warnings",
                 "--maxfail=5"
             ],
