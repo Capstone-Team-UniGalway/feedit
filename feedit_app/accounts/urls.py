@@ -18,12 +18,14 @@ from .views import (
     CustomPasswordResetFromKeyView,
     CustomPasswordResetView,
     UserSearchView,
+    MentionsListView,
 )
 
 urlpatterns = [
     path("", ProfileView.as_view(), name="account_profile"),
     path("<int:pk>/", PublicProfileView.as_view(), name="account_public_profile"),
     path("edit/", EditProfileView.as_view(), name="account_edit"),
+    path("mentions/", MentionsListView.as_view(), name="account_mentions"),
     path("auth/", AuthView.as_view(), name="account_auth"),  # canonical
     path(
         "login/", AuthRedirectView.as_view(), name="account_login"

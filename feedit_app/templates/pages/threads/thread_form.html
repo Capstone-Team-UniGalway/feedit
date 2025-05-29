@@ -1,4 +1,6 @@
 {% load widget_tweaks %}
+{% load cotton %}
+{% load mention_tags %}
 
 <c-layouts.base>
     <div class="max-w-3xl mx-auto">
@@ -39,6 +41,8 @@
                         {% for error in field.errors %}
                         <p class="text-sm text-error">{{ error }}</p>
                         {% endfor %}
+
+                        <!-- Use regular field rendering for all fields (including CKEditor5 for content) -->
                         {{ field }}
                     </div>
                     {% endfor %}
@@ -54,4 +58,22 @@
             </div>
         </div>
     </div>
+
+    <style>
+        /* Mention styling for thread creation form */
+        a.mention {
+            color: var(--color-primary);
+            font-weight: 500;
+            background-color: rgba(var(--color-primary), 0.1);
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+
+        a.mention:hover {
+            background-color: rgba(var(--color-primary), 0.2);
+            text-decoration: none;
+        }
+    </style>
 </c-layouts.base>

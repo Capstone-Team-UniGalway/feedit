@@ -42,7 +42,7 @@ class ThreadReplyForm(forms.ModelForm):
         fields = ["content"]
         widgets = {
             "content": CKEditor5Widget(
-                attrs={"class": "django_ckeditor_5 w-full textarea", "rows": "3"},
+                attrs={"class": "django_ckeditor_5 w-full textarea"},
                 config_name="extends",
             )
         }
