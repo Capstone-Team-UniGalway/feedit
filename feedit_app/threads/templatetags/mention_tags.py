@@ -44,7 +44,9 @@ def render_mentions(text):
 
             if user:
                 # If user found, create a link with user ID
-                profile_url = reverse("account_public_profile", kwargs={"pk": user.id})
+                profile_url = reverse(
+                    "account_public_profile", kwargs={"identifier": user.id}
+                )
                 return format_html(
                     '<a href="{}" class="mention" data-mention-id="{}">@{}</a>',
                     profile_url,
@@ -81,7 +83,9 @@ def render_mentions(text):
 
         if user:
             # If user found, include user ID in the mention
-            profile_url = reverse("account_public_profile", kwargs={"pk": user.id})
+            profile_url = reverse(
+                "account_public_profile", kwargs={"identifier": user.id}
+            )
             return format_html(
                 '<a href="{}" class="mention" data-mention-id="{}">@{}</a>',
                 profile_url,
@@ -102,7 +106,9 @@ def render_mentions(text):
 
             if user:
                 # If user found, create a link with user ID
-                profile_url = reverse("account_public_profile", kwargs={"pk": user.id})
+                profile_url = reverse(
+                    "account_public_profile", kwargs={"identifier": user.id}
+                )
                 return format_html(
                     '<a href="{}" class="mention" data-mention-id="{}">@{}</a>',
                     profile_url,
@@ -139,7 +145,9 @@ def render_mentions(text):
 
         if user:
             # If user found, include user ID in the mention
-            profile_url = reverse("account_public_profile", kwargs={"pk": user.id})
+            profile_url = reverse(
+                "account_public_profile", kwargs={"identifier": user.id}
+            )
             return format_html(
                 '<a href="{}" class="mention" data-mention-id="{}">@{}</a>',
                 profile_url,

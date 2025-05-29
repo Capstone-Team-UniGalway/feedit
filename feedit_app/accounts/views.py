@@ -200,68 +200,53 @@ class ProfileView(FullyActivatedUserMixin, DetailView):
     model = User
 
     def get_object(self):
-        # Check if a user ID is provided in the URL
-        user_id = self.request.GET.get("user")
-        user_name = self.request.GET.get("user_name")
+        identifier = self.kwargs.get("identifier")
 
-        if user_id:
+        if identifier is None:
+            # No path param: self-profile
+            return self.request.user
+
+        # Try resolving by integer ID
+        if identifier.isdigit():
             try:
-                # Try to get the user by ID
-                return User.objects.get(id=user_id)
-            except (User.DoesNotExist, ValueError):
+                return User.objects.get(pk=int(identifier))
+            except User.DoesNotExist:
                 pass
 
-        if user_name:
-            # Try to find the user by name
-            # This is less reliable but needed for backward compatibility
-            try:
-                if " " in user_name:
-                    first_name, last_name = user_name.split(" ", 1)
-                    user = User.objects.filter(
-                        first_name__iexact=first_name,
-                        last_name__iexact=last_name,
-                        is_active=True,
-                    ).first()
-                    if user:
-                        return user
-                else:
-                    # Try first name only
-                    user = User.objects.filter(
-                        first_name__iexact=user_name, is_active=True
-                    ).first()
-                    if user:
-                        return user
-            except Exception:
-                pass
+        # Fallback: Try resolving by name (e.g., john-doe)
+        try:
+            parts = identifier.replace("-", " ").split()
+            if len(parts) == 2:
+                first_name, last_name = parts
+                return User.objects.filter(
+                    first_name__iexact=first_name.strip(),
+                    last_name__iexact=last_name.strip(),
+                    is_active=True,
+                ).first()
+            elif len(parts) == 1:
+                return User.objects.filter(
+                    first_name__iexact=parts[0].strip(), is_active=True
+                ).first()
+        except Exception:
+            pass
 
-        # Default to the current user
+        # Default fallback (safe): self-profile
         return self.request.user
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        # Check if this is the user's own profile
-        context["is_own_profile"] = self.object == self.request.user
-        return context
-
-
-class PublicProfileView(FullyActivatedUserMixin, DetailView):
-    model = User
-    template_name = "pages/account/user_profile.html"
-    context_object_name = "user"
-
-    def get(self, request, *args, **kwargs):
+    def dispatch(self, request, *args, **kwargs):
         user = self.get_object()
-        if not user.can_view_profile(request.user):
+
+        # Only allow access if viewable or self
+        if user != request.user and not user.can_view_profile(request.user):
             messages.warning(request, "This profile is private.")
             return redirect("account_profile")
-        return super().get(request, *args, **kwargs)
+
+        self.object = user
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user = self.get_object()
-        viewer = self.request.user
-
-        context["is_own_profile"] = user == viewer
+        context["is_own_profile"] = self.object == self.request.user
         return context
 
 

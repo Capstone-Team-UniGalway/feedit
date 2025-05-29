@@ -16,14 +16,13 @@ from .views import (
     EmailVerificationSentView,
     LogoutView,
     ProfileView,
-    PublicProfileView,
     ResendEmailVerificationView,
     UserSearchView,
 )
 
 urlpatterns = [
     path("", ProfileView.as_view(), name="account_profile"),
-    path("<int:pk>/", PublicProfileView.as_view(), name="account_public_profile"),
+    path("<str:identifier>/", ProfileView.as_view(), name="account_public_profile"),
     path("edit/", EditProfileView.as_view(), name="account_edit"),
     path("auth/", AuthView.as_view(), name="account_auth"),  # canonical
     path(

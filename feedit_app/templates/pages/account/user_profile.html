@@ -76,7 +76,7 @@
                                 <label class="label font-medium">Profile URL</label>
                                 <div class="flex gap-2">
                                     <input type="text" id="profile-url"
-                                        value="{{ request.scheme }}://{{ request.get_host }}{% url 'account_public_profile' pk=user.id %}"
+                                        value="{{ request.scheme }}://{{ request.get_host }}{% url 'account_public_profile' identifier=user.id %}"
                                         class="input input-bordered w-full font-mono text-sm" readonly />
                                     <button class="btn btn-square" onclick="copyProfileUrl()">
                                         <i class="fas fa-copy"></i>
