@@ -1,15 +1,16 @@
 from app.mixins import FullyActivatedUserMixin
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseRedirect, JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import ListView, View
 
-from .models import Notification
+from .mixins import NotificationAccessMixin
 
 
-class NotificationListView(FullyActivatedUserMixin, ListView):
+class NotificationListView(LoginRequiredMixin, ListView):
     """View for displaying all notifications for the current user."""
 
     template_name = "pages/notifications/notification_list.html"
@@ -23,13 +24,9 @@ class NotificationListView(FullyActivatedUserMixin, ListView):
         )
 
 
-class MarkNotificationReadView(FullyActivatedUserMixin, View):
-    """View for marking a notification as read."""
-
+class MarkNotificationReadView(LoginRequiredMixin, NotificationAccessMixin, View):
     def post(self, request, pk):
-        notification = get_object_or_404(
-            Notification, pk=pk, recipient=request.user, is_deleted=False
-        )
+        notification = self.get_notification(pk, request.user)
 
         # Mark as read if not already read
         if not notification.read_at:
@@ -51,19 +48,16 @@ class MarkAllNotificationsReadView(FullyActivatedUserMixin, View):
 
     def post(self, request):
         # Get all unread notifications for the current user
-        unread_notifications = request.user.notifications.filter(
+        unread = request.user.notifications.filter(
             read_at__isnull=True, is_deleted=False
         )
 
-        # Mark all as read
-        now = timezone.now()
-        unread_notifications.update(read_at=now)
+        # Mark all as read and count
+        count = unread.update(read_at=timezone.now())
 
         # If AJAX request, return JSON response
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return JsonResponse(
-                {"success": True, "count": unread_notifications.count()}
-            )
+            return JsonResponse({"success": True, "count": count})
 
         # Otherwise redirect back to the notification list with a success message
         messages.success(request, "All notifications marked as read.")
@@ -74,9 +68,7 @@ class DeleteNotificationView(FullyActivatedUserMixin, View):
     """View for deleting a notification."""
 
     def post(self, request, pk):
-        notification = get_object_or_404(
-            Notification, pk=pk, recipient=request.user, is_deleted=False
-        )
+        notification = self.get_notification(pk, request.user)
 
         # Soft delete the notification
         notification.delete()

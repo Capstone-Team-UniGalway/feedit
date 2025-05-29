@@ -23,7 +23,7 @@ from django.contrib.auth import logout as auth_logout
 from django.contrib.auth import (
     update_session_auth_hash,
 )
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.views import PasswordResetConfirmView
 from django.contrib.sites.shortcuts import get_current_site
@@ -37,7 +37,6 @@ from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.views.generic import DetailView, ListView, TemplateView, View
-from django.contrib.auth.mixins import UserPassesTestMixin
 
 from .forms import (
     CustomLoginForm,
