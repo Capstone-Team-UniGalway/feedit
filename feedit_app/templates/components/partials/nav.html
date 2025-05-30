@@ -11,7 +11,7 @@
         <i class="fas fa-building"></i> Companies
     </a>
 </li>
-{% if user.company or user.workplace %}
+{% if user.has_company %}
 <li>
     <a href="{% url 'thread_list' %}"
         class="nav-link {% if request.resolver_match.url_name == 'thread_list' or request.resolver_match.url_name == 'thread_detail' %}active{% endif %}">
@@ -34,7 +34,8 @@
 {% endif %}
 {% if user.company or user.is_superuser %}
 <li>
-    <div class="dropdown dropdown-bottom dropdown-center nav-link">
+    <div
+        class="dropdown dropdown-bottom dropdown-center nav-link {% if request.resolver_match.url_name in 'list,company,manage_claims,manage_unclaimed' and request.resolver_match.namespace == 'company_requests' %}active{% endif %}">
         <div tabindex="0" role="button">
             <i class="fas fa-clipboard-list mr-1"></i> Requests
         </div>
@@ -71,7 +72,8 @@
 </li>
 {% else %}
 <li>
-    <a href="{% url 'company_requests:list' %}" class="nav-link">
+    <a href="{% url 'company_requests:list' %}"
+        class="nav-link {% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'company_requests' %}active{% endif %}">
         <i class="fas fa-clipboard-list"></i> Requests
     </a>
 </li>

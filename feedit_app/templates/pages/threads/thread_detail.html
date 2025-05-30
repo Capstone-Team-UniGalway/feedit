@@ -267,7 +267,7 @@
         a.mention {
             color: var(--color-primary);
             font-weight: 500;
-            background-color: rgba(var(--color-primary), 0.1);
+            background-color: color-mix(in oklab, var(--color-primary) 10%, transparent);
             padding: 0.125rem 0.25rem;
             border-radius: 0.25rem;
             text-decoration: none;
@@ -275,23 +275,7 @@
         }
 
         a.mention:hover {
-            background-color: rgba(var(--color-primary), 0.2);
-            text-decoration: none;
-        }
-
-        /* Mention styling */
-        a.mention {
-            color: var(--color-primary);
-            font-weight: 500;
-            background-color: rgba(var(--color-primary), 0.1);
-            padding: 0.125rem 0.25rem;
-            border-radius: 0.25rem;
-            text-decoration: none;
-            transition: background-color 0.2s;
-        }
-
-        a.mention:hover {
-            background-color: rgba(var(--color-primary), 0.2);
+            background-color: color-mix(in oklab, var(--color-primary) 20%, transparent);
             text-decoration: none;
         }
     </style>
