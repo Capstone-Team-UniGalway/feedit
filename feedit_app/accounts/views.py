@@ -5,6 +5,7 @@ from enum import Enum
 from allauth.account import app_settings as allauth_settings
 from allauth.account.forms import ChangePasswordForm
 from allauth.account.models import EmailConfirmationHMAC
+from django.utils.timezone import now
 from allauth.account.utils import (
     complete_signup,
     get_user_model,
@@ -486,10 +487,12 @@ class MentionsListView(FullyActivatedUserMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Mark all unread mentions as read when the user views this page
         unread_mentions = self.request.user.mentions_received.filter(is_read=False)
-        for mention in unread_mentions:
-            mention.mark_as_read()
+        context["unread_count"] = unread_mentions.count()
+
+        # Mark all unread mentions as read when the user views this page
+        # Efficient bulk update
+        unread_mentions.update(is_read=True, updated_at=now())
         return context
 
 
