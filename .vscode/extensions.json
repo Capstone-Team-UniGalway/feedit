@@ -1,5 +1,12 @@
 {
     "recommendations": [
-        "github.copilot"
+        "github.copilot",
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "ms-python.flake8",
+        "ms-python.vscode-pylance",
+        "ms-python.isort",
+        "njpwerner.autodocstring", // optional, for docstring templates
+        "batisteo.vscode-django" // optional, Django support
     ]
 }

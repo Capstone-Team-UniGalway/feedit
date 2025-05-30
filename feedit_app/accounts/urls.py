@@ -1,28 +1,28 @@
-from django.urls import path, include
-from allauth.mfa import urls as allauth_mfa_urls
 from allauth.account.views import ReauthenticateView
+from allauth.mfa import urls as allauth_mfa_urls
+from django.urls import include, path
+
 from .views import (
-    AuthView,
-    AuthRedirectView,
-    CustomAuthenticateView,
-    LogoutView,
-    EmailConfirmView,
-    ConfirmSuccessView,
-    EmailVerificationSentView,
-    ResendEmailVerificationView,
-    ProfileView,
-    PublicProfileView,
-    EditProfileView,
-    CloseAccountView,
     AuthPasswordResetDonePartial,
+    AuthRedirectView,
+    AuthView,
+    CloseAccountView,
+    ConfirmSuccessView,
+    CustomAuthenticateView,
     CustomPasswordResetFromKeyView,
     CustomPasswordResetView,
+    EditProfileView,
+    EmailConfirmView,
+    EmailVerificationSentView,
+    LogoutView,
+    ProfileView,
+    ResendEmailVerificationView,
     UserSearchView,
+    MentionsListView,
 )
 
 urlpatterns = [
     path("", ProfileView.as_view(), name="account_profile"),
-    path("<int:pk>/", PublicProfileView.as_view(), name="account_public_profile"),
     path("edit/", EditProfileView.as_view(), name="account_edit"),
     path("auth/", AuthView.as_view(), name="account_auth"),  # canonical
     path(
@@ -84,4 +84,7 @@ urlpatterns = [
         name="account_reauthenticate",
     ),
     path("api/search-users/", UserSearchView.as_view(), name="api_search_users"),
+    path("mentions/", MentionsListView.as_view(), name="account_mentions"),
+    # This must be the last path as it takes everything after /account/ as identifier
+    path("<str:identifier>/", ProfileView.as_view(), name="account_public_profile"),
 ]

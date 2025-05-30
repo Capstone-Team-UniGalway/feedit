@@ -1,8 +1,9 @@
-from django import template
-from django.utils.html import format_html
-from django.urls import reverse
-from django.contrib.auth import get_user_model
 import re
+
+from django import template
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+from django.utils.html import format_html
 
 register = template.Library()
 
@@ -25,12 +26,12 @@ def render_mentions(text):
 
     # Pattern to match new format mentions: @Username[123]
     new_pattern = r"@([a-zA-Z0-9_\s]+)\[(\d+)\]"
-    # Pattern to match legacy @username mentions
-    legacy_pattern = r"@([a-zA-Z0-9_\s]+)(?!\[\d+\])"
+    # Pattern to match legacy @username mentions but to exclude @Username[123] format
+    legacy_pattern = r"(?<![>\w])@([a-zA-Z0-9_]+(?: [a-zA-Z0-9_]+)?)(?!\[)"
     # Pattern to match HTML mentions with data-mention-id
     html_pattern = r'data-mention-id="(\d+)"[^>]*>@([^<]+)<'
     # Pattern to match legacy HTML mentions like "@Emp Two/a>"
-    legacy_html_pattern = r"@([a-zA-Z0-9_\s]+)(?:</a>|</span>)"
+    legacy_html_pattern = r"<(?:a|span)[^>]*>@?([a-zA-Z0-9_\s]+)</(?:a|span)>"
     User = get_user_model()
 
     def replace_new_mention(match):
@@ -43,18 +44,20 @@ def render_mentions(text):
 
             if user:
                 # If user found, create a link with user ID
-                profile_url = reverse('account_profile') + f"?user={user.id}"
+                profile_url = reverse(
+                    "account_public_profile", kwargs={"identifier": user.id}
+                )
                 return format_html(
                     '<a href="{}" class="mention" data-mention-id="{}">@{}</a>',
-                    profile_url, user.id, username
+                    profile_url,
+                    user.id,
+                    username,
                 )
         except Exception:
             pass
 
         # If user not found or error, still render as a mention but without a link
-        return format_html(
-            '<span class="mention">@{}</span>', username
-        )
+        return format_html('<span class="mention">@{}</span>', username)
 
     def replace_legacy_mention(match):
         username = match.group(1).strip()
@@ -68,29 +71,30 @@ def render_mentions(text):
                 user = User.objects.filter(
                     first_name__iexact=first_name,
                     last_name__iexact=last_name,
-                    is_active=True
+                    is_active=True,
                 ).first()
             except Exception:
                 pass
         else:
             # Try first name match
             user = User.objects.filter(
-                first_name__iexact=username,
-                is_active=True
+                first_name__iexact=username, is_active=True
             ).first()
 
         if user:
             # If user found, include user ID in the mention
-            profile_url = reverse('account_profile') + f"?user={user.id}"
+            profile_url = reverse(
+                "account_public_profile", kwargs={"identifier": user.id}
+            )
             return format_html(
                 '<a href="{}" class="mention" data-mention-id="{}">@{}</a>',
-                profile_url, user.id, username
+                profile_url,
+                user.id,
+                username,
             )
         else:
             # If user not found, still render as a mention but without a link
-            return format_html(
-                '<span class="mention">@{}</span>', username
-            )
+            return format_html('<span class="mention">@{}</span>', username)
 
     def replace_html_mention(match):
         user_id = match.group(1)
@@ -102,18 +106,20 @@ def render_mentions(text):
 
             if user:
                 # If user found, create a link with user ID
-                profile_url = reverse('account_profile') + f"?user={user.id}"
+                profile_url = reverse(
+                    "account_public_profile", kwargs={"identifier": user.id}
+                )
                 return format_html(
                     '<a href="{}" class="mention" data-mention-id="{}">@{}</a>',
-                    profile_url, user.id, username
+                    profile_url,
+                    user.id,
+                    username,
                 )
         except Exception:
             pass
 
         # If user not found or error, still render as a mention but without a link
-        return format_html(
-            '<span class="mention">@{}</span>', username
-        )
+        return format_html('<span class="mention">@{}</span>', username)
 
     def replace_legacy_html_mention(match):
         username = match.group(1).strip()
@@ -127,39 +133,40 @@ def render_mentions(text):
                 user = User.objects.filter(
                     first_name__iexact=first_name,
                     last_name__iexact=last_name,
-                    is_active=True
+                    is_active=True,
                 ).first()
             except Exception:
                 pass
         else:
             # Try first name match
             user = User.objects.filter(
-                first_name__iexact=username,
-                is_active=True
+                first_name__iexact=username, is_active=True
             ).first()
 
         if user:
             # If user found, include user ID in the mention
-            profile_url = reverse('account_profile') + f"?user={user.id}"
+            profile_url = reverse(
+                "account_public_profile", kwargs={"identifier": user.id}
+            )
             return format_html(
                 '<a href="{}" class="mention" data-mention-id="{}">@{}</a>',
-                profile_url, user.id, username
+                profile_url,
+                user.id,
+                username,
             )
         else:
             # If user not found, still render as a mention but without a link
-            return format_html(
-                '<span class="mention">@{}</span>', username
-            )
+            return format_html('<span class="mention">@{}</span>', username)
 
     # Note: We've removed the redundant replace_simple_mention function
     # as it was duplicating the functionality of the replace_legacy_mention function
 
-    # First replace new format mentions
-    result = re.sub(new_pattern, replace_new_mention, text)
-    # Then replace HTML format mentions
-    result = re.sub(html_pattern, replace_html_mention, result)
+    # First replace HTML format mentions
+    result = re.sub(html_pattern, replace_html_mention, text)
     # Then replace legacy HTML format mentions
     result = re.sub(legacy_html_pattern, replace_legacy_html_mention, result)
+    # Then replace new format mentions
+    result = re.sub(new_pattern, replace_new_mention, result)
     # Then replace legacy format mentions
     result = re.sub(legacy_pattern, replace_legacy_mention, result)
     return result

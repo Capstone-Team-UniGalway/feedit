@@ -1,5 +1,4 @@
 from django import template
-from django.utils.html import format_html
 from django.utils.timesince import timesince
 from notifications.models import Notification
 
@@ -22,7 +21,8 @@ def unread_notifications_count(user):
 @register.filter
 def notification_timesince(notification):
     """
-    Returns a human-readable string representing how long ago the notification was created.
+    Returns a human-readable string representing how long ago the notification
+    was created.
 
     Usage:
     {{ notification|notification_timesince }}
@@ -49,7 +49,7 @@ def notification_icon(notification):
         Notification.NotificationType.GENERAL_REQUEST: "fa-question-circle",
         Notification.NotificationType.GENERAL_RESPONSE: "fa-envelope",
     }
-    
+
     return icon_map.get(notification.type, "fa-bell")
 
 
@@ -72,5 +72,5 @@ def notification_color(notification):
         Notification.NotificationType.GENERAL_REQUEST: "text-info",
         Notification.NotificationType.GENERAL_RESPONSE: "text-info",
     }
-    
+
     return color_map.get(notification.type, "text-primary")

@@ -1,14 +1,15 @@
-from django.views.generic import CreateView, ListView, DetailView, View
-from django.utils.functional import cached_property
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib import messages
-from django.urls import reverse
-from django.contrib.contenttypes.models import ContentType
 from app.mixins import FullyActivatedUserMixin
-from .models import Request, RequestReply
-from .forms import RequestForm, RequestReplyForm
-from secure_files.models import SecureFile
 from companies.models import Company
+from django.contrib import messages
+from django.contrib.contenttypes.models import ContentType
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
+from django.utils.functional import cached_property
+from django.views.generic import CreateView, DetailView, ListView, View
+from secure_files.models import SecureFile
+
+from .forms import RequestForm, RequestReplyForm
+from .models import Request, RequestReply
 
 
 class CreateRequestView(FullyActivatedUserMixin, CreateView):
@@ -96,7 +97,7 @@ class CreateRequestView(FullyActivatedUserMixin, CreateView):
                     "You already have a pending request. Please wait for a response or "
                     "cancel it before submitting a new one."
                 )
-                self.permission_denied_redirect_url = "requests:list"
+                self.permission_denied_redirect_url = "company_requests:list"
                 return False
 
         return True
@@ -242,7 +243,7 @@ class RequestListView(FullyActivatedUserMixin, ListView):
             self.permission_denied_message = (
                 "You don't have permission to view this company's requests."
             )
-            self.permission_denied_redirect_url = "requests:list"
+            self.permission_denied_redirect_url = "company_requests:list"
             return False
 
         return True  # fallback for self requests view
@@ -280,7 +281,7 @@ class ProcessRequestView(FullyActivatedUserMixin, View):
         self.permission_denied_message = (
             "You do not have permission to process this request."
         )
-        self.permission_denied_redirect_url = "requests:list"
+        self.permission_denied_redirect_url = "company_requests:list"
 
         return self.request_obj.can_be_processed_by(self.request.user)
 
@@ -291,7 +292,8 @@ class ProcessRequestView(FullyActivatedUserMixin, View):
         if action == "approve":
             # Update request status
             request_obj.status = Request.RequestStatus.APPROVED
-            request_obj.save()
+            # update_fields required for notification signal
+            request_obj.save(update_fields=["status"])
 
             # If it's a join request, update the user's workplace
             if request_obj.type == Request.RequestType.JOIN and request_obj.author:
@@ -341,11 +343,12 @@ class ProcessRequestView(FullyActivatedUserMixin, View):
 
         elif action == "reject":
             request_obj.status = Request.RequestStatus.REJECTED
-            request_obj.save()
+            # update_fields required for notification signal
+            request_obj.save(update_fields=["status"])
             messages.success(request, "Request rejected successfully.")
 
         # Redirect back to the request detail page
-        return redirect("requests:detail", pk=request_obj.pk)
+        return redirect("company_requests:detail", pk=request_obj.pk)
 
 
 class CreateRequestReplyView(FullyActivatedUserMixin, CreateView):
@@ -364,14 +367,16 @@ class CreateRequestReplyView(FullyActivatedUserMixin, CreateView):
         self.permission_denied_message = (
             "You do not have permission to reply to this request."
         )
-        self.permission_denied_redirect_url = "requests:list"
+        self.permission_denied_redirect_url = "company_requests:list"
 
         return (
             user == self.request_obj.author or user == self.request_obj.company.employer
         )
 
     def get_success_url(self):
-        return reverse("requests:detail", kwargs={"pk": self.kwargs.get("request_id")})
+        return reverse(
+            "company_requests:detail", kwargs={"pk": self.kwargs.get("request_id")}
+        )
 
     def form_valid(self, form):
         form.instance.request = self.request_obj
@@ -407,13 +412,13 @@ class CancelRequestView(FullyActivatedUserMixin, View):
         self.permission_denied_message = (
             "You do not have permission to cancel this request."
         )
-        self.permission_denied_redirect_url = "requests:list"
+        self.permission_denied_redirect_url = "company_requests:list"
         return self.request.user == self.request_obj.author
 
     def post(self, request, *args, **kwargs):
         self.request_obj.delete()  # uses your model's soft delete
         messages.success(request, "Your request has been cancelled.")
-        return redirect("requests:list")
+        return redirect("company_requests:list")
 
 
 class ManageClaimsView(FullyActivatedUserMixin, ListView):
@@ -428,7 +433,7 @@ class ManageClaimsView(FullyActivatedUserMixin, ListView):
         self.permission_denied_message = (
             "You do not have permission to view these requests."
         )
-        self.permission_denied_redirect_url = "requests:list"
+        self.permission_denied_redirect_url = "company_requests:list"
         return self.request.user.is_superuser
 
     def get_queryset(self):

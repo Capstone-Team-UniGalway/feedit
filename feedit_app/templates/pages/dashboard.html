@@ -185,7 +185,7 @@
           <p class="text-sm text-gray-500 mb-2">Company Requests</p>
           <p class="text-sm">Pending Join Requests: <strong>{{ company_requests_count }}</strong></p>
 
-          <a href="{% url 'requests:company' user.company.id %}" class="btn btn-primary btn-sm mt-3 w-full">
+          <a href="{% url 'company_requests:company' user.company.id %}" class="btn btn-primary btn-sm mt-3 w-full">
             <i class="fas fa-user-plus mr-1"></i> Manage Join Requests
           </a>
 
@@ -196,10 +196,10 @@
             <li>Unclaimed Join/Other Requests: <strong>{{ admin_requests.unclaimed }}</strong></li>
           </ul>
 
-          <a href="{% url 'requests:manage_claims' %}" class="btn btn-info btn-sm w-full mb-2">
+          <a href="{% url 'company_requests:manage_claims' %}" class="btn btn-info btn-sm w-full mb-2">
             <i class="fas fa-building-circle-exclamation mr-1"></i> Manage Company Claims
           </a>
-          <a href="{% url 'requests:manage_unclaimed' %}" class="btn btn-success btn-sm w-full">
+          <a href="{% url 'company_requests:manage_unclaimed' %}" class="btn btn-success btn-sm w-full">
             <i class="fas fa-clipboard-question mr-1"></i> Manage Unclaimed Requests
           </a>
           {% endif %}

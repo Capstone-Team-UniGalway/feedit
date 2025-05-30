@@ -51,14 +51,14 @@
                     {% get_object_files request as files %}
                     {% if files %}
                     <div class="mt-3">
-                        <a href="{% url 'requests:detail' request.id %}" class="btn btn-sm btn-outline">
+                        <a href="{% url 'company_requests:detail' request.id %}" class="btn btn-sm btn-outline">
                             <i class="fas fa-file-alt mr-1"></i> View Files ({{ files|length }})
                         </a>
                     </div>
                     {% endif %}
 
                     <div class="card-actions justify-end mt-4">
-                        <a href="{% url 'requests:detail' request.id %}" class="btn btn-sm btn-outline">
+                        <a href="{% url 'company_requests:detail' request.id %}" class="btn btn-sm btn-outline">
                             <i class="fas fa-eye mr-1"></i> View Details
                         </a>
                         {% if request.status == "pending" %}

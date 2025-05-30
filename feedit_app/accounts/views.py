@@ -1,49 +1,50 @@
-from enum import Enum
-from datetime import timedelta
 import re
-from django.utils import timezone
-from django.contrib import messages
-from django.db import models
-from django.http import HttpResponse
-from django.views.generic import TemplateView, View, DetailView, ListView
-from django.shortcuts import render
-from django.contrib.auth import (
-    logout as auth_logout,
-    update_session_auth_hash,
-)
-from django.contrib.auth.tokens import default_token_generator
-from django.contrib.auth.views import PasswordResetConfirmView
-from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import EmailMessage
-from django.shortcuts import redirect
-from django.template.loader import render_to_string
-from django.urls import reverse, reverse_lazy
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
-from django.contrib.auth.mixins import LoginRequiredMixin
+from datetime import timedelta
+from enum import Enum
+
+from allauth.account import app_settings as allauth_settings
+from allauth.account.forms import ChangePasswordForm
+from allauth.account.models import EmailConfirmationHMAC
+from django.utils.timezone import now
 from allauth.account.utils import (
     complete_signup,
-    send_email_confirmation,
     get_user_model,
     perform_login,
+    send_email_confirmation,
 )
-from allauth.account import app_settings as allauth_settings
-from allauth.account.models import EmailConfirmationHMAC
 from allauth.account.views import (
     ConfirmEmailView,
     PasswordResetView,
 )
-from allauth.account.forms import ChangePasswordForm
 from allauth.mfa.base.views import AuthenticateView
+from app.mixins import FullyActivatedUserMixin
+from company_requests.models import Request
+from django.contrib import messages
+from django.contrib.auth import logout as auth_logout
+from django.contrib.auth import (
+    update_session_auth_hash,
+)
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.views import PasswordResetConfirmView
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.mail import EmailMessage
+from django.db import models
+from django.http import Http404, HttpResponse
+from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
+from django.urls import reverse, reverse_lazy
+from django.utils import timezone
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from django.views.generic import DetailView, ListView, TemplateView, View
+
 from .forms import (
     CustomLoginForm,
+    CustomResetPasswordForm,
     CustomSignupForm,
     UserProfileForm,
-    CustomResetPasswordForm,
 )
-from django.http import Http404
-from app.mixins import FullyActivatedUserMixin
-from requests.models import Request
 
 User = get_user_model()
 
@@ -194,74 +195,85 @@ class ConfirmSuccessView(TemplateView):
     template_name = "pages/account/email_confirm_success.html"
 
 
-class ProfileView(FullyActivatedUserMixin, DetailView):
+class ProfileView(UserPassesTestMixin, DetailView):
     template_name = "pages/account/user_profile.html"
     context_object_name = "user"
     model = User
 
     def get_object(self):
-        # Check if a user ID is provided in the URL
-        user_id = self.request.GET.get("user")
-        user_name = self.request.GET.get("user_name")
+        identifier = self.kwargs.get("identifier")
 
-        if user_id:
+        if identifier is None:
+            # Guest accessing /account/ without being logged in — return None
+            if not self.request.user.is_authenticated:
+                return None
+            return self.request.user
+
+        # Try resolving by integer ID
+        if identifier.isdigit():
             try:
-                # Try to get the user by ID
-                return User.objects.get(id=user_id)
-            except (User.DoesNotExist, ValueError):
+                return User.objects.get(pk=int(identifier))
+            except User.DoesNotExist:
                 pass
 
-        if user_name:
-            # Try to find the user by name
-            # This is less reliable but needed for backward compatibility
-            try:
-                if " " in user_name:
-                    first_name, last_name = user_name.split(" ", 1)
-                    user = User.objects.filter(
-                        first_name__iexact=first_name,
-                        last_name__iexact=last_name,
-                        is_active=True,
-                    ).first()
-                    if user:
-                        return user
-                else:
-                    # Try first name only
-                    user = User.objects.filter(
-                        first_name__iexact=user_name, is_active=True
-                    ).first()
-                    if user:
-                        return user
-            except Exception:
-                pass
+        # Fallback: Try resolving by name (e.g., john-doe)
+        try:
+            parts = identifier.replace("-", " ").split()
+            if len(parts) == 2:
+                first_name, last_name = parts
+                return User.objects.filter(
+                    first_name__iexact=first_name.strip(),
+                    last_name__iexact=last_name.strip(),
+                    is_active=True,
+                ).first()
+            elif len(parts) == 1:
+                return User.objects.filter(
+                    first_name__iexact=parts[0].strip(), is_active=True
+                ).first()
+        except Exception:
+            pass
 
-        # Default to the current user
+        # Default fallback (safe): self-profile
         return self.request.user
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        # Check if this is the user's own profile
-        context["is_own_profile"] = self.object == self.request.user
-        return context
-
-
-class PublicProfileView(FullyActivatedUserMixin, DetailView):
-    model = User
-    template_name = "pages/account/user_profile.html"
-    context_object_name = "user"
-
-    def get(self, request, *args, **kwargs):
-        user = self.get_object()
-        if not user.can_view_profile(request.user):
-            messages.warning(request, "This profile is private.")
-            return redirect("account_profile")
-        return super().get(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+    def test_func(self):
         user = self.get_object()
         viewer = self.request.user
 
-        context["is_own_profile"] = user == viewer
+        # Store object early for use in dispatch and context
+        self.object = user
+
+        if user and user.can_view_profile(viewer):
+            return True
+
+        if not viewer.is_authenticated:
+            # Visiting own profile
+            if user is None or user == viewer:
+                messages.info(
+                    self.request,
+                    "Please sign in or create an account to view your profile.",
+                )
+            else:
+                messages.info(
+                    self.request,
+                    "This profile is not public. Please sign in or create an account.",
+                )
+            self.permission_denied_redirect_url = "account_auth"
+        else:
+            messages.warning(
+                self.request,
+                "This profile is private. You don’t have permission to view it.",
+            )
+        return False
+
+    def handle_no_permission(self):
+        return redirect(
+            getattr(self, "permission_denied_redirect_url", "account_profile")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["is_own_profile"] = self.object == self.request.user
         return context
 
 
@@ -475,10 +487,12 @@ class MentionsListView(FullyActivatedUserMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Mark all unread mentions as read when the user views this page
         unread_mentions = self.request.user.mentions_received.filter(is_read=False)
-        for mention in unread_mentions:
-            mention.mark_as_read()
+        context["unread_count"] = unread_mentions.count()
+
+        # Mark all unread mentions as read when the user views this page
+        # Efficient bulk update
+        unread_mentions.update(is_read=True, updated_at=now())
         return context
 
 

@@ -1,9 +1,11 @@
+from unittest import mock
+
 import pytest
 from accounts.models import User
-from .factories import UserFactory
 from companies.tests.factories import CompanyFactory
 from django.core.exceptions import ValidationError
-from unittest import mock
+
+from .factories import UserFactory
 
 pytestmark = pytest.mark.django_db
 

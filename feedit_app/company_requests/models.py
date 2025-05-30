@@ -1,8 +1,8 @@
+from app.base_model import BaseModel
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django_ckeditor_5.fields import CKEditor5Field
-from app.base_model import BaseModel
 
 
 # Requests made by employees to employers with status tracking
@@ -40,7 +40,7 @@ class Request(BaseModel):
     def get_absolute_url(self):
         from django.urls import reverse
 
-        return reverse("requests:detail", kwargs={"pk": self.pk})
+        return reverse("company_requests:detail", kwargs={"pk": self.pk})
 
     def can_be_processed_by(self, user):
         if not user.is_authenticated:

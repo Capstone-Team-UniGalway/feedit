@@ -12,6 +12,12 @@
     "python.linting.flake8Args": [
         "--config=pyproject.toml"
     ],
+    "python.linting.mypyEnabled": false, // ✅ optional, for type checking
+    "python.linting.banditEnabled": true, // ✅ optional, for security linting
+    "files.trimTrailingWhitespace": true, // ✅ makes diffs cleaner
+    "files.insertFinalNewline": true, // ✅ consistent newline behavior
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.typeCheckingMode": "off", // ✅ optional: "strict" if you use MyPy aggressively
     "terminal.integrated.shellArgs.linux": [
         "-l"
     ],

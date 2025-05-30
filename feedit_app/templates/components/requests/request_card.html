@@ -12,13 +12,13 @@
             </div>
             <span class="badge badge-{{ request.get_status_badge_color }}">{{ request.get_status_display }}</span>
         </div>
-        
+
         <div class="mt-4">
             {{ request.content|safe|truncatewords_html:50 }}
         </div>
-        
+
         <div class="card-actions justify-end mt-4">
-            <a href="{% url 'requests:detail' request.id %}" class="btn btn-sm btn-outline">
+            <a href="{% url 'company_requests:detail' request.id %}" class="btn btn-sm btn-outline">
                 View Details
             </a>
         </div>

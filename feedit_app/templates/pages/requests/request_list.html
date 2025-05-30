@@ -8,7 +8,7 @@
                 <p class="text-gray-500">{{ description|default:"View and manage requests" }}</p>
             </div>
             {% if user.has_company %}
-            <a href="{% url 'requests:create' %}" class="btn btn-primary">
+            <a href="{% url 'company_requests:create' %}" class="btn btn-primary">
                 <i class="fas fa-plus mr-2"></i> New Request
             </a>
             {% endif %}
@@ -40,7 +40,7 @@
                     </div>
 
                     <div class="card-actions justify-end mt-4">
-                        <a href="{% url 'requests:detail' request.id %}" class="btn btn-sm btn-outline">
+                        <a href="{% url 'company_requests:detail' request.id %}" class="btn btn-sm btn-outline">
                             View Details
                         </a>
 

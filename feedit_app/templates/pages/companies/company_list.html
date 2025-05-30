@@ -79,7 +79,7 @@
                     </button>
                     {% else %}
                     {% if not user.has_company %}
-                    <a href="{% url 'requests:create_with_id' company.id %}" class="btn btn-sm btn-primary">
+                    <a href="{% url 'company_requests:create_with_id' company.id %}" class="btn btn-sm btn-primary">
                         {% if user.type == 'employer' %}
                         <i class="fas fa-flag mr-1"></i> Claim
                         {% else %}

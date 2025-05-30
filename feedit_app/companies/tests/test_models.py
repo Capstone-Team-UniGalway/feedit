@@ -1,8 +1,10 @@
-import pytest
-from companies.models import Company
-from .factories import CompanyFactory
-from accounts.tests.factories import UserFactory
 from unittest import mock
+
+import pytest
+from accounts.tests.factories import UserFactory
+from companies.models import Company
+
+from .factories import CompanyFactory
 
 pytestmark = pytest.mark.django_db
 

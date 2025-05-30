@@ -1,7 +1,8 @@
 import random
-from django.core.management.base import BaseCommand
-from companies.tests.factories import CompanyFactory
+
 from accounts.tests.factories import UserFactory
+from companies.tests.factories import CompanyFactory
+from django.core.management.base import BaseCommand
 
 COUNTRIES = [
     "Ireland",

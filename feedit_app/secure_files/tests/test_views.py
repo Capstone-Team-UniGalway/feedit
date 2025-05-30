@@ -1,9 +1,9 @@
 import pytest
-from django.urls import reverse
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.contrib.contenttypes.models import ContentType
-from secure_files.models import SecureFile
 from accounts.tests.factories import UserFactory
+from django.contrib.contenttypes.models import ContentType
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.urls import reverse
+from secure_files.models import SecureFile
 from secure_files.tests.factories import SecureFileFactory
 
 pytestmark = pytest.mark.django_db

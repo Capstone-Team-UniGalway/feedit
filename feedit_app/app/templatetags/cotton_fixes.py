@@ -2,6 +2,7 @@ from django import template
 
 register = template.Library()
 
+
 @register.tag
 def endc(parser, token):
     """

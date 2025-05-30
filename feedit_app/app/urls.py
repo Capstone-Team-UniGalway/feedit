@@ -15,16 +15,16 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.contrib import admin
-from django.contrib.auth.decorators import login_required
-from django.urls import path, include
+from accounts.views import DashboardView
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib import admin
+from django.contrib.auth.decorators import login_required
+from django.urls import include, path
 from django.views.generic import TemplateView
 from django.views.static import serve
-from accounts.views import DashboardView
-from .views import WelcomeView
 
+from .views import WelcomeView
 
 admin.site.login = login_required(admin.site.login)
 
@@ -51,7 +51,8 @@ urlpatterns = [
     path("account/", include("accounts.urls")),
     path("threads/", include("threads.urls")),
     path("reviews/", include("reviews.urls")),
-    path("requests/", include("requests.urls")),
+    path("requests/", include("company_requests.urls")),
+    path("notifications/", include("notifications.urls")),
     path("uploads/", include("secure_files.urls")),
     path("upload/", include("django_ckeditor_5.urls")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

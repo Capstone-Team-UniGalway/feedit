@@ -1,10 +1,11 @@
 import pytest
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.exceptions import ValidationError
-from django.contrib.contenttypes.models import ContentType
-from secure_files.models import SecureFile
-from .factories import SecureFileFactory
 from accounts.tests.factories import UserFactory
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
+from secure_files.models import SecureFile
+
+from .factories import SecureFileFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -33,7 +34,7 @@ def test_secure_file_rejects_non_image_for_user():
 
 
 def test_secure_file_allows_non_image_for_request():
-    from requests.tests.factories import RequestFactory
+    from company_requests.tests.factories import RequestFactory
 
     file = SecureFileFactory.build(
         content_object=RequestFactory(),

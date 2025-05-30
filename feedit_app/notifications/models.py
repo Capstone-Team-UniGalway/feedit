@@ -1,7 +1,7 @@
+from app.base_model import BaseModel
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from app.base_model import BaseModel
 
 
 # Notification system for alerts and updates
@@ -32,7 +32,7 @@ class Notification(BaseModel):
     read_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"Notification for {self.recipient}: {self.message[:50]}"
@@ -55,7 +55,8 @@ class Notification(BaseModel):
             self.save()
 
     def get_action_url(self):
-        """Returns the action URL for the notification, or a default URL if none is set."""
+        """Returns the action URL for the notification,
+        or a default URL if none is set."""
         if self.action_url:
             return self.action_url
-        return '/'
+        return "/"

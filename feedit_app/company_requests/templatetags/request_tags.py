@@ -1,5 +1,5 @@
+from company_requests.models import Request
 from django import template
-from requests.models import Request
 
 register = template.Library()
 

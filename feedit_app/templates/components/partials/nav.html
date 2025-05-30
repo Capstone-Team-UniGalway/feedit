@@ -11,7 +11,7 @@
         <i class="fas fa-building"></i> Companies
     </a>
 </li>
-{% if user.company or user.workplace %}
+{% if user.has_company %}
 <li>
     <a href="{% url 'thread_list' %}"
         class="nav-link {% if request.resolver_match.url_name == 'thread_list' or request.resolver_match.url_name == 'thread_detail' %}active{% endif %}">
@@ -34,19 +34,20 @@
 {% endif %}
 {% if user.company or user.is_superuser %}
 <li>
-    <div class="dropdown dropdown-bottom dropdown-center nav-link">
+    <div
+        class="dropdown dropdown-bottom dropdown-center nav-link {% if request.resolver_match.url_name in 'list,company,manage_claims,manage_unclaimed' and request.resolver_match.namespace == 'company_requests' %}active{% endif %}">
         <div tabindex="0" role="button">
             <i class="fas fa-clipboard-list mr-1"></i> Requests
         </div>
         <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-t-none rounded-box z-1 w-52 p-2 shadow-sm">
             {% if user.company %}
             <li>
-                <a href="{% url 'requests:list' %}">
+                <a href="{% url 'company_requests:list' %}">
                     <i class="fas fa-clipboard-user mr-1"></i> My Requests
                 </a>
             </li>
             <li>
-                <a href="{% url 'requests:company' company_id=user.company.id %}">
+                <a href="{% url 'company_requests:company' company_id=user.company.id %}">
                     <i class="fas fa-building-flag mr-1"></i> Company Requests
                 </a>
             </li>
@@ -56,12 +57,12 @@
             {% endif %}
             {% if user.is_superuser %}
             <li>
-                <a href="{% url 'requests:manage_claims' %}">
+                <a href="{% url 'company_requests:manage_claims' %}">
                     <i class="fas fa-building-circle-exclamation mr-1"></i> Company Claims
                 </a>
             </li>
             <li>
-                <a href="{% url 'requests:manage_unclaimed' %}">
+                <a href="{% url 'company_requests:manage_unclaimed' %}">
                     <i class="fas fa-clipboard-question mr-1"></i> Unclaimed Requests
                 </a>
             </li>
@@ -71,7 +72,8 @@
 </li>
 {% else %}
 <li>
-    <a href="{% url 'requests:list' %}" class="nav-link">
+    <a href="{% url 'company_requests:list' %}"
+        class="nav-link {% if request.resolver_match.url_name == 'list' and request.resolver_match.namespace == 'company_requests' %}active{% endif %}">
         <i class="fas fa-clipboard-list"></i> Requests
     </a>
 </li>

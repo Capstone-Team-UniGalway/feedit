@@ -1,15 +1,18 @@
-from django.db.models import Q, Prefetch
+from accounts.models import User
+from app.mixins import FullyActivatedUserMixin
+from company_requests.models import Request
+from django.contrib import messages
+from django.contrib.auth.mixins import UserPassesTestMixin
+from django.core.paginator import Paginator
+from django.db.models import Prefetch, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, View
-from django.contrib import messages
-from django.contrib.auth import get_user_model
-from .models import Company
+from django.views.generic import CreateView, DetailView, ListView, UpdateView, View
 from reviews.models import ReviewReply
-from app.mixins import FullyActivatedUserMixin
+
 from .forms import CompanyForm
-from django.core.paginator import Paginator
+from .models import Company
 
 
 class PublicCompanyListView(ListView):
@@ -35,11 +38,6 @@ class PublicCompanyListView(ListView):
 
         # Add pending requests context for authenticated users
         if user.is_authenticated and not user.workplace:
-            # Import here to avoid circular import
-            from django.apps import apps
-
-            Request = apps.get_model("requests", "Request")
-
             # Get IDs of companies where the user has pending join requests
             pending_requests = Request.objects.filter(
                 author=user,
@@ -114,11 +112,6 @@ class CompanyDetailView(DetailView):
 
             # Add pending requests context for authenticated users without a workplace
             if not user.workplace:
-                # Import here to avoid circular import
-                from django.apps import apps
-
-                Request = apps.get_model("requests", "Request")
-
                 # Check if user has a pending join request for this company
                 has_pending_request = Request.objects.filter(
                     author=user,
@@ -261,75 +254,111 @@ class LeaveCompanyView(FullyActivatedUserMixin, View):
         return redirect("dashboard")
 
 
-class CompanyEmployeeDirectoryView(FullyActivatedUserMixin, ListView):
-    """View for company members to search and find coworkers
-    Route: /companies/directory/ | Permission: authenticated users with a company"""
+class CompanyEmployeeDirectoryView(UserPassesTestMixin, ListView):
+    """
+    Directory of employees for a company.
+    - Route: /companies/<company_id>/directory/ or /companies/directory/
+    - Guests can only view with company_id in path.
+    - Authenticated users can view their own company without company_id.
+    """
 
     http_method_names = ["get"]
     template_name = "pages/companies/employee_directory.html"
     context_object_name = "employees"
     paginate_by = 12
 
-    def user_test_func(self):
-        """Only allow access to users who belong to a company"""
+    # ========== PERMISSION GATE ==========
+
+    def test_func(self):
+        self.company = None  # Will be attached dynamically
+
+        company_id = self.kwargs.get("pk")
+
+        if company_id:
+            self.company = get_object_or_404(Company, pk=company_id)
+            return True  # Any user or guest can view if company exists
+
         user = self.request.user
-        return user.is_authenticated and (
-            user.workplace is not None or hasattr(user, "company")
+        if not user.is_authenticated:
+            return False  # No access to own company directory if not logged in
+
+        # Figure out user's own company
+        self.company = getattr(user, "workplace", None) or getattr(
+            user, "company", None
         )
+        return bool(self.company)
 
     def handle_no_permission(self):
-        messages.warning(
-            self.request,
-            "You need to be part of a company to access the employee directory.",
-        )
-        return redirect("dashboard")
+        user = self.request.user
+        company_id = self.kwargs.get("pk")
+
+        if not user.is_authenticated and not company_id:
+            messages.warning(self.request, "Sign in to view your company directory.")
+            return redirect("account_auth")
+
+        if user.is_authenticated and not company_id:
+            messages.warning(self.request, "Join a company to view the directory.")
+            return redirect("companies:list")  # Replace with actual path name
+
+        return super().handle_no_permission()
+
+    # ========== QUERYSET BUILDER ==========
 
     def get_queryset(self):
-        """Get all employees from the user's company"""
         user = self.request.user
-        User = get_user_model()
+        company = self.company
 
-        # Determine the user's company
-        company = None
-        if hasattr(user, "workplace") and user.workplace:
-            company = user.workplace
-        elif hasattr(user, "company"):
-            company = user.company
-
-        if not company:
-            return User.objects.none()
-
-        # Base queryset - all active users in the company
-        queryset = (
-            User.objects.filter(is_active=True, is_deleted=False)
-            .filter(Q(workplace=company) | Q(company=company))
-            .order_by("first_name", "last_name")
+        base_query = User.objects.filter(is_active=True, is_deleted=False).filter(
+            Q(workplace=company) | Q(company=company)
         )
 
-        # Apply search if provided
-        search_query = self.request.GET.get("q", "").strip()
-        if search_query:
-            queryset = queryset.filter(
-                Q(first_name__icontains=search_query)
-                | Q(last_name__icontains=search_query)
-                | Q(email__icontains=search_query)
-                | Q(job_title__icontains=search_query)
-            )
+        # Admins in company: see all
+        if user.is_authenticated and user.is_superuser:
+            return base_query.order_by("first_name", "last_name")
 
-        return queryset
+        # Guests: only public users
+        if not user.is_authenticated:
+            return base_query.filter(privacy=User.PrivacyType.PUBLIC)
+
+        is_own_company = (
+            getattr(user, "company", None) == company
+            or getattr(user, "workplace", None) == company
+        )
+
+        if is_own_company:
+            if user.type == User.UserType.EMPLOYER:
+                return base_query  # See all users including self
+            elif user.type == User.UserType.EMPLOYEE:
+                return base_query.filter(
+                    Q(privacy=User.PrivacyType.PUBLIC)
+                    | Q(privacy=User.PrivacyType.INTERNAL)
+                )
+        else:
+            return base_query.filter(privacy=User.PrivacyType.PUBLIC)
+
+    # ========== CONTEXT ==========
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-
-        # Determine the user's company
-        company = None
-        if hasattr(user, "workplace") and user.workplace:
-            company = user.workplace
-        elif hasattr(user, "company"):
-            company = user.company
+        company = self.company
 
         context["company"] = company
         context["search_query"] = self.request.GET.get("q", "")
+
+        # Show employer if privacy allows
+        employer = company.employer if company else None
+        if employer:
+            if employer.privacy == User.PrivacyType.PUBLIC:
+                context["employer"] = employer
+            elif employer.privacy == User.PrivacyType.INTERNAL:
+                if user.is_authenticated and (
+                    user.is_superuser
+                    or getattr(user, "company", None) == company
+                    or getattr(user, "workplace", None) == company
+                ):
+                    context["employer"] = employer
+            elif user == employer:
+                context["employer"] = employer
 
         return context
