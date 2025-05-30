@@ -22,7 +22,6 @@ from .views import (
 
 urlpatterns = [
     path("", ProfileView.as_view(), name="account_profile"),
-    path("<str:identifier>/", ProfileView.as_view(), name="account_public_profile"),
     path("edit/", EditProfileView.as_view(), name="account_edit"),
     path("auth/", AuthView.as_view(), name="account_auth"),  # canonical
     path(
@@ -84,4 +83,6 @@ urlpatterns = [
         name="account_reauthenticate",
     ),
     path("api/search-users/", UserSearchView.as_view(), name="api_search_users"),
+    # This must be the last path as it takes everything after /account/ as identifier
+    path("<str:identifier>/", ProfileView.as_view(), name="account_public_profile"),
 ]

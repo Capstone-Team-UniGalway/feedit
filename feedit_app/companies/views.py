@@ -294,7 +294,7 @@ class CompanyEmployeeDirectoryView(UserPassesTestMixin, ListView):
 
         if not user.is_authenticated and not company_id:
             messages.warning(self.request, "Sign in to view your company directory.")
-            return redirect("account_login")
+            return redirect("account_auth")
 
         if user.is_authenticated and not company_id:
             messages.warning(self.request, "Join a company to view the directory.")

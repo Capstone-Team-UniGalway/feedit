@@ -203,7 +203,9 @@ class ProfileView(UserPassesTestMixin, DetailView):
         identifier = self.kwargs.get("identifier")
 
         if identifier is None:
-            # No path param: self-profile
+            # Guest accessing /account/ without being logged in — return None
+            if not self.request.user.is_authenticated:
+                return None
             return self.request.user
 
         # Try resolving by integer ID
@@ -240,20 +242,27 @@ class ProfileView(UserPassesTestMixin, DetailView):
         # Store object early for use in dispatch and context
         self.object = user
 
-        if user.can_view_profile(viewer):
+        if user and user.can_view_profile(viewer):
             return True
 
-        # Guest trying to view private/internal profile
         if not viewer.is_authenticated:
-            messages.info(
-                self.request,
-                "This profile is not public. Sign up and join a company to "
-                "view coworkers' profiles.",
-            )
-            self.permission_denied_redirect_url = "account_login"
+            # Visiting own profile
+            if user is None or user == viewer:
+                messages.info(
+                    self.request,
+                    "Please sign in or create an account to view your profile.",
+                )
+            else:
+                messages.info(
+                    self.request,
+                    "This profile is not public. Please sign in or create an account.",
+                )
+            self.permission_denied_redirect_url = "account_auth"
         else:
-            messages.warning(self.request, "This profile is private.")
-
+            messages.warning(
+                self.request,
+                "This profile is private. You don’t have permission to view it.",
+            )
         return False
 
     def handle_no_permission(self):
