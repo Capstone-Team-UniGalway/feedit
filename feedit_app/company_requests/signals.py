@@ -55,47 +55,47 @@ def request_post_save(sender, instance, created, **kwargs):
                 message=f"{author_name} submitted a request: {instance.title}",
             )
     # For status updates (not new requests)
-    else:
-        previous = sender.objects.get(pk=instance.pk)
+    elif (
+        not created
+        and kwargs.get("update_fields")
+        and "status" in kwargs.get("update_fields")
+    ):
+        status = instance.status
+        company_name = instance.company.name
+        title = instance.title
+        recipient = instance.author
 
-        # Check if status changed to approved or rejected
-        if previous.status != instance.status and instance.author:
-            company_name = instance.company.name
-            title = instance.title
-            recipient = instance.author
+        notif_map = {
+            ("join", "approved"): (
+                Notification.NotificationType.JOIN_RESPONSE,
+                f"Your request to join {company_name} has been approved!",
+            ),
+            ("join", "rejected"): (
+                Notification.NotificationType.JOIN_RESPONSE,
+                f"Your request to join {company_name} has been rejected.",
+            ),
+            ("claim", "approved"): (
+                Notification.NotificationType.CLAIM_RESPONSE,
+                f"Your request to claim {company_name} has been approved!",
+            ),
+            ("claim", "rejected"): (
+                Notification.NotificationType.CLAIM_RESPONSE,
+                f"Your request to claim {company_name} has been rejected.",
+            ),
+            ("other", "approved"): (
+                Notification.NotificationType.GENERAL_RESPONSE,
+                f"Your request '{title}' has been approved!",
+            ),
+            ("other", "rejected"): (
+                Notification.NotificationType.GENERAL_RESPONSE,
+                f"Your request '{title}' has been rejected.",
+            ),
+        }
 
-            status = instance.status
-            notif_map = {
-                ("join", "approved"): (
-                    Notification.NotificationType.JOIN_RESPONSE,
-                    f"Your request to join {company_name} has been approved!",
-                ),
-                ("join", "rejected"): (
-                    Notification.NotificationType.JOIN_RESPONSE,
-                    f"Your request to join {company_name} has been rejected.",
-                ),
-                ("claim", "approved"): (
-                    Notification.NotificationType.CLAIM_RESPONSE,
-                    f"Your request to claim {company_name} has been approved!",
-                ),
-                ("claim", "rejected"): (
-                    Notification.NotificationType.CLAIM_RESPONSE,
-                    f"Your request to claim {company_name} has been rejected.",
-                ),
-                ("other", "approved"): (
-                    Notification.NotificationType.GENERAL_RESPONSE,
-                    f"Your request '{title}' has been approved!",
-                ),
-                ("other", "rejected"): (
-                    Notification.NotificationType.GENERAL_RESPONSE,
-                    f"Your request '{title}' has been rejected.",
-                ),
-            }
-
-            notif_type, message = notif_map.get((instance.type, status), (None, None))
-            if notif_type:
-                # Notify the request author about the new status
-                send_request_notification(recipient, instance, notif_type, message)
+        notif_type, message = notif_map.get((instance.type, status), (None, None))
+        if notif_type:
+            # Notify the request author about the new status
+            send_request_notification(recipient, instance, notif_type, message)
 
 
 @receiver(post_save, sender=RequestReply)

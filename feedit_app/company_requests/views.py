@@ -292,7 +292,8 @@ class ProcessRequestView(FullyActivatedUserMixin, View):
         if action == "approve":
             # Update request status
             request_obj.status = Request.RequestStatus.APPROVED
-            request_obj.save()
+            # update_fields required for notification signal
+            request_obj.save(update_fields=["status"])
 
             # If it's a join request, update the user's workplace
             if request_obj.type == Request.RequestType.JOIN and request_obj.author:
@@ -342,7 +343,8 @@ class ProcessRequestView(FullyActivatedUserMixin, View):
 
         elif action == "reject":
             request_obj.status = Request.RequestStatus.REJECTED
-            request_obj.save()
+            # update_fields required for notification signal
+            request_obj.save(update_fields=["status"])
             messages.success(request, "Request rejected successfully.")
 
         # Redirect back to the request detail page
