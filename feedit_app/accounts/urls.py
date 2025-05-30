@@ -85,7 +85,6 @@ urlpatterns = [
         name="account_reauthenticate",
     ),
     path("api/search-users/", UserSearchView.as_view(), name="api_search_users"),
-    path("mentions/", MentionsListView.as_view(), name="account_mentions"),
     # This must be the last path as it takes everything after /account/ as identifier
     path("<str:identifier>/", ProfileView.as_view(), name="account_public_profile"),
 ]
