@@ -1,0 +1,24 @@
+name: OWASP ZAP Baseline Scan
+
+on:
+  workflow_run:
+    workflows: ["DevSecOps CD Pipeline"]
+    types:
+      - completed
+
+jobs:
+  zap_scan:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    name: ZAP Scan
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Wait for app to be ready
+        run: sleep 300  # Adjust based on actual deployment time
+
+      - name: Run ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.11.0
+        with:
+          target: 'https://feedit.online'
