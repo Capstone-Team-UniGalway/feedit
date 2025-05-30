@@ -500,7 +500,7 @@ class UserSearchView(FullyActivatedUserMixin, View):
     """HTMX-compatible view for searching users (for @mentions)."""
 
     def get(self, request):
-        # Get and sanitize query parameter
+        # Get and sanitize query parameter (for direct queries)
         raw_query = request.GET.get("q", "").strip()
 
         # Sanitize the query to prevent SQL injection
@@ -512,6 +512,10 @@ class UserSearchView(FullyActivatedUserMixin, View):
                 f"WARNING: Query was sanitized from '{raw_query}' to '{query}' - "
                 "possible injection attempt"
             )
+
+        # Debug logging
+        print(f"[UserSearchView] Raw query parameter: '{raw_query}'")
+        print(f"[UserSearchView] Sanitized query: '{query}'")
 
         selected_user_id = request.GET.get("selected_user")
         if selected_user_id:
@@ -567,21 +571,30 @@ class UserSearchView(FullyActivatedUserMixin, View):
         textarea_id = request.GET.get("id", "content")
         print(f"Textarea ID: {textarea_id}")
 
-        # Check if we have a direct query parameter
-        if query:
-            print(f"Using direct query: '{query}'")
+        # Check if we have a direct query parameter or mention query
+        if query is not None:  # Allow empty string queries
+            print(f"[UserSearchView] Processing query: '{query}'")
             # Remove @ symbol if present at the beginning
             if query.startswith("@"):
                 query = query[1:]
+                print(f"[UserSearchView] Removed @ symbol, query now: '{query}'")
 
-            # Search by name or email
-            users = users_qs.filter(
-                models.Q(first_name__icontains=query)
-                | models.Q(last_name__icontains=query)
-                | models.Q(email__icontains=query)
-            ).exclude(id=request.user.id)[
-                :10
-            ]  # Limit to 10 results, exclude current user
+            if query.strip():  # If we have actual search text
+                print(f"[UserSearchView] Searching for users matching: '{query}'")
+                # Search by name or email
+                users = users_qs.filter(
+                    models.Q(first_name__icontains=query)
+                    | models.Q(last_name__icontains=query)
+                    | models.Q(email__icontains=query)
+                ).exclude(id=request.user.id)[
+                    :10
+                ]  # Limit to 10 results, exclude current user
+                print(f"[UserSearchView] Found {users.count()} users matching query")
+            else:
+                # Empty query - show some default users (first few in company)
+                print("[UserSearchView] Empty query - showing default users")
+                users = users_qs.exclude(id=request.user.id)[:5]
+                print(f"[UserSearchView] Showing {users.count()} default users")
         else:
             # Try to extract from full text
             raw_full_text = request.GET.get(textarea_id, "")
@@ -627,14 +640,10 @@ class UserSearchView(FullyActivatedUserMixin, View):
             else:
                 print("No @ symbol found in text")
 
-        # Always return at least some users for testing if no results found
-        if not users.exists():
-            print("No users found, returning some default users")
-            # Get some default users (excluding current user)
-            users = users_qs.exclude(id=request.user.id)[:5]
-            print(f"Found {users.count()} matching users")
-            for user in users:
-                print(f"- {user.get_full_name()} ({user.email})")
+        # Log the results
+        print(f"Found {users.count()} matching users")
+        for user in users:
+            print(f"- {user.get_full_name()} ({user.email})")
 
         # Always return HTML for the dropdown
         print(f"Headers: {dict(request.headers)}")

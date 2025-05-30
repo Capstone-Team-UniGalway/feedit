@@ -1,14 +1,15 @@
-<!-- Force the dropdown to be visible -->
+<!-- Mention dropdown with proper classes for click-outside detection -->
 <div
-  class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-primary rounded-lg shadow-lg z-[9999] w-80">
+  class="mention-dropdown fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-primary rounded-lg shadow-lg z-[9999] w-80">
   <div class="p-2 bg-primary text-primary-content font-bold text-sm">
     Select a user to mention
+    <span class="text-xs opacity-75 ml-2">(Press Esc or click outside to dismiss)</span>
   </div>
 
   {% if users %}
   <ul class="menu w-full p-0" id="mention-list-{{ request.GET.id|default:'content' }}">
     {% for user in users %}
-    <li class="mention-item hover:bg-base-200 border-b border-base-200"
+    <li class="mention-item hover:bg-base-200 border-b border-base-200 cursor-pointer"
       onclick="selectMention('{{ request.GET.id|default:'content' }}', '{{ user.id }}', '{{ user.get_full_name }}')">
       <div class="flex items-center gap-2 p-2">
         <!-- User avatar/initials -->
@@ -42,9 +43,15 @@
   </div>
 </div>
 
-<!-- Minimal script for debugging -->
+<!-- Script to register this dropdown with the MentionManager -->
 <script>
   console.log("User search results rendered");
   console.log("Users found: {{ users|length }}");
   console.log("Query: {{ query|default:'none' }}");
+
+  // Register this dropdown as active with the MentionManager
+  if (window.MentionManager) {
+    const textareaId = '{{ request.GET.id|default:"content" }}';
+    window.MentionManager.showDropdown(textareaId);
+  }
 </script>
