@@ -1,0 +1,108 @@
+{% comment %}
+User Profile Picture Upload Component
+
+Usage:
+<c-profile_picture.user_upload :user="user" />
+
+Parameters:
+- user: The user object to upload profile picture for
+{% endcomment %}
+
+{% load static %}
+{% load secure_files_tags %}
+
+<div class="profile-picture-upload">
+    <div class="card bg-base-100 shadow-md">
+        <div class="card-body">
+            <h3 class="card-title">Profile Picture</h3>
+            
+            <!-- Current Profile Picture Preview -->
+            <div class="flex flex-col items-center mb-4">
+                <div class="avatar mb-3">
+                    <div class="w-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+                        <img src="{{ user.profile_picture }}" alt="{{ user.get_full_name }}" id="profile-preview" />
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500">Current profile picture</p>
+            </div>
+
+            <!-- Upload Form -->
+            {% get_content_type_id user as content_type_id %}
+            <form method="post" action="{% url 'secure_files:new' content_type_id=content_type_id object_id=user.id %}"
+                enctype="multipart/form-data" class="space-y-4">
+                {% csrf_token %}
+
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Upload New Profile Picture</span>
+                        <span class="label-text-alt">JPG, PNG, WEBP (max 5MB)</span>
+                    </label>
+                    <input type="file" name="file" class="file-input file-input-bordered w-full"
+                        accept="image/jpeg,image/jpg,image/png,image/webp" required 
+                        onchange="previewImage(this)" />
+                </div>
+
+                <div class="card-actions justify-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload mr-2"></i>
+                        Upload Picture
+                    </button>
+                </div>
+            </form>
+
+            <!-- Current Files List (if any) -->
+            {% get_object_files user as files %}
+            {% if files %}
+            <div class="divider">Current Files</div>
+            <div class="overflow-x-auto">
+                <table class="table table-zebra table-sm">
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Size</th>
+                            <th>Uploaded</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file in files %}
+                        <tr>
+                            <td>
+                                {% get_file_url file as file_url %}
+                                <div class="flex items-center gap-2">
+                                    <img src="{{ file_url }}" alt="{{ file.filename }}" class="w-8 h-8 rounded object-cover" />
+                                    <span class="text-sm">{{ file.filename }}</span>
+                                </div>
+                            </td>
+                            <td class="text-sm">{{ file.size|filesizeformat }}</td>
+                            <td class="text-sm">{{ file.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <form method="post" action="{% url 'secure_files:delete' file_id=file.id %}" class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-error btn-outline"
+                                        onclick="return confirm('Are you sure you want to delete this profile picture?')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('profile-preview').src = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
