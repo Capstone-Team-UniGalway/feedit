@@ -1,10 +1,11 @@
 from django.urls import path
 
-from .views import CreateReviewReplyView, CreateReviewView, ToggleGuestNameFieldView
+from .views import CreateReviewReplyView, CreateReviewView, EmployerReviewsOverviewView, ToggleGuestNameFieldView
 
 app_name = "reviews"
 
 urlpatterns = [
+    path("", EmployerReviewsOverviewView.as_view(), name="overview"),
     path("create/<int:company_id>/", CreateReviewView.as_view(), name="create_review"),
     path(
         "reply/<int:review_id>/",

@@ -1,0 +1,193 @@
+<c-layouts.base>
+    <div class="max-w-6xl mx-auto">
+        <!-- Header Section -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">Reviews Overview</h1>
+                    <p class="text-gray-500">Manage reviews for {{ company.name }}</p>
+                </div>
+                <a href="{% url 'companies:detail' company.id %}" class="btn btn-outline">
+                    <i class="fas fa-building mr-2"></i> View Company Profile
+                </a>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="stat bg-base-100 shadow rounded-lg">
+                    <div class="stat-title">Total Reviews</div>
+                    <div class="stat-value text-primary">{{ total_reviews }}</div>
+                    <div class="stat-desc">All time</div>
+                </div>
+                <div class="stat bg-base-100 shadow rounded-lg">
+                    <div class="stat-title">Average Rating</div>
+                    <div class="stat-value text-yellow-500">
+                        {% if avg_rating > 0 %}
+                        {{ avg_rating }}
+                        <span class="text-sm">★</span>
+                        {% else %}
+                        N/A
+                        {% endif %}
+                    </div>
+                    <div class="stat-desc">Out of 5.0</div>
+                </div>
+                <div class="stat bg-base-100 shadow rounded-lg">
+                    <div class="stat-title">Pending Replies</div>
+                    <div class="stat-value {% if unreplied_count > 0 %}text-warning{% else %}text-success{% endif %}">
+                        {{ unreplied_count }}
+                    </div>
+                    <div class="stat-desc">Need response</div>
+                </div>
+                <div class="stat bg-base-100 shadow rounded-lg">
+                    <div class="stat-title">Response Rate</div>
+                    <div class="stat-value text-info">{{ reply_rate }}%</div>
+                    <div class="stat-desc">Reviews replied to</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviews Section -->
+        <div class="card bg-base-100 shadow-md">
+            <div class="card-body">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="card-title text-2xl">
+                        <i class="fas fa-star text-yellow-400 mr-2"></i>
+                        Company Reviews
+                    </h2>
+                    {% if unreplied_count > 0 %}
+                    <div class="badge badge-warning">
+                        {{ unreplied_count }} pending replies
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if reviews %}
+                <!-- Reviews List -->
+                <div class="space-y-6">
+                    {% for review in reviews %}
+                    <div class="card bg-base-50 border border-base-200">
+                        <div class="card-body">
+                            <!-- Review Header -->
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="avatar placeholder">
+                                        <div class="bg-primary text-primary-content rounded-full w-12">
+                                            <span class="text-lg">
+                                                {% if review.is_anonymous %}
+                                                ?
+                                                {% else %}
+                                                {{ review.get_display_name.0|upper }}
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-lg">{{ review.get_display_name }}</h3>
+                                        <p class="text-sm text-gray-500">
+                                            <i class="fas fa-calendar mr-1"></i>
+                                            {{ review.created_at|date:"M d, Y" }} 
+                                            ({{ review.created_at|timesince }} ago)
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Rating Display -->
+                                <div class="text-right">
+                                    <div class="text-yellow-400 text-lg mb-1">
+                                        {% for i in "12345" %}
+                                        {% if review.rating >= forloop.counter %}
+                                        ★
+                                        {% elif review.rating >= forloop.counter|add:"-0.5" %}
+                                        ☆
+                                        {% else %}
+                                        ☆
+                                        {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <div class="text-sm text-gray-500">{{ review.rating }}/5.0</div>
+                                </div>
+                            </div>
+
+                            <!-- Review Content -->
+                            <div class="mb-4">
+                                <p class="text-gray-700 leading-relaxed">{{ review.content }}</p>
+                            </div>
+
+                            <!-- Reply Section -->
+                            {% if review.replies.exists %}
+                            <div class="border-t pt-4">
+                                <div class="bg-blue-50 p-4 rounded-lg">
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-reply text-primary mr-2"></i>
+                                        <span class="font-medium text-primary">Your Response</span>
+                                        <span class="text-xs text-gray-500 ml-auto">
+                                            {{ review.replies.first.created_at|date:"M d, Y" }}
+                                        </span>
+                                    </div>
+                                    <p class="text-gray-700">{{ review.replies.first.content }}</p>
+                                </div>
+                            </div>
+                            {% else %}
+                            <!-- Reply Button -->
+                            <div class="border-t pt-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-warning">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        This review needs a response
+                                    </span>
+                                    <a href="{% url 'reviews:create_review_reply' review.id %}" 
+                                       class="btn btn-primary btn-sm">
+                                        <i class="fas fa-reply mr-2"></i>
+                                        Reply to Review
+                                    </a>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                <div class="flex justify-center mt-8">
+                    <div class="join">
+                        {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn">
+                            <i class="fas fa-chevron-left mr-1"></i> Previous
+                        </a>
+                        {% endif %}
+                        
+                        <button class="join-item btn btn-active">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        </button>
+                        
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" class="join-item btn">
+                            Next <i class="fas fa-chevron-right ml-1"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% else %}
+                <!-- No Reviews State -->
+                <div class="text-center py-12">
+                    <div class="text-6xl text-gray-300 mb-4">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">No Reviews Yet</h3>
+                    <p class="text-gray-500 mb-6">
+                        Your company hasn't received any reviews yet. Share your company profile to encourage reviews.
+                    </p>
+                    <a href="{% url 'companies:detail' company.id %}" class="btn btn-primary">
+                        <i class="fas fa-share mr-2"></i>
+                        View Company Profile
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</c-layouts.base>

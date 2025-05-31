@@ -1,10 +1,12 @@
 from app.mixins import FullyActivatedUserMixin, SuperuserBypassMixin
 from companies.models import Company
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views import View
+from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView
 
 from .forms import ReviewForm, ReviewReplyForm
@@ -138,3 +140,63 @@ class ToggleGuestNameFieldView(View):
             return HttpResponse(html)
 
         return HttpResponse("")  # Empty response hides guest name field
+
+
+class EmployerReviewsOverviewView(FullyActivatedUserMixin, TemplateView):
+    """
+    Overview page for employers to see all reviews for their company.
+    Only accessible to users who own a company.
+    """
+
+    template_name = "pages/reviews/employer_overview.html"
+
+    def user_test_func(self):
+        """Ensure user has a company (is an employer)"""
+        return hasattr(self.request.user, 'company') and self.request.user.company
+
+    def handle_no_permission(self):
+        """Redirect to dashboard if user doesn't have permission"""
+        messages.error(self.request, "You need to own a company to access the reviews overview.")
+        return redirect("dashboard")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        company = user.company
+
+        # Get all reviews for user's company
+        reviews = (
+            company.reviews.filter(is_deleted=False)
+            .select_related("user")
+            .prefetch_related("replies")
+            .order_by("-created_at")
+        )
+
+        # Add pagination (10 reviews per page)
+        paginator = Paginator(reviews, 10)
+        page_number = self.request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+
+        # Calculate statistics
+        unreplied_reviews = reviews.filter(replies__isnull=True)
+        total_reviews = reviews.count()
+        unreplied_count = unreplied_reviews.count()
+
+        # Calculate average rating
+        if total_reviews > 0:
+            avg_rating = sum(review.rating for review in reviews) / total_reviews
+        else:
+            avg_rating = 0
+
+        context.update({
+            "reviews": page_obj.object_list,
+            "page_obj": page_obj,
+            "is_paginated": page_obj.has_other_pages(),
+            "company": company,
+            "unreplied_count": unreplied_count,
+            "total_reviews": total_reviews,
+            "avg_rating": round(avg_rating, 1),
+            "reply_rate": round(((total_reviews - unreplied_count) / total_reviews * 100), 1) if total_reviews > 0 else 0,
+        })
+
+        return context
