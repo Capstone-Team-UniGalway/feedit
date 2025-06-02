@@ -23,6 +23,7 @@ from django.conf.urls.static import static
 from django.views.generic import TemplateView
 from django.views.static import serve
 from accounts.views import DashboardView
+from companies.views import PublicCompanyListView
 from .views import WelcomeView
 
 
@@ -31,6 +32,7 @@ admin.site.login = login_required(admin.site.login)
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("companies/", include("companies.urls")),
+    path("join_company/", PublicCompanyListView.as_view(template_name="pages/join_company.html"), name="join_company"),
     path("", WelcomeView.as_view(), name="home"),
     path("dashboard/", DashboardView.as_view(), name="dashboard"),
     path(
@@ -52,6 +54,7 @@ urlpatterns = [
     path("threads/", include("threads.urls")),
     path("reviews/", include("reviews.urls")),
     path("requests/", include("requests.urls")),
+    path("notifications/", include("notifications.urls")),
     path("uploads/", include("secure_files.urls")),
     path("upload/", include("django_ckeditor_5.urls")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

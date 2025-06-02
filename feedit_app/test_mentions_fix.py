@@ -7,6 +7,7 @@ This script tests the fix for the mentions notification system.
 import os
 import sys
 import django
+import pytest
 
 # Setup Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'app.settings')
@@ -19,6 +20,7 @@ from companies.models import Company
 
 User = get_user_model()
 
+@pytest.mark.django_db
 def test_mentions_notifications():
     """Test that mentions in threads create notifications."""
     
