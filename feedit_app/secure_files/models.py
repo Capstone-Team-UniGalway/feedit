@@ -11,10 +11,15 @@ from django.contrib.auth import get_user_model
 from app.base_model import BaseModel
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
-ALLOWED_MODELS = [get_user_model(), Company, Thread, Request, RequestReply]
-ALLOWED_CONTENT_TYPES = [
-    ContentType.objects.get_for_model(model).model for model in ALLOWED_MODELS
+# Define allowed models as strings to avoid import-time DB access
+ALLOWED_MODEL_STRINGS = [
+    "accounts.user",
+    "companies.company",
+    "threads.thread",
+    "requests.request",
+    "requests.requestreply",
 ]
+
 IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp"]
 
 
@@ -85,7 +90,7 @@ class SecureFile(BaseModel):
             return super().save(*args, **kwargs)
 
         # ✅ Enforce allowed content types
-        if model not in ALLOWED_CONTENT_TYPES:
+        if model not in self.get_allowed_content_types():
             raise ValidationError(
                 f"Attachments to '{self.content_type.name}' are not allowed."
             )
@@ -145,3 +150,10 @@ class SecureFile(BaseModel):
     @property
     def is_profile_picture(self):
         return self.content_type.model in ["user", "company"]
+
+    @staticmethod
+    def get_allowed_content_types():
+        # Returns allowed model names (e.g., 'user', 'company', ...)
+        return [s.split(".")[1] for s in ALLOWED_MODEL_STRINGS if "." in s]
+
+ALLOWED_CONTENT_TYPES = [s.split(".")[1] for s in ALLOWED_MODEL_STRINGS if "." in s]

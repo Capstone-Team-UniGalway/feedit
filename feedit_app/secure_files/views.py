@@ -137,13 +137,13 @@ class SecureFileDownloadView(View):
         if not secure_file.file or not obj:
             raise Http404("File not found")
 
-        # Public access: user or company profile pictures
-        if model in ["user", "company"]:
-            pass  # ✅ Allowed for all
-
         # Superusers can always access any file
-        elif user.is_superuser:
+        if user.is_superuser:
             pass  # ✅ Superuser override
+
+        # Public access: user or company profile pictures
+        elif model in ["user", "company"]:
+            pass  # ✅ Allowed for all
 
         # All other models: enforce login
         elif not user.is_authenticated:
