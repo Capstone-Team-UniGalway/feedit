@@ -30,7 +30,7 @@ if ENVIRONMENT == "development":
 SECRET_KEY = env("SECRET_KEY", default="super-secret-key")
 DEBUG = env.bool("DEBUG", default=False)
 # Allowed Hosts
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost"])
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
 
 # Database Configuration

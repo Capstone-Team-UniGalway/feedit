@@ -27,7 +27,8 @@
 {% endif %}
 {% if user.company %}
 <li>
-    <a href="#" class="nav-link">
+    <a href="{% url 'reviews:overview' %}"
+        class="nav-link {% if request.resolver_match.url_name == 'overview' and request.resolver_match.namespace == 'reviews' %}active{% endif %}">
         <i class="fas fa-star"></i> Reviews
     </a>
 </li>
