@@ -12,3 +12,32 @@ class UserFactory(factory.django.DjangoModelFactory):
     last_name = "Doe"
     password = factory.PostGenerationMethodCall("set_password", "testpass123")
     type = User.UserType.EMPLOYEE
+
+
+class FullyActivatedUserFactory(UserFactory):
+    """Factory for creating fully activated users with email verification and MFA."""
+
+    job_title = "Software Engineer"
+    bio = "This is a test bio that meets the minimum length requirements for the user profile."
+
+    @factory.post_generation
+    def setup_activation(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        # Create verified email address
+        from allauth.account.models import EmailAddress
+        EmailAddress.objects.create(
+            user=self,
+            email=self.email,
+            verified=True,
+            primary=True
+        )
+
+        # Create MFA authenticator
+        from allauth.mfa.models import Authenticator
+        Authenticator.objects.create(
+            user=self,
+            type="totp",
+            data={"secret": "test_secret"}
+        )

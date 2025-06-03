@@ -1,7 +1,7 @@
 import factory
+from reviews.models import Review, ReviewReply
 from accounts.tests.factories import UserFactory
 from companies.tests.factories import CompanyFactory
-from reviews.models import Review, ReviewReply
 
 
 class ReviewFactory(factory.django.DjangoModelFactory):

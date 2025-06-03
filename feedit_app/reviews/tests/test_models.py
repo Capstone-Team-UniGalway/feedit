@@ -1,8 +1,7 @@
 import pytest
-from django.core.exceptions import ValidationError
 from reviews.models import Review, ReviewReply
-
 from .factories import ReviewFactory, ReviewReplyFactory
+from django.core.exceptions import ValidationError
 
 pytestmark = pytest.mark.django_db
 

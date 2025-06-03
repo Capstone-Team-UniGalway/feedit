@@ -1,8 +1,7 @@
 import pytest
-from django.utils import timezone
 from notifications.models import Notification
-
 from .factories import NotificationFactory
+from django.utils import timezone
 
 pytestmark = pytest.mark.django_db
 

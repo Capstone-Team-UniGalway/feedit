@@ -1,7 +1,7 @@
 import factory
+from threads.models import Thread
 from accounts.tests.factories import UserFactory
 from companies.tests.factories import CompanyFactory
-from threads.models import Thread
 
 
 class ThreadFactory(factory.django.DjangoModelFactory):
