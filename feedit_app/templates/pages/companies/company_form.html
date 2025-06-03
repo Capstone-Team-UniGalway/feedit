@@ -34,6 +34,11 @@
         </div>
 
         {% if object and object.pk %}
+        <!-- Company Logo Upload -->
+        <c-profile_picture.company_upload :company="object" />
+        {% endif %}
+
+        {% if object and object.pk %}
         <!-- Delete Company -->
         <div class="card bg-base-100 shadow p-6">
             <h2 class="text-xl font-semibold mb-4">Delete Company</h2>
