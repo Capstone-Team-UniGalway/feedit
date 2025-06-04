@@ -1,5 +1,6 @@
 import pytest
 from threads.models import Thread
+
 from .factories import ThreadFactory
 
 pytestmark = pytest.mark.django_db

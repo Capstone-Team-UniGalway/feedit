@@ -1,9 +1,11 @@
+from unittest import mock
+
 import pytest
 from accounts.models import User
-from .factories import UserFactory
 from companies.tests.factories import CompanyFactory
 from django.core.exceptions import ValidationError
-from unittest import mock
+
+from .factories import UserFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -83,8 +85,10 @@ def test_profile_picture_property_returns_file_or_none():
         mocked_filter.assert_called_once()
 
     # Test case 2: Secure file found with file - should return secure file URL
-    with mock.patch("secure_files.models.SecureFile.objects.filter") as mocked_filter, \
-         mock.patch("secure_files.utils.get_secure_file_url") as mocked_get_url:
+    with (
+        mock.patch("secure_files.models.SecureFile.objects.filter") as mocked_filter,
+        mock.patch("secure_files.utils.get_secure_file_url") as mocked_get_url,
+    ):
 
         # Create a mock secure file object with a file attribute
         mock_secure_file = mock.Mock()

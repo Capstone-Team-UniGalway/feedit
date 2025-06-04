@@ -15,10 +15,10 @@ from .views import (
     EmailConfirmView,
     EmailVerificationSentView,
     LogoutView,
+    MentionsListView,
     ProfileView,
     ResendEmailVerificationView,
     UserSearchView,
-    MentionsListView,
 )
 
 urlpatterns = [

@@ -1,18 +1,13 @@
 import pytest
-from django.test import Client
-from django.urls import reverse
+from accounts.tests.factories import FullyActivatedUserFactory, UserFactory
 from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
+from django.test import Client
+from django.urls import reverse
 from django.utils import timezone
-from unittest.mock import patch
-
 from notifications.models import Notification
-from notifications.views import (
-    NotificationListView, MarkNotificationReadView,
-    MarkAllNotificationsReadView, DeleteNotificationView
-)
+
 from .factories import NotificationFactory
-from accounts.tests.factories import UserFactory, FullyActivatedUserFactory
 
 User = get_user_model()
 pytestmark = pytest.mark.django_db
@@ -23,11 +18,11 @@ class TestNotificationListView:
 
     def setup_method(self):
         self.client = Client()
-        self.url = reverse('notifications:list')
+        self.url = reverse("notifications:list")
 
     def _assert_response_or_redirect(self, response, expected_status=200):
         """Helper method to handle authentication redirects in test environment."""
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             return True
         else:
@@ -38,7 +33,7 @@ class TestNotificationListView:
         """Test that unauthenticated users are redirected to login."""
         response = self.client.get(self.url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_fully_activated_user_required(self):
         """Test that non-activated users are redirected."""
@@ -47,21 +42,25 @@ class TestNotificationListView:
 
         response = self.client.get(self.url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_user_sees_own_notifications(self):
         """Test that users see only their own notifications."""
         user = FullyActivatedUserFactory()
         other_user = FullyActivatedUserFactory()
 
-        own_notification = NotificationFactory(recipient=user, message="Your notification")
-        other_notification = NotificationFactory(recipient=other_user, message="Other notification")
+        own_notification = NotificationFactory(
+            recipient=user, message="Your notification"
+        )
+        other_notification = NotificationFactory(
+            recipient=other_user, message="Other notification"
+        )
 
         self.client.force_login(user)
         response = self.client.get(self.url)
 
         if not self._assert_response_or_redirect(response):
-            notifications = list(response.context['notifications'])
+            notifications = list(response.context["notifications"])
             assert own_notification in notifications
             assert other_notification not in notifications
 
@@ -69,15 +68,15 @@ class TestNotificationListView:
         """Test that notifications are ordered by creation date descending."""
         user = FullyActivatedUserFactory()
 
-        notification1 = NotificationFactory(recipient=user, message="First notification")
-        notification2 = NotificationFactory(recipient=user, message="Second notification")
-        notification3 = NotificationFactory(recipient=user, message="Third notification")
+        NotificationFactory(recipient=user, message="First notification")
+        NotificationFactory(recipient=user, message="Second notification")
+        NotificationFactory(recipient=user, message="Third notification")
 
         self.client.force_login(user)
         response = self.client.get(self.url)
 
         if not self._assert_response_or_redirect(response):
-            notifications = list(response.context['notifications'])
+            notifications = list(response.context["notifications"])
             # Should be ordered by created_at descending (newest first)
             assert notifications[0].created_at >= notifications[1].created_at
             assert notifications[1].created_at >= notifications[2].created_at
@@ -94,8 +93,8 @@ class TestNotificationListView:
         response = self.client.get(self.url)
 
         if not self._assert_response_or_redirect(response):
-            assert response.context['is_paginated'] is True
-            assert len(response.context['notifications']) == 20
+            assert response.context["is_paginated"] is True
+            assert len(response.context["notifications"]) == 20
 
     def test_context_includes_unread_count(self):
         """Test that context includes unread notification count."""
@@ -110,27 +109,27 @@ class TestNotificationListView:
         response = self.client.get(self.url)
 
         if not self._assert_response_or_redirect(response):
-            assert 'unread_count' in response.context
-            assert response.context['unread_count'] == 2
+            assert "unread_count" in response.context
+            assert response.context["unread_count"] == 2
 
     def test_filter_by_type(self):
         """Test filtering notifications by type."""
         user = FullyActivatedUserFactory()
 
         thread_notification = NotificationFactory(
-            recipient=user,
-            type=Notification.NotificationType.NEW_THREAD
+            recipient=user, type=Notification.NotificationType.NEW_THREAD
         )
         review_notification = NotificationFactory(
-            recipient=user,
-            type=Notification.NotificationType.NEW_REVIEW
+            recipient=user, type=Notification.NotificationType.NEW_REVIEW
         )
 
         self.client.force_login(user)
-        response = self.client.get(self.url, {'type': Notification.NotificationType.NEW_THREAD})
+        response = self.client.get(
+            self.url, {"type": Notification.NotificationType.NEW_THREAD}
+        )
 
         if not self._assert_response_or_redirect(response):
-            notifications = list(response.context['notifications'])
+            notifications = list(response.context["notifications"])
             assert thread_notification in notifications
             assert review_notification not in notifications
 
@@ -144,16 +143,16 @@ class TestNotificationListView:
         self.client.force_login(user)
 
         # Test unread filter
-        response = self.client.get(self.url, {'read': 'false'})
+        response = self.client.get(self.url, {"read": "false"})
         if not self._assert_response_or_redirect(response):
-            notifications = list(response.context['notifications'])
+            notifications = list(response.context["notifications"])
             assert unread_notification in notifications
             assert read_notification not in notifications
 
         # Test read filter
-        response = self.client.get(self.url, {'read': 'true'})
+        response = self.client.get(self.url, {"read": "true"})
         if not self._assert_response_or_redirect(response):
-            notifications = list(response.context['notifications'])
+            notifications = list(response.context["notifications"])
             assert read_notification in notifications
             assert unread_notification not in notifications
 
@@ -162,19 +161,19 @@ class TestNotificationListView:
         user = FullyActivatedUserFactory()
         self.client.force_login(user)
 
-        response = self.client.get(self.url, {'type': 'new_thread', 'read': 'false'})
+        response = self.client.get(self.url, {"type": "new_thread", "read": "false"})
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
             context = response.context
-            assert 'page_title' in context
-            assert context['page_title'] == 'Notifications'
-            assert 'type_filter' in context
-            assert context['type_filter'] == 'new_thread'
-            assert 'read_filter' in context
-            assert context['read_filter'] == 'false'
-            assert 'notification_types' in context
-            assert 'unread_count' in context
+            assert "page_title" in context
+            assert context["page_title"] == "Notifications"
+            assert "type_filter" in context
+            assert context["type_filter"] == "new_thread"
+            assert "read_filter" in context
+            assert context["read_filter"] == "false"
+            assert "notification_types" in context
+            assert "unread_count" in context
 
     def test_empty_notifications_list(self):
         """Test view when user has no notifications."""
@@ -185,8 +184,8 @@ class TestNotificationListView:
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            assert len(response.context['notifications']) == 0
-            assert response.context['unread_count'] == 0
+            assert len(response.context["notifications"]) == 0
+            assert response.context["unread_count"] == 0
 
     def test_http_method_restrictions(self):
         """Test that only GET method is allowed."""
@@ -205,17 +204,20 @@ class TestNotificationListView:
 
 
 class TestNotificationMarkReadView:
-    """Test the NotificationMarkReadView for marking individual notifications as read."""
+    """Test the NotificationMarkReadView for marking
+    individual notifications as read."""
 
     def setup_method(self):
         self.client = Client()
         self.user = FullyActivatedUserFactory()
         self.notification = NotificationFactory(recipient=self.user, read_at=None)
-        self.url = reverse('notifications:mark_read', kwargs={'pk': self.notification.pk})
+        self.url = reverse(
+            "notifications:mark_read", kwargs={"pk": self.notification.pk}
+        )
 
     def _assert_response_or_redirect(self, response, expected_status=200):
         """Helper method to handle authentication redirects in test environment."""
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             return True
         else:
@@ -226,7 +228,7 @@ class TestNotificationMarkReadView:
         """Test that unauthenticated users are redirected to login."""
         response = self.client.post(self.url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_fully_activated_user_required(self):
         """Test that non-activated users are redirected."""
@@ -235,7 +237,7 @@ class TestNotificationMarkReadView:
 
         response = self.client.post(self.url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_user_can_mark_own_notification_read(self):
         """Test that users can mark their own notifications as read."""
@@ -246,15 +248,15 @@ class TestNotificationMarkReadView:
         # In test environment, may redirect or show form
         if response.status_code == 302:
             # If redirected, check if notification was actually marked as read
-            if '/account/auth' not in response.url:
+            if "/account/auth" not in response.url:
                 # Should redirect to notifications list
-                assert response.url == reverse('notifications:list')
+                assert response.url == reverse("notifications:list")
                 # Check if notification was actually marked as read
                 self.notification.refresh_from_db()
                 if self.notification.read_at is not None:
                     assert self.notification.read_at is not None
                 else:
-                    # Notification not marked - likely permission issue in test environment
+                    # Notification not marked - likely permission issue in test env
                     # This is acceptable as the redirect behavior is correct
                     pass
         else:
@@ -270,8 +272,9 @@ class TestNotificationMarkReadView:
 
         # In test environment, may redirect due to authentication or show 404
         if response.status_code == 302:
-            # May redirect to auth or notifications list due to permission/authentication check
-            assert '/account/' in response.url or '/notifications/' in response.url
+            # May redirect to auth or notifications list
+            # due to permission/authentication check
+            assert "/account/" in response.url or "/notifications/" in response.url
         else:
             # Should return 404 for other user's notification
             assert response.status_code == 404
@@ -295,13 +298,14 @@ class TestNotificationMarkReadView:
         """Test that marking non-existent notification returns 404."""
         self.client.force_login(self.user)
 
-        url = reverse('notifications:mark_read', kwargs={'pk': 99999})
+        url = reverse("notifications:mark_read", kwargs={"pk": 99999})
         response = self.client.post(url)
 
         # In test environment, may redirect due to authentication or show 404
         if response.status_code == 302:
-            # May redirect to auth or notifications list due to permission/authentication check
-            assert '/account/' in response.url or '/notifications/' in response.url
+            # May redirect to auth or notifications list
+            # due to permission/authentication check
+            assert "/account/" in response.url or "/notifications/" in response.url
         else:
             # Should return 404 for non-existent notification
             assert response.status_code == 404
@@ -313,7 +317,7 @@ class TestNotificationMarkReadView:
         response = self.client.post(self.url)
 
         # In test environment, may redirect due to authentication requirements
-        if response.status_code == 302 and '/account/auth' not in response.url:
+        if response.status_code == 302 and "/account/auth" not in response.url:
             # Only check messages if not redirected to auth
             messages = list(get_messages(response.wsgi_request))
             if messages:  # Messages may not be available in test environment
@@ -339,11 +343,11 @@ class TestNotificationMarkAllReadView:
 
     def setup_method(self):
         self.client = Client()
-        self.url = reverse('notifications:mark_all_read')
+        self.url = reverse("notifications:mark_all_read")
 
     def _assert_response_or_redirect(self, response, expected_status=200):
         """Helper method to handle authentication redirects in test environment."""
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             return True
         else:
@@ -354,7 +358,7 @@ class TestNotificationMarkAllReadView:
         """Test that unauthenticated users are redirected to login."""
         response = self.client.post(self.url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_fully_activated_user_required(self):
         """Test that non-activated users are redirected."""
@@ -363,7 +367,7 @@ class TestNotificationMarkAllReadView:
 
         response = self.client.post(self.url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_mark_all_user_notifications_read(self):
         """Test that all user notifications are marked as read."""
@@ -383,17 +387,20 @@ class TestNotificationMarkAllReadView:
         # In test environment, may redirect or show form
         if response.status_code == 302:
             # If redirected, check if notifications were actually marked as read
-            if '/account/auth' not in response.url:
+            if "/account/auth" not in response.url:
                 # Should redirect to notifications list
-                assert response.url == reverse('notifications:list')
+                assert response.url == reverse("notifications:list")
                 # Check if notifications were actually marked as read
                 notification1.refresh_from_db()
                 notification2.refresh_from_db()
-                if notification1.read_at is not None and notification2.read_at is not None:
+                if (
+                    notification1.read_at is not None
+                    and notification2.read_at is not None
+                ):
                     assert notification1.read_at is not None
                     assert notification2.read_at is not None
                 else:
-                    # Notifications not marked - likely permission issue in test environment
+                    # Notifications not marked - likely permission issue in test env
                     # This is acceptable as the redirect behavior is correct
                     pass
 
@@ -427,7 +434,7 @@ class TestNotificationMarkAllReadView:
         # In test environment, may redirect or show form
         if response.status_code == 302:
             # If redirected, check if notifications were actually marked as read
-            if '/account/auth' not in response.url:
+            if "/account/auth" not in response.url:
                 # Both should be marked as read
                 read_notification.refresh_from_db()
                 unread_notification.refresh_from_db()
@@ -435,7 +442,7 @@ class TestNotificationMarkAllReadView:
                     assert read_notification.read_at is not None
                     assert unread_notification.read_at is not None
                 else:
-                    # Notifications not marked - likely permission issue in test environment
+                    # Notifications not marked - likely permission issue in test env
                     # This is acceptable as the redirect behavior is correct
                     pass
         else:
@@ -451,11 +458,13 @@ class TestNotificationMarkAllReadView:
         response = self.client.post(self.url)
 
         # In test environment, may redirect due to authentication requirements
-        if response.status_code == 302 and '/account/auth' not in response.url:
+        if response.status_code == 302 and "/account/auth" not in response.url:
             # Only check messages if not redirected to auth
             messages = list(get_messages(response.wsgi_request))
             if messages:  # Messages may not be available in test environment
-                assert any("All notifications marked as read" in str(m) for m in messages)
+                assert any(
+                    "All notifications marked as read" in str(m) for m in messages
+                )
 
     def test_http_method_restrictions(self):
         """Test that only POST method is allowed."""
@@ -480,11 +489,11 @@ class TestNotificationDeleteView:
         self.client = Client()
         self.user = FullyActivatedUserFactory()
         self.notification = NotificationFactory(recipient=self.user)
-        self.url = reverse('notifications:delete', kwargs={'pk': self.notification.pk})
+        self.url = reverse("notifications:delete", kwargs={"pk": self.notification.pk})
 
     def _assert_response_or_redirect(self, response, expected_status=200):
         """Helper method to handle authentication redirects in test environment."""
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             return True
         else:
@@ -495,7 +504,7 @@ class TestNotificationDeleteView:
         """Test that unauthenticated users are redirected to login."""
         response = self.client.post(self.url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_fully_activated_user_required(self):
         """Test that non-activated users are redirected."""
@@ -504,7 +513,7 @@ class TestNotificationDeleteView:
 
         response = self.client.post(self.url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_user_can_delete_own_notification(self):
         """Test that users can delete their own notifications."""
@@ -515,14 +524,16 @@ class TestNotificationDeleteView:
         # In test environment, may redirect or show form
         if response.status_code == 302:
             # If redirected, check if notification was actually deleted
-            if '/account/auth' not in response.url:
+            if "/account/auth" not in response.url:
                 # Should redirect to notifications list
-                assert response.url == reverse('notifications:list')
+                assert response.url == reverse("notifications:list")
                 # Check if notification was actually deleted
                 if not Notification.objects.filter(pk=self.notification.pk).exists():
-                    assert not Notification.objects.filter(pk=self.notification.pk).exists()
+                    assert not Notification.objects.filter(
+                        pk=self.notification.pk
+                    ).exists()
                 else:
-                    # Notification not deleted - likely permission issue in test environment
+                    # Notification not deleted - likely permission issue in test env
                     # This is acceptable as the redirect behavior is correct
                     pass
         else:
@@ -538,8 +549,9 @@ class TestNotificationDeleteView:
 
         # In test environment, may redirect due to authentication or show 404
         if response.status_code == 302:
-            # May redirect to auth or notifications list due to permission/authentication check
-            assert '/account/' in response.url or '/notifications/' in response.url
+            # May redirect to auth or notifications list
+            # due to permission/authentication check
+            assert "/account/" in response.url or "/notifications/" in response.url
         else:
             # Should return 404 for other user's notification
             assert response.status_code == 404
@@ -560,20 +572,21 @@ class TestNotificationDeleteView:
         else:
             # If form is shown (200), verify context
             assert response.status_code == 200
-            assert 'notification' in response.context
-            assert response.context['notification'] == self.notification
+            assert "notification" in response.context
+            assert response.context["notification"] == self.notification
 
     def test_nonexistent_notification_returns_404(self):
         """Test that deleting non-existent notification returns 404."""
         self.client.force_login(self.user)
 
-        url = reverse('notifications:delete', kwargs={'pk': 99999})
+        url = reverse("notifications:delete", kwargs={"pk": 99999})
         response = self.client.post(url)
 
         # In test environment, may redirect due to authentication or show 404
         if response.status_code == 302:
-            # May redirect to auth or notifications list due to permission/authentication check
-            assert '/account/' in response.url or '/notifications/' in response.url
+            # May redirect to auth or notifications list
+            # due to permission/authentication check
+            assert "/account/" in response.url or "/notifications/" in response.url
         else:
             # Should return 404 for non-existent notification
             assert response.status_code == 404
@@ -585,11 +598,13 @@ class TestNotificationDeleteView:
         response = self.client.post(self.url)
 
         # In test environment, may redirect due to authentication requirements
-        if response.status_code == 302 and '/account/auth' not in response.url:
+        if response.status_code == 302 and "/account/auth" not in response.url:
             # Only check messages if not redirected to auth
             messages = list(get_messages(response.wsgi_request))
             if messages:  # Messages may not be available in test environment
-                assert any("Notification deleted successfully" in str(m) for m in messages)
+                assert any(
+                    "Notification deleted successfully" in str(m) for m in messages
+                )
 
     def test_http_method_restrictions(self):
         """Test that only GET and POST methods are allowed."""
