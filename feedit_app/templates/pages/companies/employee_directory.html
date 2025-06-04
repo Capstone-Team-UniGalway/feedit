@@ -33,8 +33,17 @@
             {% for employee in employees %}
             <div class="card bg-base-100 shadow-xl">
                 <figure class="px-6 pt-6">
-                    <img src="{{ employee.profile_picture }}" alt="{{ employee.get_full_name }}"
-                        class="rounded-full w-24 h-24 object-cover" />
+                    <div
+                        class="w-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 m-2 overflow-hidden">
+                        {% if employee.profile_picture %}
+                        <img alt="{{ employee.get_full_name }}" src="{{ employee.profile_picture }}" />
+                        {% else %}
+                        <div
+                            class="bg-primary text-primary-content w-10 h-10 flex items-center justify-center text-lg font-bold">
+                            {{ employee.get_initials|default:employee.email.0|upper }}
+                        </div>
+                        {% endif %}
+                    </div>
                 </figure>
                 <div class="card-body items-center text-center">
                     <h2 class="card-title">{{ employee.get_full_name }}</h2>

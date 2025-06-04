@@ -9,14 +9,18 @@
         <div class="card bg-base-100 shadow-md mb-6">
             <div class="card-body">
                 <div class="flex items-center gap-3 mb-2">
-                    <div class="avatar">
-                        {% if review.user and not review.is_anonymous %}
-                        <div class="w-10 rounded-full">
-                            <img src="{{ review.user.profile_picture }}" alt="{{ review.user.get_full_name }}" />
+                    <div class="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden">
+                        {% if review.is_anonymous or not review.user %}
+                        <div
+                            class="bg-primary text-primary-content w-10 h-10 flex items-center justify-center text-lg font-bold">
+                            ?
                         </div>
+                        {% elif review.user.profile_pic %}
+                        <img alt="{{ review.user.get_full_name }}" src="{{ review.user.profile_pic.url }}" />
                         {% else %}
-                        <div class="w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <i class="fas fa-user text-gray-500"></i>
+                        <div
+                            class="bg-primary text-primary-content w-10 h-10 flex items-center justify-center text-lg font-bold">
+                            {{ review.user.get_initials|default:review.user.email.0|upper }}
                         </div>
                         {% endif %}
                     </div>

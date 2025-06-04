@@ -1,3 +1,4 @@
+{% load static %}
 <c-layouts.base>
     <div class="max-w-6xl mx-auto">
         <!-- Header Section -->
@@ -70,27 +71,33 @@
                             <!-- Review Header -->
                             <div class="flex items-start justify-between mb-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="avatar placeholder">
-                                        <div class="bg-primary text-primary-content rounded-full w-12">
-                                            <span class="text-lg">
-                                                {% if review.is_anonymous %}
-                                                ?
-                                                {% else %}
-                                                {{ review.get_display_name.0|upper }}
-                                                {% endif %}
-                                            </span>
+                                    <div
+                                        class="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden">
+                                        {% if review.is_anonymous or not review.user %}
+                                        <div
+                                            class="bg-primary text-primary-content w-10 h-10 flex items-center justify-center text-lg font-bold">
+                                            ?
                                         </div>
+                                        {% elif review.user.profile_picture %}
+                                        <img alt="{{ review.user.get_full_name }}"
+                                            src="{{ review.user.profile_picture }}" />
+                                        {% else %}
+                                        <div
+                                            class="bg-primary text-primary-content w-10 h-10 flex items-center justify-center text-lg font-bold">
+                                            {{ review.user.get_initials|default:review.user.email.0|upper }}
+                                        </div>
+                                        {% endif %}
                                     </div>
                                     <div>
                                         <h3 class="font-semibold text-lg">{{ review.get_display_name }}</h3>
                                         <p class="text-sm text-gray-500">
                                             <i class="fas fa-calendar mr-1"></i>
-                                            {{ review.created_at|date:"M d, Y" }} 
+                                            {{ review.created_at|date:"M d, Y" }}
                                             ({{ review.created_at|timesince }} ago)
                                         </p>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Rating Display -->
                                 <div class="text-right">
                                     <div class="text-yellow-400 text-lg mb-1">
@@ -135,8 +142,8 @@
                                         <i class="fas fa-exclamation-triangle mr-1"></i>
                                         This review needs a response
                                     </span>
-                                    <a href="{% url 'reviews:create_review_reply' review.id %}" 
-                                       class="btn btn-primary btn-sm">
+                                    <a href="{% url 'reviews:create_review_reply' review.id %}"
+                                        class="btn btn-primary btn-sm">
                                         <i class="fas fa-reply mr-2"></i>
                                         Reply to Review
                                     </a>
@@ -157,11 +164,11 @@
                             <i class="fas fa-chevron-left mr-1"></i> Previous
                         </a>
                         {% endif %}
-                        
+
                         <button class="join-item btn btn-active">
                             Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
                         </button>
-                        
+
                         {% if page_obj.has_next %}
                         <a href="?page={{ page_obj.next_page_number }}" class="join-item btn">
                             Next <i class="fas fa-chevron-right ml-1"></i>

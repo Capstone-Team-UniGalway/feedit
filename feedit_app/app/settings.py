@@ -43,13 +43,6 @@ if ENVIRONMENT == "development":
     }
     # Email settings for development
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-    # SMTP settings for production (twhen DJANGO_ENV is not 'development')
-    EMAIL_HOST = "smtp.mailersend.net"
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = "MS_psx0J8@feedit.online"
-    EMAIL_HOST_PASSWORD = "mssp.ceCiaq5.pr9084z608mlw63d.fZT2kLf"
-    DEFAULT_FROM_EMAIL = "noreply@feedit.online"
 else:
     DATABASES = {
         "default": {
@@ -63,13 +56,11 @@ else:
     }
     # Email settings for production
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    EMAIL_HOST = env("EMAIL_HOST", default="smtp.mailersend.net")
+    EMAIL_HOST = env("EMAIL_HOST", default="***")
     EMAIL_PORT = env.int("EMAIL_PORT", default=587)
     EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
-    EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="MS_psx0J8@feedit.online")
-    EMAIL_HOST_PASSWORD = env(
-        "EMAIL_HOST_PASSWORD", default="mssp.ceCiaq5.pr9084z608mlw63d.fZT2kLf"
-    )
+    EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="***")
+    EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="***")
     DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@feedit.online")
 
     # Security settings for production
