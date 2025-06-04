@@ -20,15 +20,18 @@
                     </ul>
                 </div>
                 <div class="navbar-end gap-2">
-                    <div class="form-control hidden md:block">
-                        <div class="input-group join">
-                            <input type="text" placeholder="Search..."
-                                class="join-item input input-bordered input-sm w-32 md:w-auto" />
-                            <button class="join-item btn btn-square btn-sm">
-                                <i class="fas fa-search"></i>
-                            </button>
+                    <form method="get" action="{% url 'companies:list' %}" class="flex gap-2 hidden md:block">
+                        <div class="form-control">
+                            <div class="input-group join">
+                                <input type="text" name="q" placeholder="Search..."
+                                    class="join-item input input-bordered input-sm w-32 md:w-auto"
+                                    value="{{ request.GET.q }}" />
+                                <button type="submit" class="join-item btn btn-square btn-sm">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    </form>
                     {% if user.is_authenticated %}
                     <!-- Notifications -->
                     <c-notifications.dropdown />
@@ -120,7 +123,20 @@
             <label for="my-drawer-3" aria-label="close sidebar" class="drawer-overlay"></label>
             <ul class="menu min-h-full w-80 bg-base-200 p-4">
                 <!-- Sidebar content here -->
+                <div class="divider"></div>
                 <c-partials.nav />
+                <div class="divider"></div>
+                <form method="get" action="{% url 'companies:list' %}" class="flex gap-2 block md:hidden w-full">
+                    <div class="form-control w-full">
+                        <div class="input-group join w-full">
+                            <input type="text" name="q" placeholder="Search..."
+                                class="join-item input input-bordered input-sm w-full" value="{{ request.GET.q }}" />
+                            <button type="submit" class="join-item btn btn-square btn-sm">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </ul>
         </div>
     </div>
