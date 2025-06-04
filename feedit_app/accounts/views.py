@@ -657,6 +657,6 @@ class UserSearchView(FullyActivatedUserMixin, View):
         # Always render the HTML template
         return render(
             request,
-            "components/user_search_results_tailwind.html",
+            "components/account/user_search_results_tailwind.html",
             {"users": users, "query": query},
         )

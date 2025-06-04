@@ -172,7 +172,7 @@ def render_mentions(text):
     return result
 
 
-@register.inclusion_tag("components/mention_input_tailwind.html")
+@register.inclusion_tag("components/threads/mention_input_tailwind.html")
 def mention_input(
     name, id=None, value=None, css_class="", placeholder=None, required=False
 ):
