@@ -1,11 +1,10 @@
 import pytest
-from accounts.tests.factories import UserFactory
-from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.models import ContentType
 from secure_files.models import SecureFile
-
 from .factories import SecureFileFactory
+from accounts.tests.factories import UserFactory
 
 pytestmark = pytest.mark.django_db
 

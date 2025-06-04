@@ -1,8 +1,7 @@
-import datetime
-
 import factory
-from accounts.tests.factories import UserFactory
 from companies.models import Company
+from accounts.tests.factories import UserFactory
+import datetime
 
 
 class CompanyFactory(factory.django.DjangoModelFactory):
