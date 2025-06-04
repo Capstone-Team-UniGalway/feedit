@@ -90,6 +90,9 @@
                     <button class="btn btn-sm btn-neutral" onclick="document.getElementById('share_modal').showModal()">
                         <i class="fas fa-share-alt mr-1"></i> Share Profile
                     </button>
+                    <a href="{% url 'companies:company_directory' pk=company.id %}">
+                        <i class="fas fa-users"></i> Employees
+                    </a>
                 </div>
             </div>
         </div>

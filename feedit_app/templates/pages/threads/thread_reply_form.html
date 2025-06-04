@@ -1,3 +1,6 @@
+{% load widget_tweaks %}
+{% load mention_tags %}
+
 <c-layouts.base>
     <div class="max-w-3xl mx-auto">
         <!-- Breadcrumbs -->
@@ -20,11 +23,10 @@
 
                     <!-- Content -->
                     <div class="form-control mb-4">
-                        <label class="label">
-                            <span class="label-text">Your Reply</span>
-                        </label>
-                        {{ form.content.errors }}
-                        {{ form.content }}
+                        {% mention_input name="content" id="reply_content_top" css_class="min-h-32" placeholder="Write your reply here..." required=True %}
+                        {% if reply_form.content.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ reply_form.content.errors.0 }}</p>
+                        {% endif %}
                     </div>
 
                     <!-- Form Actions -->
