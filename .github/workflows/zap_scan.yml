@@ -22,16 +22,15 @@ jobs:
         run: sleep 30
 
       - name: Run ZAP Baseline Scan
-        uses: zaproxy/action-baseline@v0.11.0
+        uses: zaproxy/action-baseline@v0.14.0
         with:
           target: 'https://feedit.online'
           fail_action: false
           artifact_name: zap-report
-          cmd_options: '-w zap_report.md'  # write Markdown summary
+          cmd_options: '-w zap_report.md -r zap_report.html'
         continue-on-error: true
 
       - name: Display ZAP Summary in GitHub UI
-        if: success()
         run: |
           if [ -f zap_report.md ]; then
             echo "## 🔐 OWASP ZAP Baseline Scan Summary" >> $GITHUB_STEP_SUMMARY
