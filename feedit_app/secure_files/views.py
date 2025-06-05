@@ -1,5 +1,7 @@
 import mimetypes
 
+from botocore.exceptions import ClientError
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
@@ -12,6 +14,7 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, redirect
 from django.views import View
+from storages.backends.s3boto3 import S3Boto3Storage
 
 from .forms import SecureFileForm
 from .models import IMAGE_EXTENSIONS, SecureFile, get_allowed_content_types
@@ -135,15 +138,13 @@ class SecureFileDownloadView(View):
         obj = secure_file.content_object
         user = request.user
 
-        # Ensure the file exists
+        # Ensure the file exists and has a valid object
         if not secure_file.file or not obj:
             raise Http404("File not found")
 
-        # Public access: user or company profile pictures
+        # Access control
         if model in ["user", "company"]:
-            pass  # ✅ Allowed for all
-
-        # Superusers can always access any file
+            pass  # ✅ Public profile images
         elif user.is_superuser:
             pass  # ✅ Superuser override
 
@@ -185,11 +186,9 @@ class SecureFileDownloadView(View):
             else:
                 raise PermissionDenied("Invalid request reference.")
 
-        # Determine MIME type and disposition
-        file_path = secure_file.file.path
+        # Determine filename, content type and disposition
         filename = secure_file.filename
         extension = filename.rsplit(".", 1)[-1].lower()
-
         content_type, _ = mimetypes.guess_type(filename)
         if not content_type:
             content_type = "application/octet-stream"
@@ -197,6 +196,17 @@ class SecureFileDownloadView(View):
         is_image = extension in IMAGE_EXTENSIONS
         disposition = "inline" if is_image else "attachment"
 
-        response = FileResponse(open(file_path, "rb"), content_type=content_type)
+        # Open file from appropriate storage
+        try:
+            if settings.ENVIRONMENT == "production":
+                storage = S3Boto3Storage()
+                file = storage.open(secure_file.file.name, "rb")
+            else:
+                file = open(secure_file.file.path, "rb")
+        except (FileNotFoundError, ClientError):
+            raise Http404("File not found")
+
+        # Serve file with secure response
+        response = FileResponse(file, content_type=content_type)
         response["Content-Disposition"] = f'{disposition}; filename="{filename}"'
         return response

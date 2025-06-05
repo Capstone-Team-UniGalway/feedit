@@ -69,6 +69,24 @@ else:
     CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+    # Storage backend
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
+    # S3 credentials
+    AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
+    AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", default="eu-north-1")
+
+    # Optional: Only set if explicitly provided
+    if env("AWS_ACCESS_KEY_ID", default=None):
+        AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
+    if env("AWS_SECRET_ACCESS_KEY", default=None):
+        AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
+
+    # Privacy: disable direct public access
+    AWS_QUERYSTRING_AUTH = True  # signed URLs only
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None  # Do not make files public by default
+
 
 # Application definition
 SITE_ID = 1
