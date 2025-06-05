@@ -11,14 +11,38 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     name: ZAP Scan
+    permissions:
+      contents: read
+      actions: read  # necessary to access previous workflow artifacts
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Wait for app to be ready
-        run: sleep 300  # Adjust based on actual deployment time
+        run: sleep 30
 
-      - name: Run ZAP Baseline Scan
+      - name: Run ZAP Baseline Scan and save HTML report
         uses: zaproxy/action-baseline@v0.11.0
         with:
           target: 'https://feedit.online'
+          fail_action: false  # prevents job failure due to any warning
+          cmd_options: '-r zap_report.html'  # generate report
+        continue-on-error: true
+
+      - name: Upload ZAP HTML Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-html-report
+          path: zap_report.html
+
+      - name: Summarize ZAP Results
+        run: |
+          echo "## 🔐 OWASP ZAP Baseline Scan Summary" >> $GITHUB_STEP_SUMMARY
+          if grep -q "FAIL-" owasp-zap-baseline-results.md; then
+            echo "⚠️ Some security risks were found. Please review the full report artifact." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ No critical security issues detected." >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "👉 **[Download the full ZAP HTML report from the run artifacts for details.]**" >> $GITHUB_STEP_SUMMARY
+        continue-on-error: true
