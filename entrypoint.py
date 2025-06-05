@@ -42,8 +42,16 @@ def main():
 
     # Continue running Django command or gunicorn
     cmd = sys.argv[1:]
-    print(f"Running command: {' '.join(cmd)}")
-    subprocess.run(cmd, check=True)  # nosec
+    # If no command is passed, run migrate + gunicorn
+    if not cmd:
+        print("No command passed. Running migrate and gunicorn.")
+        subprocess.run(["python", "manage.py", "migrate", "--noinput"], check=True)
+        subprocess.run(
+            ["gunicorn", "--bind", "0.0.0.0:8000", "app.wsgi:application"], check=True
+        )
+    else:
+        print(f"Running command: {' '.join(cmd)}")
+        subprocess.run(cmd, check=True)
 
 
 if __name__ == "__main__":
