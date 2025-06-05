@@ -28,6 +28,7 @@ jobs:
           fail_action: false
           artifact_name: zap-report
           cmd_options: '-w zap_report.md -r zap_report.html'
+          allow_issue_writing: false
         continue-on-error: true
 
       - name: Display ZAP Summary in GitHub UI
