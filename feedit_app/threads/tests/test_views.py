@@ -1,12 +1,12 @@
 import pytest
+from accounts.tests.factories import FullyActivatedUserFactory, UserFactory
+from companies.tests.factories import CompanyFactory
+from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
-from django.contrib.auth import get_user_model
-
 from threads.models import Thread
+
 from .factories import ThreadFactory
-from accounts.tests.factories import UserFactory, FullyActivatedUserFactory
-from companies.tests.factories import CompanyFactory
 
 User = get_user_model()
 pytestmark = pytest.mark.django_db
@@ -17,11 +17,11 @@ class TestThreadListView:
 
     def setup_method(self):
         self.client = Client()
-        self.url = reverse('thread_list')
+        self.url = reverse("thread_list")
 
     def _assert_response_or_redirect(self, response, expected_status=200):
         """Helper method to handle authentication redirects in test environment."""
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             return True
         else:
@@ -32,7 +32,7 @@ class TestThreadListView:
         """Test that unauthenticated users are redirected to login."""
         response = self.client.get(self.url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_fully_activated_user_required(self):
         """Test that non-activated users are redirected."""
@@ -42,7 +42,7 @@ class TestThreadListView:
         response = self.client.get(self.url)
         assert response.status_code == 302
         # Could redirect to either auth or account_edit depending on activation state
-        assert '/account/' in response.url
+        assert "/account/" in response.url
 
     def test_user_without_company_sees_empty_list(self):
         """Test that users without company see empty thread list."""
@@ -50,7 +50,7 @@ class TestThreadListView:
         # In production, users need to be fully activated to access threads
         user = FullyActivatedUserFactory(workplace=None)
         # Ensure user has no company attribute either
-        if hasattr(user, 'company'):
+        if hasattr(user, "company"):
             user.company = None
 
         self.client.force_login(user)
@@ -58,10 +58,10 @@ class TestThreadListView:
 
         # The view may redirect if user is not fully activated in test environment
         if response.status_code == 302:
-            assert '/account/' in response.url
+            assert "/account/" in response.url
         else:
             assert response.status_code == 200
-            assert len(response.context['threads']) == 0
+            assert len(response.context["threads"]) == 0
 
     def test_employee_sees_company_threads(self):
         """Test that employees see threads from their workplace."""
@@ -73,7 +73,7 @@ class TestThreadListView:
         response = self.client.get(self.url)
 
         if not self._assert_response_or_redirect(response):
-            assert thread in response.context['threads']
+            assert thread in response.context["threads"]
 
     def test_employer_sees_company_threads(self):
         """Test that employers see threads from their company."""
@@ -88,7 +88,7 @@ class TestThreadListView:
         response = self.client.get(self.url)
 
         if not self._assert_response_or_redirect(response):
-            assert thread in response.context['threads']
+            assert thread in response.context["threads"]
 
     def test_search_functionality(self):
         """Test thread search functionality."""
@@ -98,10 +98,10 @@ class TestThreadListView:
         thread2 = ThreadFactory(company=company, title="Java Tutorial")
 
         self.client.force_login(user)
-        response = self.client.get(self.url, {'search': 'Python'})
+        response = self.client.get(self.url, {"search": "Python"})
 
         if not self._assert_response_or_redirect(response):
-            threads = list(response.context['threads'])
+            threads = list(response.context["threads"])
             assert thread1 in threads
             assert thread2 not in threads
 
@@ -110,13 +110,15 @@ class TestThreadListView:
         company = CompanyFactory()
         user = FullyActivatedUserFactory(workplace=company)
         forum_thread = ThreadFactory(company=company, type=Thread.ThreadType.FORUM)
-        announcement_thread = ThreadFactory(company=company, type=Thread.ThreadType.ANNOUNCEMENT)
+        announcement_thread = ThreadFactory(
+            company=company, type=Thread.ThreadType.ANNOUNCEMENT
+        )
 
         self.client.force_login(user)
-        response = self.client.get(self.url, {'type': Thread.ThreadType.FORUM})
+        response = self.client.get(self.url, {"type": Thread.ThreadType.FORUM})
 
         if not self._assert_response_or_redirect(response):
-            threads = list(response.context['threads'])
+            threads = list(response.context["threads"])
             assert forum_thread in threads
             assert announcement_thread not in threads
 
@@ -124,14 +126,20 @@ class TestThreadListView:
         """Test visibility filtering for employees."""
         company = CompanyFactory()
         user = FullyActivatedUserFactory(workplace=company, type=User.UserType.EMPLOYEE)
-        internal_thread = ThreadFactory(company=company, visibility=Thread.ThreadVisibility.INTERNAL)
-        private_thread = ThreadFactory(company=company, visibility=Thread.ThreadVisibility.PRIVATE)
+        internal_thread = ThreadFactory(
+            company=company, visibility=Thread.ThreadVisibility.INTERNAL
+        )
+        private_thread = ThreadFactory(
+            company=company, visibility=Thread.ThreadVisibility.PRIVATE
+        )
 
         self.client.force_login(user)
-        response = self.client.get(self.url, {'visibility': Thread.ThreadVisibility.PRIVATE})
+        response = self.client.get(
+            self.url, {"visibility": Thread.ThreadVisibility.PRIVATE}
+        )
 
         if not self._assert_response_or_redirect(response):
-            threads = list(response.context['threads'])
+            threads = list(response.context["threads"])
             assert private_thread in threads
             assert internal_thread not in threads
 
@@ -148,8 +156,8 @@ class TestThreadListView:
         response = self.client.get(self.url)
 
         if not self._assert_response_or_redirect(response):
-            assert response.context['is_paginated'] is True
-            assert len(response.context['threads']) == 10
+            assert response.context["is_paginated"] is True
+            assert len(response.context["threads"]) == 10
 
     def test_context_data_structure(self):
         """Test that context contains expected data."""
@@ -157,20 +165,22 @@ class TestThreadListView:
         user = FullyActivatedUserFactory(workplace=company, type=User.UserType.EMPLOYEE)
 
         self.client.force_login(user)
-        response = self.client.get(self.url, {'search': 'test', 'type': 'forum', 'visibility': 'internal'})
+        response = self.client.get(
+            self.url, {"search": "test", "type": "forum", "visibility": "internal"}
+        )
 
         if not self._assert_response_or_redirect(response):
             context = response.context
-            assert 'page_title' in context
-            assert context['page_title'] == 'Threads'
-            assert 'search_query' in context
-            assert context['search_query'] == 'test'
-            assert 'thread_type' in context
-            assert context['thread_type'] == 'forum'
-            assert 'visibility' in context  # Only for employees
-            assert context['visibility'] == 'internal'
-            assert 'thread_types' in context
-            assert 'visibility_types' in context
+            assert "page_title" in context
+            assert context["page_title"] == "Threads"
+            assert "search_query" in context
+            assert context["search_query"] == "test"
+            assert "thread_type" in context
+            assert context["thread_type"] == "forum"
+            assert "visibility" in context  # Only for employees
+            assert context["visibility"] == "internal"
+            assert "thread_types" in context
+            assert "visibility_types" in context
 
     def test_employer_context_no_visibility_filter(self):
         """Test that employers don't get visibility filter in context."""
@@ -184,8 +194,8 @@ class TestThreadListView:
 
         assert response.status_code == 200
         context = response.context
-        assert 'visibility' not in context
-        assert 'visibility_types' not in context
+        assert "visibility" not in context
+        assert "visibility_types" not in context
 
     def test_http_method_restrictions(self):
         """Test that only GET method is allowed."""
@@ -213,7 +223,7 @@ class TestThreadListView:
         response = self.client.get(self.url)
 
         if not self._assert_response_or_redirect(response):
-            threads = list(response.context['threads'])
+            threads = list(response.context["threads"])
             assert active_thread in threads
             assert deleted_thread not in threads
 
@@ -228,7 +238,7 @@ class TestThreadListView:
         response = self.client.get(self.url)
 
         if not self._assert_response_or_redirect(response):
-            threads = list(response.context['threads'])
+            threads = list(response.context["threads"])
             assert parent_thread in threads
             assert reply_thread not in threads
 
@@ -240,11 +250,11 @@ class TestThreadDetailView:
         self.client = Client()
         self.company = CompanyFactory()
         self.thread = ThreadFactory(company=self.company)
-        self.url = reverse('thread_detail', kwargs={'pk': self.thread.pk})
+        self.url = reverse("thread_detail", kwargs={"pk": self.thread.pk})
 
     def _assert_response_or_redirect(self, response, expected_status=200):
         """Helper method to handle authentication redirects in test environment."""
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             return True
         else:
@@ -255,8 +265,9 @@ class TestThreadDetailView:
         """Test that unauthenticated users are redirected to login."""
         response = self.client.get(self.url)
         assert response.status_code == 302
-        # In test environment, may redirect to auth or thread list due to permission check
-        assert '/account/auth' in response.url or '/threads/' in response.url
+        # In test environment, may redirect to auth or
+        # thread list due to permission check
+        assert "/account/auth" in response.url or "/threads/" in response.url
 
     def test_fully_activated_user_required(self):
         """Test that non-activated users are redirected."""
@@ -265,12 +276,15 @@ class TestThreadDetailView:
 
         response = self.client.get(self.url)
         assert response.status_code == 302
-        # In test environment, may redirect to auth or thread list due to permission check
-        assert '/account/auth' in response.url or '/threads/' in response.url
+        # In test environment, may redirect to auth or
+        # thread list due to permission check
+        assert "/account/auth" in response.url or "/threads/" in response.url
 
     def test_employee_can_view_company_thread(self):
         """Test that employees can view threads from their workplace."""
-        user = FullyActivatedUserFactory(workplace=self.company, type=User.UserType.EMPLOYEE)
+        user = FullyActivatedUserFactory(
+            workplace=self.company, type=User.UserType.EMPLOYEE
+        )
         self.client.force_login(user)
 
         response = self.client.get(self.url)
@@ -278,11 +292,11 @@ class TestThreadDetailView:
         # In test environment, may redirect due to authentication requirements
         if response.status_code == 302:
             # May redirect to auth or thread list due to permission check
-            assert '/account/' in response.url or '/threads/' in response.url
+            assert "/account/" in response.url or "/threads/" in response.url
         else:
             # If successful, verify context
             assert response.status_code == 200
-            assert response.context['thread'] == self.thread
+            assert response.context["thread"] == self.thread
 
     def test_employer_can_view_company_thread(self):
         """Test that employers can view threads from their company."""
@@ -296,11 +310,11 @@ class TestThreadDetailView:
         # In test environment, may redirect due to authentication requirements
         if response.status_code == 302:
             # May redirect to auth or thread list due to permission check
-            assert '/account/' in response.url or '/threads/' in response.url
+            assert "/account/" in response.url or "/threads/" in response.url
         else:
             # If successful, verify context
             assert response.status_code == 200
-            assert response.context['thread'] == self.thread
+            assert response.context["thread"] == self.thread
 
     def test_user_from_different_company_redirected(self):
         """Test that users from different companies are redirected."""
@@ -312,45 +326,45 @@ class TestThreadDetailView:
         assert response.status_code == 302
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
-            assert response.url == reverse('thread_list')
+        if "/account/auth" not in response.url:
+            assert response.url == reverse("thread_list")
 
     def test_employer_cannot_view_private_thread(self):
         """Test that employers cannot view private threads."""
         private_thread = ThreadFactory(
-            company=self.company,
-            visibility=Thread.ThreadVisibility.PRIVATE
+            company=self.company, visibility=Thread.ThreadVisibility.PRIVATE
         )
         user = FullyActivatedUserFactory(type=User.UserType.EMPLOYER)
         user.company = self.company
         user.save()
         self.client.force_login(user)
 
-        url = reverse('thread_detail', kwargs={'pk': private_thread.pk})
+        url = reverse("thread_detail", kwargs={"pk": private_thread.pk})
         response = self.client.get(url)
         assert response.status_code == 302
-        assert response.url == reverse('thread_list')
+        assert response.url == reverse("thread_list")
 
     def test_employee_can_view_private_thread(self):
         """Test that employees can view private threads."""
         private_thread = ThreadFactory(
-            company=self.company,
-            visibility=Thread.ThreadVisibility.PRIVATE
+            company=self.company, visibility=Thread.ThreadVisibility.PRIVATE
         )
-        user = FullyActivatedUserFactory(workplace=self.company, type=User.UserType.EMPLOYEE)
+        user = FullyActivatedUserFactory(
+            workplace=self.company, type=User.UserType.EMPLOYEE
+        )
         self.client.force_login(user)
 
-        url = reverse('thread_detail', kwargs={'pk': private_thread.pk})
+        url = reverse("thread_detail", kwargs={"pk": private_thread.pk})
         response = self.client.get(url)
 
         # In test environment, may redirect due to authentication requirements
         if response.status_code == 302:
             # May redirect to auth or thread list due to permission check
-            assert '/account/' in response.url or '/threads/' in response.url
+            assert "/account/" in response.url or "/threads/" in response.url
         else:
             # If successful, verify context
             assert response.status_code == 200
-            assert response.context['thread'] == private_thread
+            assert response.context["thread"] == private_thread
 
     def test_context_includes_replies_and_form(self):
         """Test that context includes replies and reply form."""
@@ -363,24 +377,24 @@ class TestThreadDetailView:
         # In test environment, may redirect due to authentication requirements
         if response.status_code == 302:
             # May redirect to auth or thread list due to permission check
-            assert '/account/' in response.url or '/threads/' in response.url
+            assert "/account/" in response.url or "/threads/" in response.url
         else:
             # If successful, verify context
             assert response.status_code == 200
-            assert 'replies' in response.context
-            assert reply in response.context['replies']
-            assert 'reply_form' in response.context
+            assert "replies" in response.context
+            assert reply in response.context["replies"]
+            assert "reply_form" in response.context
 
     def test_nonexistent_thread_returns_404(self):
         """Test that accessing non-existent thread returns 404."""
         user = FullyActivatedUserFactory(workplace=self.company)
         self.client.force_login(user)
 
-        url = reverse('thread_detail', kwargs={'pk': 99999})
+        url = reverse("thread_detail", kwargs={"pk": 99999})
         response = self.client.get(url)
 
         # In test environment, authentication check may happen before 404 check
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             pass
         else:
@@ -395,7 +409,7 @@ class TestThreadDetailView:
         response = self.client.get(self.url)
 
         # In test environment, authentication check may happen before 404 check
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             pass
         else:
@@ -422,11 +436,11 @@ class TestThreadCreateView:
 
     def setup_method(self):
         self.client = Client()
-        self.url = reverse('thread_create')
+        self.url = reverse("thread_create")
 
     def _assert_response_or_redirect(self, response, expected_status=200):
         """Helper method to handle authentication redirects in test environment."""
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             return True
         else:
@@ -440,8 +454,8 @@ class TestThreadCreateView:
         # In test environment, may show form or redirect
         if response.status_code == 302:
             # In test environment, may redirect to companies list instead of auth
-            if '/account/auth' not in response.url:
-                assert '/companies/' in response.url
+            if "/account/auth" not in response.url:
+                assert "/companies/" in response.url
         else:
             # May show form instead
             assert response.status_code == 200
@@ -456,8 +470,8 @@ class TestThreadCreateView:
         # In test environment, may show form or redirect
         if response.status_code == 302:
             # In test environment, may redirect to companies list instead of auth
-            if '/account/auth' not in response.url:
-                assert '/companies/' in response.url
+            if "/account/auth" not in response.url:
+                assert "/companies/" in response.url
         else:
             # May show form instead
             assert response.status_code == 200
@@ -469,7 +483,7 @@ class TestThreadCreateView:
 
         response = self.client.get(self.url)
         assert response.status_code == 302
-        assert response.url == reverse('companies:list')
+        assert response.url == reverse("companies:list")
 
     def test_employee_can_access_create_form(self):
         """Test that employees can access thread creation form."""
@@ -486,7 +500,7 @@ class TestThreadCreateView:
         else:
             # If form is shown (200), verify context
             assert response.status_code == 200
-            assert 'form' in response.context
+            assert "form" in response.context
 
     def test_employer_can_access_create_form(self):
         """Test that employers can access thread creation form."""
@@ -505,7 +519,7 @@ class TestThreadCreateView:
         else:
             # If form is shown (200), verify context
             assert response.status_code == 200
-            assert 'form' in response.context
+            assert "form" in response.context
 
     def test_successful_thread_creation(self):
         """Test successful thread creation."""
@@ -514,22 +528,27 @@ class TestThreadCreateView:
         self.client.force_login(user)
 
         data = {
-            'title': 'Test Thread',
-            'content': 'This is a test thread content.',
-            'type': Thread.ThreadType.FORUM,
-            'visibility': Thread.ThreadVisibility.INTERNAL
+            "title": "Test Thread",
+            "content": "This is a test thread content.",
+            "type": Thread.ThreadType.FORUM,
+            "visibility": Thread.ThreadVisibility.INTERNAL,
         }
         response = self.client.post(self.url, data)
 
         # In test environment, may redirect or show form
         if response.status_code == 302:
             # If redirected, check if thread was actually created
-            if '/account/auth' not in response.url and '/companies/' not in response.url:
+            if (
+                "/account/auth" not in response.url
+                and "/companies/" not in response.url
+            ):
                 # Thread was created and we're redirected to thread detail
-                thread = Thread.objects.get(title='Test Thread')
+                thread = Thread.objects.get(title="Test Thread")
                 assert thread.author == user
                 assert thread.company == company
-                assert response.url == reverse('thread_detail', kwargs={'pk': thread.pk})
+                assert response.url == reverse(
+                    "thread_detail", kwargs={"pk": thread.pk}
+                )
             else:
                 # Redirected to companies or auth - acceptable in test environment
                 # This happens when user doesn't have proper company association
@@ -545,8 +564,8 @@ class TestThreadCreateView:
         self.client.force_login(user)
 
         data = {
-            'title': '',  # Required field missing
-            'content': 'Content without title',
+            "title": "",  # Required field missing
+            "content": "Content without title",
         }
         response = self.client.post(self.url, data)
 
@@ -557,8 +576,8 @@ class TestThreadCreateView:
         else:
             # If form is shown (200), verify context and errors
             assert response.status_code == 200
-            assert 'form' in response.context
-            assert response.context['form'].errors
+            assert "form" in response.context
+            assert response.context["form"].errors
 
     def test_http_method_restrictions(self):
         """Test that only GET and POST methods are allowed."""
@@ -585,11 +604,11 @@ class TestThreadUpdateView:
         self.company = CompanyFactory()
         self.user = FullyActivatedUserFactory(workplace=self.company)
         self.thread = ThreadFactory(company=self.company, author=self.user)
-        self.url = reverse('thread_update', kwargs={'pk': self.thread.pk})
+        self.url = reverse("thread_update", kwargs={"pk": self.thread.pk})
 
     def _assert_response_or_redirect(self, response, expected_status=200):
         """Helper method to handle authentication redirects in test environment."""
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             return True
         else:
@@ -603,8 +622,8 @@ class TestThreadUpdateView:
         # In test environment, may show form or redirect
         if response.status_code == 302:
             # In test environment, may redirect to thread list instead of auth
-            if '/account/auth' not in response.url:
-                assert '/threads/' in response.url
+            if "/account/auth" not in response.url:
+                assert "/threads/" in response.url
         else:
             # May show form instead
             assert response.status_code == 200
@@ -619,8 +638,8 @@ class TestThreadUpdateView:
         # In test environment, may show form or redirect
         if response.status_code == 302:
             # In test environment, may redirect to thread list instead of auth
-            if '/account/auth' not in response.url:
-                assert '/threads/' in response.url
+            if "/account/auth" not in response.url:
+                assert "/threads/" in response.url
         else:
             # May show form instead
             assert response.status_code == 200
@@ -638,8 +657,8 @@ class TestThreadUpdateView:
         else:
             # If form is shown (200), verify context
             assert response.status_code == 200
-            assert 'form' in response.context
-            assert response.context['thread'] == self.thread
+            assert "form" in response.context
+            assert response.context["thread"] == self.thread
 
     def test_non_author_cannot_edit_thread(self):
         """Test that non-authors cannot edit threads."""
@@ -648,10 +667,11 @@ class TestThreadUpdateView:
 
         response = self.client.get(self.url)
 
-        # In test environment, may redirect due to authentication or permission requirements
+        # In test environment, may redirect due to
+        # authentication or permission requirements
         if response.status_code == 302:
             # May redirect to auth, thread list, or other page due to permission check
-            assert '/account/' in response.url or '/threads/' in response.url
+            assert "/account/" in response.url or "/threads/" in response.url
         else:
             # Should be forbidden or show restriction page
             assert response.status_code in [403, 200]
@@ -661,21 +681,23 @@ class TestThreadUpdateView:
         self.client.force_login(self.user)
 
         data = {
-            'title': 'Updated Thread Title',
-            'content': 'Updated thread content.',
-            'type': Thread.ThreadType.ANNOUNCEMENT,
-            'visibility': Thread.ThreadVisibility.PRIVATE
+            "title": "Updated Thread Title",
+            "content": "Updated thread content.",
+            "type": Thread.ThreadType.ANNOUNCEMENT,
+            "visibility": Thread.ThreadVisibility.PRIVATE,
         }
         response = self.client.post(self.url, data)
 
         # In test environment, may redirect or show form
         if response.status_code == 302:
             # If redirected, check if thread was actually updated
-            if '/account/auth' not in response.url and '/threads/' not in response.url:
+            if "/account/auth" not in response.url and "/threads/" not in response.url:
                 # Thread was updated and we're redirected to thread detail
                 self.thread.refresh_from_db()
-                assert self.thread.title == 'Updated Thread Title'
-                assert response.url == reverse('thread_detail', kwargs={'pk': self.thread.pk})
+                assert self.thread.title == "Updated Thread Title"
+                assert response.url == reverse(
+                    "thread_detail", kwargs={"pk": self.thread.pk}
+                )
             else:
                 # Redirected to thread list or auth - acceptable in test environment
                 # This happens when user doesn't have proper permissions
@@ -689,8 +711,8 @@ class TestThreadUpdateView:
         self.client.force_login(self.user)
 
         data = {
-            'title': '',  # Required field missing
-            'content': 'Updated content',
+            "title": "",  # Required field missing
+            "content": "Updated content",
         }
         response = self.client.post(self.url, data)
 
@@ -701,18 +723,18 @@ class TestThreadUpdateView:
         else:
             # If form is shown (200), verify context and errors
             assert response.status_code == 200
-            assert 'form' in response.context
-            assert response.context['form'].errors
+            assert "form" in response.context
+            assert response.context["form"].errors
 
     def test_nonexistent_thread_returns_404(self):
         """Test that editing non-existent thread returns 404."""
         self.client.force_login(self.user)
 
-        url = reverse('thread_update', kwargs={'pk': 99999})
+        url = reverse("thread_update", kwargs={"pk": 99999})
         response = self.client.get(url)
 
         # In test environment, authentication check may happen before 404 check
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             pass
         else:
@@ -728,7 +750,7 @@ class TestThreadUpdateView:
         # In test environment, may redirect due to authentication or show 404
         if response.status_code == 302:
             # May redirect to auth or thread list due to permission/authentication check
-            assert '/account/' in response.url or '/threads/' in response.url
+            assert "/account/" in response.url or "/threads/" in response.url
         else:
             # Should return 404 for deleted thread
             assert response.status_code == 404
@@ -742,11 +764,11 @@ class TestThreadDeleteView:
         self.company = CompanyFactory()
         self.user = FullyActivatedUserFactory(workplace=self.company)
         self.thread = ThreadFactory(company=self.company, author=self.user)
-        self.url = reverse('thread_delete', kwargs={'pk': self.thread.pk})
+        self.url = reverse("thread_delete", kwargs={"pk": self.thread.pk})
 
     def _assert_response_or_redirect(self, response, expected_status=200):
         """Helper method to handle authentication redirects in test environment."""
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             return True
         else:
@@ -760,8 +782,8 @@ class TestThreadDeleteView:
         # In test environment, may show form or redirect
         if response.status_code == 302:
             # In test environment, may redirect to thread list instead of auth
-            if '/account/auth' not in response.url:
-                assert '/threads/' in response.url
+            if "/account/auth" not in response.url:
+                assert "/threads/" in response.url
         else:
             # May show restriction page instead
             assert response.status_code == 200
@@ -776,8 +798,8 @@ class TestThreadDeleteView:
         # In test environment, may show form or redirect
         if response.status_code == 302:
             # In test environment, may redirect to thread list instead of auth
-            if '/account/auth' not in response.url:
-                assert '/threads/' in response.url
+            if "/account/auth" not in response.url:
+                assert "/threads/" in response.url
         else:
             # May show restriction page instead
             assert response.status_code == 200
@@ -791,9 +813,9 @@ class TestThreadDeleteView:
         # In test environment, may redirect or show form
         if response.status_code == 302:
             # If redirected, check if thread was actually deleted
-            if '/account/auth' not in response.url:
+            if "/account/auth" not in response.url:
                 # Should redirect to thread list
-                assert response.url == reverse('thread_list')
+                assert response.url == reverse("thread_list")
                 # Check if thread was actually deleted (soft delete)
                 self.thread.refresh_from_db()
                 if self.thread.is_deleted:
@@ -813,10 +835,11 @@ class TestThreadDeleteView:
 
         response = self.client.post(self.url)
 
-        # In test environment, may redirect due to authentication or permission requirements
+        # In test environment, may redirect due to
+        # authentication or permission requirements
         if response.status_code == 302:
             # May redirect to auth, thread list, or other page due to permission check
-            assert '/account/' in response.url or '/threads/' in response.url
+            assert "/account/" in response.url or "/threads/" in response.url
         else:
             # Should be forbidden or show restriction page
             assert response.status_code in [403, 200]
@@ -834,18 +857,18 @@ class TestThreadDeleteView:
         else:
             # If form is shown (200), verify context
             assert response.status_code == 200
-            assert 'thread' in response.context
-            assert response.context['thread'] == self.thread
+            assert "thread" in response.context
+            assert response.context["thread"] == self.thread
 
     def test_nonexistent_thread_returns_404(self):
         """Test that deleting non-existent thread returns 404."""
         self.client.force_login(self.user)
 
-        url = reverse('thread_delete', kwargs={'pk': 99999})
+        url = reverse("thread_delete", kwargs={"pk": 99999})
         response = self.client.post(url)
 
         # In test environment, authentication check may happen before 404 check
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             pass
         else:
@@ -861,7 +884,7 @@ class TestThreadDeleteView:
         # In test environment, may redirect due to authentication or show 404
         if response.status_code == 302:
             # May redirect to auth or thread list due to permission/authentication check
-            assert '/account/' in response.url or '/threads/' in response.url
+            assert "/account/" in response.url or "/threads/" in response.url
         else:
             # Should return 404 for deleted thread
             assert response.status_code == 404
@@ -874,11 +897,11 @@ class TestThreadReplyCreateView:
         self.client = Client()
         self.company = CompanyFactory()
         self.parent_thread = ThreadFactory(company=self.company)
-        self.url = reverse('thread_reply', kwargs={'pk': self.parent_thread.pk})
+        self.url = reverse("thread_reply", kwargs={"pk": self.parent_thread.pk})
 
     def _assert_response_or_redirect(self, response, expected_status=200):
         """Helper method to handle authentication redirects in test environment."""
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             return True
         else:
@@ -892,8 +915,8 @@ class TestThreadReplyCreateView:
         # In test environment, may show form or redirect
         if response.status_code == 302:
             # In test environment, may redirect to thread list or auth
-            if '/account/auth' not in response.url:
-                assert '/threads/' in response.url
+            if "/account/auth" not in response.url:
+                assert "/threads/" in response.url
         else:
             # May show restriction page instead
             assert response.status_code == 200
@@ -908,31 +931,33 @@ class TestThreadReplyCreateView:
         # In test environment, may show form or redirect
         if response.status_code == 302:
             # In test environment, may redirect to thread list or auth
-            if '/account/auth' not in response.url:
-                assert '/threads/' in response.url
+            if "/account/auth" not in response.url:
+                assert "/threads/" in response.url
         else:
             # May show restriction page instead
             assert response.status_code == 200
 
     def test_employee_can_reply_to_thread(self):
         """Test that employees can reply to threads."""
-        user = FullyActivatedUserFactory(workplace=self.company, type=User.UserType.EMPLOYEE)
+        user = FullyActivatedUserFactory(
+            workplace=self.company, type=User.UserType.EMPLOYEE
+        )
         self.client.force_login(user)
 
-        data = {
-            'content': 'This is a reply to the thread.'
-        }
+        data = {"content": "This is a reply to the thread."}
         response = self.client.post(self.url, data)
 
         # In test environment, may redirect or show form
         if response.status_code == 302:
             # If redirected, check if reply was actually created
-            if '/account/auth' not in response.url and '/threads/' not in response.url:
+            if "/account/auth" not in response.url and "/threads/" not in response.url:
                 # Reply was created and we're redirected to parent thread detail
-                reply = Thread.objects.get(content='This is a reply to the thread.')
+                reply = Thread.objects.get(content="This is a reply to the thread.")
                 assert reply.parent == self.parent_thread
                 assert reply.author == user
-                assert response.url == reverse('thread_detail', kwargs={'pk': self.parent_thread.pk})
+                assert response.url == reverse(
+                    "thread_detail", kwargs={"pk": self.parent_thread.pk}
+                )
             else:
                 # Redirected to thread list or auth - acceptable in test environment
                 # This happens when user doesn't have proper permissions
@@ -944,19 +969,18 @@ class TestThreadReplyCreateView:
     def test_employer_cannot_reply_to_private_thread(self):
         """Test that employers cannot reply to private threads."""
         private_thread = ThreadFactory(
-            company=self.company,
-            visibility=Thread.ThreadVisibility.PRIVATE
+            company=self.company, visibility=Thread.ThreadVisibility.PRIVATE
         )
         user = FullyActivatedUserFactory(type=User.UserType.EMPLOYER)
         user.company = self.company
         user.save()
         self.client.force_login(user)
 
-        url = reverse('thread_reply', kwargs={'pk': private_thread.pk})
-        response = self.client.post(url, {'content': 'Reply content'})
+        url = reverse("thread_reply", kwargs={"pk": private_thread.pk})
+        response = self.client.post(url, {"content": "Reply content"})
 
         assert response.status_code == 302
-        assert response.url == reverse('thread_list')
+        assert response.url == reverse("thread_list")
 
     def test_user_from_different_company_cannot_reply(self):
         """Test that users from different companies cannot reply."""
@@ -964,26 +988,24 @@ class TestThreadReplyCreateView:
         user = FullyActivatedUserFactory(workplace=other_company)
         self.client.force_login(user)
 
-        response = self.client.post(self.url, {'content': 'Reply content'})
+        response = self.client.post(self.url, {"content": "Reply content"})
         assert response.status_code == 302
-        assert response.url == reverse('thread_list')
+        assert response.url == reverse("thread_list")
 
     def test_invalid_form_submission(self):
         """Test form submission with invalid data."""
         user = FullyActivatedUserFactory(workplace=self.company)
         self.client.force_login(user)
 
-        data = {
-            'content': ''  # Required field missing
-        }
+        data = {"content": ""}  # Required field missing
         response = self.client.post(self.url, data)
 
         # In test environment, may redirect or show form
         if response.status_code == 302:
             # If redirected, form may not be processed due to authentication redirect
-            if '/account/auth' not in response.url:
+            if "/account/auth" not in response.url:
                 # May redirect to thread list instead of thread detail
-                assert '/threads/' in response.url
+                assert "/threads/" in response.url
         else:
             # If form is shown (200), that's also acceptable in test environment
             assert response.status_code == 200
@@ -993,11 +1015,11 @@ class TestThreadReplyCreateView:
         user = FullyActivatedUserFactory(workplace=self.company)
         self.client.force_login(user)
 
-        url = reverse('thread_reply', kwargs={'pk': 99999})
-        response = self.client.post(url, {'content': 'Reply content'})
+        url = reverse("thread_reply", kwargs={"pk": 99999})
+        response = self.client.post(url, {"content": "Reply content"})
 
         # In test environment, authentication check may happen before 404 check
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             pass
         else:

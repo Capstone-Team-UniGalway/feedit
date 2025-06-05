@@ -90,87 +90,151 @@
                     <button class="btn btn-sm btn-neutral" onclick="document.getElementById('share_modal').showModal()">
                         <i class="fas fa-share-alt mr-1"></i> Share Profile
                     </button>
+                    <a href="{% url 'companies:company_directory' pk=company.id %}">
+                        <i class="fas fa-users"></i> Employees
+                    </a>
                 </div>
             </div>
         </div>
 
         <!-- Reviews Section -->
-        <div class="mb-8">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-bold">Reviews</h3>
-                <button class="btn btn-outline btn-sm">Sort by</button>
-            </div>
-
-            {% if reviews %}
-            {% for review in reviews %}
-            <div class="card bg-base-100 shadow-sm mb-6">
-                <div class="card-body space-y-2">
-                    <div class="flex items-center gap-3">
-                        <div class="text-lg font-bold">{{ forloop.counter }}</div>
-                        <div>
-                            <h3 class="font-semibold">{{ review.get_display_name }}</h3>
-                            <p class="text-sm text-gray-400">📅 {{ review.created_at|timesince }} ago</p>
-                        </div>
-                        <div class="ml-auto text-yellow-400 text-sm">
-                            {% for i in "12345" %}
-                            {% if review.rating|floatformat:1 >= forloop.counter %}
-                            ★
-                            {% else %}
-                            ☆
-                            {% endif %}
-                            {% endfor %}
-                            ({{ review.rating|floatformat:1 }})
-                        </div>
+        <div class="card bg-base-100 shadow-md">
+            <div class="card-body">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="card-title text-2xl">
+                        <i class="fas fa-star text-yellow-400 mr-2"></i>
+                        Company Reviews
+                    </h2>
+                    {% if unreplied_count > 0 %}
+                    <div class="badge badge-warning">
+                        {{ unreplied_count }} pending replies
                     </div>
-                    <p class="text-sm text-gray-600">{{ review.content }}</p>
-                    {% if user.is_authenticated and user == company.employer and not review.replies.exists %}
-                    <a href="{% url 'reviews:create_review_reply' review.id %}" class="btn btn-sm btn-outline self-end">
-                        <i class="fas fa-reply mr-1"></i> Reply
-                    </a>
                     {% endif %}
                 </div>
-                {% if review.replies.exists %}
-                <div class="mt-4 border-t pt-3 text-sm space-y-2">
-                    <p class="font-medium text-primary">Employer Response:</p>
-                    {% for reply in review.replies.all %}
-                    <div class="bg-gray-50 p-3 rounded">
-                        <p class="text-gray-700">{{ reply.content }}</p>
-                        <p class="text-xs text-gray-400 mt-1">{{ reply.created_at|date:"M d, Y" }}</p>
+
+                {% if reviews %}
+                <div class="space-y-6">
+                    {% for review in reviews %}
+                    <div class="card bg-base-50 border border-base-200">
+                        <div class="card-body">
+                            <!-- Review Header -->
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden">
+                                        {% if review.is_anonymous or not review.user %}
+                                        <div
+                                            class="bg-primary text-primary-content w-10 h-10 flex items-center justify-center text-lg font-bold">
+                                            ?
+                                        </div>
+                                        {% elif review.user.profile_picture %}
+                                        <img alt="{{ review.user.get_full_name }}"
+                                            src="{{ review.user.profile_picture }}" />
+                                        {% else %}
+                                        <div
+                                            class="bg-primary text-primary-content w-10 h-10 flex items-center justify-center text-lg font-bold">
+                                            {{ review.user.get_initials|default:review.user.email.0|upper }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-lg">{{ review.get_display_name }}</h3>
+                                        <p class="text-sm text-gray-500">
+                                            <i class="fas fa-calendar mr-1"></i>
+                                            {{ review.created_at|date:"M d, Y" }}
+                                            ({{ review.created_at|timesince }} ago)
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-yellow-400 text-lg mb-1">
+                                        {% for i in "12345" %}
+                                        {% if review.rating >= forloop.counter %}
+                                        ★
+                                        {% elif review.rating >= forloop.counter|add:"-0.5" %}
+                                        ☆
+                                        {% else %}
+                                        ☆
+                                        {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <div class="text-sm text-gray-500">{{ review.rating }}/5.0</div>
+                                </div>
+                            </div>
+
+                            <!-- Review Content -->
+                            <div class="mb-4">
+                                <p class="text-gray-700 leading-relaxed">{{ review.content }}</p>
+                            </div>
+
+                            <!-- Reply Section -->
+                            {% if review.replies.exists %}
+                            <div class="border-t pt-4">
+                                <div class="bg-blue-50 p-4 rounded-lg">
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-reply text-primary mr-2"></i>
+                                        <span class="font-medium text-primary">Your Response</span>
+                                        <span class="text-xs text-gray-500 ml-auto">
+                                            {{ review.replies.first.created_at|date:"M d, Y" }}
+                                        </span>
+                                    </div>
+                                    <p class="text-gray-700">{{ review.replies.first.content }}</p>
+                                </div>
+                            </div>
+                            {% elif user == company.employer %}
+                            <div class="border-t pt-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-warning">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        This review needs a response
+                                    </span>
+                                    <a href="{% url 'reviews:create_review_reply' review.id %}"
+                                        class="btn btn-primary btn-sm">
+                                        <i class="fas fa-reply mr-2"></i> Reply to Review
+                                    </a>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
-                {% endif %}
-            </div>
-            {% endfor %}
 
-            {% if is_paginated %}
-            <div class="join mt-6 justify-center flex">
-                {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn">« Prev</a>
+                {% if is_paginated %}
+                <div class="flex justify-center mt-8">
+                    <div class="join">
+                        {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn">
+                            <i class="fas fa-chevron-left mr-1"></i> Previous
+                        </a>
+                        {% endif %}
+                        <button class="join-item btn btn-active">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        </button>
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" class="join-item btn">
+                            Next <i class="fas fa-chevron-right ml-1"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
                 {% endif %}
-                <button class="join-item btn btn-disabled">
-                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-                </button>
-                {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}" class="join-item btn">Next »</a>
-                {% endif %}
-            </div>
-            {% endif %}
-            {% else %}
-            <p class="text-sm text-gray-500">No reviews yet for this company.</p>
-            {% endif %}
-
-            {% if not has_reviewed %}
-            <!-- Write Review -->
-            <div class="mt-12">
-                <h2 class="text-2xl font-semibold mb-4">Write a review</h2>
-                <div class="flex justify-center">
+                {% else %}
+                <!-- No Reviews State -->
+                <div class="text-center py-12">
+                    <div class="text-6xl text-gray-300 mb-4">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">No Reviews Yet</h3>
+                    <p class="text-gray-500 mb-6">
+                        This company hasn't received any reviews yet. Be the first to write one!
+                    </p>
                     <a href="{% url 'reviews:create_review' company.id %}" class="btn btn-primary">
                         <i class="fas fa-star mr-2"></i> Write a Review
                     </a>
                 </div>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
     </section>
 

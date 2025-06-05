@@ -39,14 +39,9 @@ urlpatterns = [
         name="privacy",
     ),
     path(
-        "report_bug/",
+        "report-bug/",
         TemplateView.as_view(template_name="pages/report_bug.html"),
         name="report_bug",
-    ),
-    path(
-        "secure_file_demo/",
-        TemplateView.as_view(template_name="pages/secure_file_demo.html"),
-        name="secure_file_demo",
     ),
     path("account/", include("accounts.urls")),
     path("threads/", include("threads.urls")),

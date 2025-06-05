@@ -1,4 +1,4 @@
-<footer class="footer-center footer footer-horizontal bg-neutral-800 p-10 text-neutral-content">
+<footer class="footer-center footer footer-horizontal bg-neutral p-10 text-neutral-content">
     <form>
         <h6 class="footer-title">Subscribe to our Newsletter</h6>
         <fieldset class="w-80">
@@ -10,12 +10,14 @@
         </fieldset>
     </form>
 </footer>
-<footer class="footer items-center bg-neutral-800 p-4 text-neutral-content sm:footer-horizontal">
+<footer class="footer items-center bg-neutral p-4 text-neutral-content sm:footer-horizontal">
     <aside class="grid-flow-col items-center">
         <i class="fas fa-comments text-primary-content text-xl mr-1"></i>
         <p>Copyright © {% now "Y" %} - All right reserved</p>
     </aside>
     <nav class="grid-flow-col gap-4 md:place-self-center md:justify-self-end">
+        <a href="{% url 'privacy' %}" class="link link-hover">Privacy</a>
+        <a href="{% url 'report_bug' %}" class="link link-hover">Report a Bug</a>
         <a>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current">
                 <path

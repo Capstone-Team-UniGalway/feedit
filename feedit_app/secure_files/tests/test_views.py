@@ -21,8 +21,6 @@ class TestSecureFileUploadView:
         assert response.status_code == 302  # Redirects to login page
 
 
-
-
 class TestSecureFileDeleteView:
     def test_delete_file_requires_login(self, client):
         file = SecureFileFactory()
@@ -33,12 +31,11 @@ class TestSecureFileDeleteView:
         assert response.status_code == 302  # Redirects to login page
 
 
-
-
 class TestSecureFileDownloadView:
     def test_download_file_requires_login(self, client):
         # Create a file attached to a request (not user/company) which requires login
         from company_requests.tests.factories import RequestFactory
+
         request_obj = RequestFactory()
         file = SecureFileFactory(content_object=request_obj)
 
@@ -58,6 +55,4 @@ class TestSecureFileDownloadView:
 
         assert response.status_code == 200
         # Images use "inline" disposition, not "attachment"
-        assert (
-            response["Content-Disposition"] == f'inline; filename="{file.filename}"'
-        )
+        assert response["Content-Disposition"] == f'inline; filename="{file.filename}"'

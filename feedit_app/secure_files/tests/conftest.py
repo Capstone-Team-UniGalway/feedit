@@ -8,7 +8,7 @@ def temp_media_root(tmp_path):
     with override_settings(
         MEDIA_ROOT=tmp_path,
         AUTHENTICATION_BACKENDS=[
-            'django.contrib.auth.backends.ModelBackend',  # Use default backend for tests
-        ]
+            "django.contrib.auth.backends.ModelBackend",  # default backend for tests
+        ],
     ):
         yield

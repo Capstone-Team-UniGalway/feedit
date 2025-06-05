@@ -1,5 +1,4 @@
 {% load widget_tweaks %}
-{% load cotton %}
 {% load mention_tags %}
 
 <c-layouts.base>
@@ -28,6 +27,7 @@
                     </div>
                     {% endif %}
                     {% for field in form.visible_fields %}
+
                     <div class="form-control mb-4">
                         <label class="label" for="{{ field.id_for_label }}">
                             <span class="label-text">{{ field.label }}</span>
@@ -41,9 +41,11 @@
                         {% for error in field.errors %}
                         <p class="text-sm text-error">{{ error }}</p>
                         {% endfor %}
-
-                        <!-- Use regular field rendering for all fields (including CKEditor5 for content) -->
+                        {% if field.name == "content" %}
+                        {% mention_input name="content" id="reply_content_top" css_class="min-h-32" placeholder="Write your reply here..." required=True %}
+                        {% else %}
                         {{ field }}
+                        {% endif %}
                     </div>
                     {% endfor %}
 

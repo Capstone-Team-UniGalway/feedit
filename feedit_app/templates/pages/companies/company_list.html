@@ -9,23 +9,7 @@
             {% endif %}
         </h1>
         <div class="flex gap-2">
-            <form method="get" class="flex gap-2">
-                <div class="form-control">
-                    <div class="input-group join">
-                        <input type="text" name="q" placeholder="Search companies..." class="input input-bordered"
-                            value="{{ request.GET.q }}" />
-                        <button type="submit" class="btn btn-square">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                </div>
-            </form>
             {% if user.is_authenticated and not user.workplace %}
-            {#
-            <a href="{% url 'claim_company' %}" class="btn btn-primary">
-                <i class="fas fa-plus mr-1"></i> Create Company
-            </a>
-            #}
             <a href="{% url 'companies:create' %}" class="btn btn-primary">
                 <i class="fas fa-plus mr-1"></i> Create Company
             </a>

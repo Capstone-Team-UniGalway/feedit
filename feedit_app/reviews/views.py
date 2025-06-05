@@ -152,11 +152,13 @@ class EmployerReviewsOverviewView(FullyActivatedUserMixin, TemplateView):
 
     def user_test_func(self):
         """Ensure user has a company (is an employer)"""
-        return hasattr(self.request.user, 'company') and self.request.user.company
+        return hasattr(self.request.user, "company") and self.request.user.company
 
     def handle_no_permission(self):
         """Redirect to dashboard if user doesn't have permission"""
-        messages.error(self.request, "You need to own a company to access the reviews overview.")
+        messages.error(
+            self.request, "You need to own a company to access the reviews overview."
+        )
         return redirect("dashboard")
 
     def get_context_data(self, **kwargs):
@@ -188,15 +190,21 @@ class EmployerReviewsOverviewView(FullyActivatedUserMixin, TemplateView):
         else:
             avg_rating = 0
 
-        context.update({
-            "reviews": page_obj.object_list,
-            "page_obj": page_obj,
-            "is_paginated": page_obj.has_other_pages(),
-            "company": company,
-            "unreplied_count": unreplied_count,
-            "total_reviews": total_reviews,
-            "avg_rating": round(avg_rating, 1),
-            "reply_rate": round(((total_reviews - unreplied_count) / total_reviews * 100), 1) if total_reviews > 0 else 0,
-        })
+        context.update(
+            {
+                "reviews": page_obj.object_list,
+                "page_obj": page_obj,
+                "is_paginated": page_obj.has_other_pages(),
+                "company": company,
+                "unreplied_count": unreplied_count,
+                "total_reviews": total_reviews,
+                "avg_rating": round(avg_rating, 1),
+                "reply_rate": (
+                    round(((total_reviews - unreplied_count) / total_reviews * 100), 1)
+                    if total_reviews > 0
+                    else 0
+                ),
+            }
+        )
 
         return context

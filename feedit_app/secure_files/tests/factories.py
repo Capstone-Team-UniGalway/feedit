@@ -1,9 +1,9 @@
 import factory
+from accounts.models import User
+from accounts.tests.factories import UserFactory
+from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from secure_files.models import SecureFile
-from accounts.models import User
-from django.contrib.contenttypes.models import ContentType
-from accounts.tests.factories import UserFactory
 
 
 class SecureFileFactory(factory.django.DjangoModelFactory):

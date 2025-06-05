@@ -5,7 +5,6 @@ from enum import Enum
 from allauth.account import app_settings as allauth_settings
 from allauth.account.forms import ChangePasswordForm
 from allauth.account.models import EmailConfirmationHMAC
-from django.utils.timezone import now
 from allauth.account.utils import (
     complete_signup,
     get_user_model,
@@ -37,6 +36,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
+from django.utils.timezone import now
 from django.views.generic import DetailView, ListView, TemplateView, View
 
 from .forms import (
@@ -657,6 +657,6 @@ class UserSearchView(FullyActivatedUserMixin, View):
         # Always render the HTML template
         return render(
             request,
-            "components/user_search_results_tailwind.html",
+            "components/account/user_search_results_tailwind.html",
             {"users": users, "query": query},
         )

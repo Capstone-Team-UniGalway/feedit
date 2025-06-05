@@ -8,18 +8,16 @@ thoroughly tested through model tests, form tests, and integration scenarios.
 """
 
 import pytest
-from django.test import Client
-from django.urls import reverse
+from accounts.tests.factories import FullyActivatedUserFactory, UserFactory
+from companies.tests.factories import CompanyFactory
+from company_requests.models import Request, RequestReply
+from company_requests.tests.factories import RequestFactory
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.messages import get_messages
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.contrib.contenttypes.models import ContentType
-from unittest.mock import patch
-
-from company_requests.models import Request, RequestReply
-from company_requests.tests.factories import RequestFactory, RequestReplyFactory
-from accounts.tests.factories import UserFactory, FullyActivatedUserFactory
-from companies.tests.factories import CompanyFactory
+from django.test import Client
+from django.urls import reverse
 from secure_files.models import SecureFile
 
 User = get_user_model()
@@ -32,11 +30,13 @@ class TestCreateRequestView:
     def setup_method(self):
         self.client = Client()
         self.company = CompanyFactory()
-        self.url = reverse('company_requests:create_with_id', kwargs={'company_id': self.company.id})
+        self.url = reverse(
+            "company_requests:create_with_id", kwargs={"company_id": self.company.id}
+        )
 
     def _assert_response_or_redirect(self, response, expected_status=200):
         """Helper method to handle authentication redirects in test environment."""
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             return True
         else:
@@ -47,7 +47,7 @@ class TestCreateRequestView:
         """Test that unauthenticated users are redirected to login."""
         response = self.client.get(self.url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_fully_activated_user_required(self):
         """Test that non-activated users are redirected."""
@@ -56,7 +56,7 @@ class TestCreateRequestView:
 
         response = self.client.get(self.url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_get_renders_create_form_employee(self):
         """Test GET request renders create form for employee."""
@@ -68,7 +68,7 @@ class TestCreateRequestView:
         # Due to test environment limitations with FullyActivatedUserMixin,
         # we expect a redirect to auth page for non-activated users in tests
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_get_renders_create_form_employer(self):
         """Test GET request renders create form for employer."""
@@ -79,9 +79,9 @@ class TestCreateRequestView:
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            assert 'form' in response.context
-            assert 'company' in response.context
-            assert response.context['company'] == self.company
+            assert "form" in response.context
+            assert "company" in response.context
+            assert response.context["company"] == self.company
 
     def test_get_initial_data_employee(self):
         """Test initial form data for employee users."""
@@ -92,9 +92,9 @@ class TestCreateRequestView:
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            form = response.context['form']
-            assert form.initial['type'] == Request.RequestType.JOIN
-            assert f"Request to join {self.company.name}" in form.initial['title']
+            form = response.context["form"]
+            assert form.initial["type"] == Request.RequestType.JOIN
+            assert f"Request to join {self.company.name}" in form.initial["title"]
 
     def test_get_initial_data_employer(self):
         """Test initial form data for employer users."""
@@ -105,9 +105,9 @@ class TestCreateRequestView:
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            form = response.context['form']
-            assert form.initial['type'] == Request.RequestType.CLAIM
-            assert f"Request to claim {self.company.name}" in form.initial['title']
+            form = response.context["form"]
+            assert form.initial["type"] == Request.RequestType.CLAIM
+            assert f"Request to claim {self.company.name}" in form.initial["title"]
 
     def test_post_create_join_request_success(self):
         """Test successful creation of join request by employee."""
@@ -115,9 +115,9 @@ class TestCreateRequestView:
         self.client.force_login(user)
 
         data = {
-            'type': Request.RequestType.JOIN,
-            'title': f'Request to join {self.company.name}',
-            'content': 'I would like to join this company.'
+            "type": Request.RequestType.JOIN,
+            "title": f"Request to join {self.company.name}",
+            "content": "I would like to join this company.",
         }
 
         response = self.client.post(self.url, data)
@@ -126,17 +126,20 @@ class TestCreateRequestView:
         assert response.status_code == 302
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
+        if "/account/auth" not in response.url:
             # Check request was created
             request_obj = Request.objects.get(author=user, company=self.company)
             assert request_obj.type == Request.RequestType.JOIN
             assert request_obj.status == Request.RequestStatus.PENDING
-            assert request_obj.title == data['title']
-            assert request_obj.content == data['content']
+            assert request_obj.title == data["title"]
+            assert request_obj.content == data["content"]
 
             # Check success message
             messages = list(get_messages(response.wsgi_request))
-            assert any("join request has been submitted successfully" in str(m) for m in messages)
+            assert any(
+                "join request has been submitted successfully" in str(m)
+                for m in messages
+            )
 
     def test_post_create_claim_request_success(self):
         """Test successful creation of claim request by employer."""
@@ -144,9 +147,9 @@ class TestCreateRequestView:
         self.client.force_login(user)
 
         data = {
-            'type': Request.RequestType.CLAIM,
-            'title': f'Request to claim {self.company.name}',
-            'content': 'I am the rightful owner of this company.'
+            "type": Request.RequestType.CLAIM,
+            "title": f"Request to claim {self.company.name}",
+            "content": "I am the rightful owner of this company.",
         }
 
         response = self.client.post(self.url, data)
@@ -155,7 +158,7 @@ class TestCreateRequestView:
         assert response.status_code == 302
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
+        if "/account/auth" not in response.url:
             # Check request was created
             request_obj = Request.objects.get(author=user, company=self.company)
             assert request_obj.type == Request.RequestType.CLAIM
@@ -166,7 +169,8 @@ class TestCreateRequestView:
             assert any("claim request has been submitted" in str(m) for m in messages)
 
     def test_post_create_claim_request_dispute(self):
-        """Test creation of claim request when company already has employer (dispute)."""
+        """Test creation of claim request when
+        company already has employer (dispute)."""
         # Company already has an employer
         existing_employer = FullyActivatedUserFactory(type=User.UserType.EMPLOYER)
         self.company.employer = existing_employer
@@ -177,18 +181,20 @@ class TestCreateRequestView:
         self.client.force_login(user)
 
         data = {
-            'type': Request.RequestType.CLAIM,
-            'title': f'Request to claim {self.company.name}',
-            'content': 'I am the rightful owner of this company.'
+            "type": Request.RequestType.CLAIM,
+            "title": f"Request to claim {self.company.name}",
+            "content": "I am the rightful owner of this company.",
         }
 
         response = self.client.post(self.url, data)
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
+        if "/account/auth" not in response.url:
             # Check dispute message
             messages = list(get_messages(response.wsgi_request))
-            assert any("ownership dispute has been submitted" in str(m) for m in messages)
+            assert any(
+                "ownership dispute has been submitted" in str(m) for m in messages
+            )
 
     def test_post_with_verification_document(self):
         """Test request creation with file upload."""
@@ -197,39 +203,40 @@ class TestCreateRequestView:
 
         # Create a test file
         test_file = SimpleUploadedFile(
-            "verification.pdf",
-            b"fake_pdf_content",
-            content_type="application/pdf"
+            "verification.pdf", b"fake_pdf_content", content_type="application/pdf"
         )
 
         data = {
-            'type': Request.RequestType.CLAIM,
-            'title': f'Request to claim {self.company.name}',
-            'content': 'I am the rightful owner of this company.',
-            'verification_document': test_file
+            "type": Request.RequestType.CLAIM,
+            "title": f"Request to claim {self.company.name}",
+            "content": "I am the rightful owner of this company.",
+            "verification_document": test_file,
         }
 
         response = self.client.post(self.url, data)
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
+        if "/account/auth" not in response.url:
             # Check request was created
             request_obj = Request.objects.get(author=user, company=self.company)
 
             # Check file was uploaded
             content_type = ContentType.objects.get_for_model(Request)
             secure_file = SecureFile.objects.get(
-                content_type=content_type,
-                object_id=request_obj.id,
-                uploaded_by=user
+                content_type=content_type, object_id=request_obj.id, uploaded_by=user
             )
             assert secure_file is not None
 
             # Check success messages
             messages = list(get_messages(response.wsgi_request))
             message_texts = [str(m) for m in messages]
-            assert any("claim request has been submitted" in msg for msg in message_texts)
-            assert any("Verification document uploaded successfully" in msg for msg in message_texts)
+            assert any(
+                "claim request has been submitted" in msg for msg in message_texts
+            )
+            assert any(
+                "Verification document uploaded successfully" in msg
+                for msg in message_texts
+            )
 
     def test_post_invalid_form_data(self):
         """Test form validation with invalid data."""
@@ -238,9 +245,9 @@ class TestCreateRequestView:
 
         # Missing required fields
         data = {
-            'type': Request.RequestType.JOIN,
-            'title': '',  # Empty title
-            'content': ''  # Empty content
+            "type": Request.RequestType.JOIN,
+            "title": "",  # Empty title
+            "content": "",  # Empty content
         }
 
         response = self.client.post(self.url, data)
@@ -248,8 +255,8 @@ class TestCreateRequestView:
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
             # Should not redirect (form invalid)
-            assert 'form' in response.context
-            assert response.context['form'].errors
+            assert "form" in response.context
+            assert response.context["form"].errors
 
         # No request should be created
         assert not Request.objects.filter(author=user, company=self.company).exists()
@@ -259,11 +266,13 @@ class TestCreateRequestView:
         user = FullyActivatedUserFactory()
         self.client.force_login(user)
 
-        invalid_url = reverse('company_requests:create_with_id', kwargs={'company_id': 99999})
+        invalid_url = reverse(
+            "company_requests:create_with_id", kwargs={"company_id": 99999}
+        )
         response = self.client.get(invalid_url)
 
         # In test environment, authentication check may happen before 404 check
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             pass
         else:
@@ -293,10 +302,10 @@ class TestCreateRequestView:
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            form = response.context['form']
+            form = response.context["form"]
             # Employee should only see join option
-            assert form.fields['type'].choices == [('join', 'Join')]
-            assert form.fields['type'].initial == 'join'
+            assert form.fields["type"].choices == [("join", "Join")]
+            assert form.fields["type"].initial == "join"
 
     def test_form_user_type_restrictions_employer(self):
         """Test that employer form only shows claim option."""
@@ -307,27 +316,28 @@ class TestCreateRequestView:
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            form = response.context['form']
+            form = response.context["form"]
             # Employer should only see claim option
-            assert form.fields['type'].choices == [('claim', 'Claim')]
-            assert form.fields['type'].initial == 'claim'
+            assert form.fields["type"].choices == [("claim", "Claim")]
+            assert form.fields["type"].initial == "claim"
 
     def test_request_type_forced_by_user_type(self):
-        """Test that request type is forced based on user type regardless of form data."""
+        """Test that request type is forced based on
+        user type regardless of form data."""
         # Test employee trying to submit claim request
         employee = FullyActivatedUserFactory(type=User.UserType.EMPLOYEE)
         self.client.force_login(employee)
 
         data = {
-            'type': Request.RequestType.CLAIM,  # Employee trying to claim
-            'title': 'Test title',
-            'content': 'Test content'
+            "type": Request.RequestType.CLAIM,  # Employee trying to claim
+            "title": "Test title",
+            "content": "Test content",
         }
 
         response = self.client.post(self.url, data)
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
+        if "/account/auth" not in response.url:
             # Request should be created as JOIN type despite form data
             request_obj = Request.objects.get(author=employee, company=self.company)
             assert request_obj.type == Request.RequestType.JOIN
@@ -337,15 +347,15 @@ class TestCreateRequestView:
         self.client.force_login(employer)
 
         data = {
-            'type': Request.RequestType.JOIN,  # Employer trying to join
-            'title': 'Test title',
-            'content': 'Test content'
+            "type": Request.RequestType.JOIN,  # Employer trying to join
+            "title": "Test title",
+            "content": "Test content",
         }
 
         response = self.client.post(self.url, data)
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
+        if "/account/auth" not in response.url:
             # Request should be created as CLAIM type despite form data
             request_obj = Request.objects.get(author=employer, company=self.company)
             assert request_obj.type == Request.RequestType.CLAIM
@@ -359,7 +369,7 @@ class TestProcessRequestView:
 
     def _assert_response_or_redirect(self, response, expected_status=200):
         """Helper method to handle authentication redirects in test environment."""
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             return True
         else:
@@ -369,22 +379,22 @@ class TestProcessRequestView:
     def test_authentication_required(self):
         """Test that unauthenticated users are redirected to login."""
         request_obj = RequestFactory()
-        url = reverse('company_requests:process', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:process", kwargs={"pk": request_obj.id})
 
         response = self.client.post(url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_fully_activated_user_required(self):
         """Test that non-activated users are redirected."""
         user = UserFactory()  # Not fully activated
         request_obj = RequestFactory()
-        url = reverse('company_requests:process', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:process", kwargs={"pk": request_obj.id})
 
         self.client.force_login(user)
         response = self.client.post(url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_process_join_request_approve_success(self):
         """Test successful approval of join request by company employer."""
@@ -398,21 +408,23 @@ class TestProcessRequestView:
             type=Request.RequestType.JOIN,
             company=company,
             author=employee,
-            status=Request.RequestStatus.PENDING
+            status=Request.RequestStatus.PENDING,
         )
 
-        url = reverse('company_requests:process', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:process", kwargs={"pk": request_obj.id})
         self.client.force_login(employer)
 
-        data = {'action': 'approve'}
+        data = {"action": "approve"}
         response = self.client.post(url, data)
 
         # Should redirect to request detail
         assert response.status_code == 302
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
-            assert response.url == reverse('company_requests:detail', kwargs={'pk': request_obj.id})
+        if "/account/auth" not in response.url:
+            assert response.url == reverse(
+                "company_requests:detail", kwargs={"pk": request_obj.id}
+            )
 
             # Check request status updated
             request_obj.refresh_from_db()
@@ -438,21 +450,23 @@ class TestProcessRequestView:
             type=Request.RequestType.JOIN,
             company=company,
             author=employee,
-            status=Request.RequestStatus.PENDING
+            status=Request.RequestStatus.PENDING,
         )
 
-        url = reverse('company_requests:process', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:process", kwargs={"pk": request_obj.id})
         self.client.force_login(employer)
 
-        data = {'action': 'reject'}
+        data = {"action": "reject"}
         response = self.client.post(url, data)
 
         # Should redirect to request detail
         assert response.status_code == 302
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
-            assert response.url == reverse('company_requests:detail', kwargs={'pk': request_obj.id})
+        if "/account/auth" not in response.url:
+            assert response.url == reverse(
+                "company_requests:detail", kwargs={"pk": request_obj.id}
+            )
 
             # Check request status updated
             request_obj.refresh_from_db()
@@ -474,18 +488,18 @@ class TestProcessRequestView:
             type=Request.RequestType.CLAIM,
             company=company,
             author=claimant,
-            status=Request.RequestStatus.PENDING
+            status=Request.RequestStatus.PENDING,
         )
 
         superuser = FullyActivatedUserFactory(is_superuser=True)
-        url = reverse('company_requests:process', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:process", kwargs={"pk": request_obj.id})
         self.client.force_login(superuser)
 
-        data = {'action': 'approve'}
+        data = {"action": "approve"}
         response = self.client.post(url, data)
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
+        if "/account/auth" not in response.url:
             # Check request status updated
             request_obj.refresh_from_db()
             assert request_obj.status == Request.RequestStatus.APPROVED
@@ -506,18 +520,18 @@ class TestProcessRequestView:
             type=Request.RequestType.CLAIM,
             company=company,
             author=claimant,
-            status=Request.RequestStatus.PENDING
+            status=Request.RequestStatus.PENDING,
         )
 
         superuser = FullyActivatedUserFactory(is_superuser=True)
-        url = reverse('company_requests:process', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:process", kwargs={"pk": request_obj.id})
         self.client.force_login(superuser)
 
-        data = {'action': 'reject'}
+        data = {"action": "reject"}
         response = self.client.post(url, data)
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
+        if "/account/auth" not in response.url:
             # Check request status updated
             request_obj.refresh_from_db()
             assert request_obj.status == Request.RequestStatus.REJECTED
@@ -533,18 +547,18 @@ class TestProcessRequestView:
 
         # User who is not the company employer
         unauthorized_user = FullyActivatedUserFactory()
-        url = reverse('company_requests:process', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:process", kwargs={"pk": request_obj.id})
         self.client.force_login(unauthorized_user)
 
-        data = {'action': 'approve'}
+        data = {"action": "approve"}
         response = self.client.post(url, data)
 
         # Should redirect to dashboard with error
         assert response.status_code == 302
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
-            assert response.url == reverse('dashboard')
+        if "/account/auth" not in response.url:
+            assert response.url == reverse("dashboard")
 
             # Check error message
             messages = list(get_messages(response.wsgi_request))
@@ -560,22 +574,25 @@ class TestProcessRequestView:
 
         # Regular user (not superuser)
         regular_user = FullyActivatedUserFactory(is_superuser=False)
-        url = reverse('company_requests:process', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:process", kwargs={"pk": request_obj.id})
         self.client.force_login(regular_user)
 
-        data = {'action': 'approve'}
+        data = {"action": "approve"}
         response = self.client.post(url, data)
 
         # Should redirect to dashboard with error
         assert response.status_code == 302
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
-            assert response.url == reverse('dashboard')
+        if "/account/auth" not in response.url:
+            assert response.url == reverse("dashboard")
 
             # Check error message
             messages = list(get_messages(response.wsgi_request))
-            assert any("Only administrators can process claim requests" in str(m) for m in messages)
+            assert any(
+                "Only administrators can process claim requests" in str(m)
+                for m in messages
+            )
 
     def test_process_invalid_action(self):
         """Test processing request with invalid action."""
@@ -585,10 +602,10 @@ class TestProcessRequestView:
         company.save()
 
         request_obj = RequestFactory(type=Request.RequestType.JOIN, company=company)
-        url = reverse('company_requests:process', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:process", kwargs={"pk": request_obj.id})
         self.client.force_login(employer)
 
-        data = {'action': 'invalid_action'}
+        data = {"action": "invalid_action"}
         response = self.client.post(url, data)
 
         # Should redirect to dashboard
@@ -601,14 +618,14 @@ class TestProcessRequestView:
     def test_process_nonexistent_request(self):
         """Test processing non-existent request."""
         user = FullyActivatedUserFactory(is_superuser=True)
-        url = reverse('company_requests:process', kwargs={'pk': 99999})
+        url = reverse("company_requests:process", kwargs={"pk": 99999})
         self.client.force_login(user)
 
-        data = {'action': 'approve'}
+        data = {"action": "approve"}
         response = self.client.post(url, data)
 
         # In test environment, authentication check may happen before 404 check
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             pass
         else:
@@ -618,14 +635,14 @@ class TestProcessRequestView:
         """Test processing deleted request."""
         request_obj = RequestFactory(is_deleted=True)
         user = FullyActivatedUserFactory(is_superuser=True)
-        url = reverse('company_requests:process', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:process", kwargs={"pk": request_obj.id})
         self.client.force_login(user)
 
-        data = {'action': 'approve'}
+        data = {"action": "approve"}
         response = self.client.post(url, data)
 
         # In test environment, authentication check may happen before 404 check
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             pass
         else:
@@ -635,7 +652,7 @@ class TestProcessRequestView:
         """Test that only POST method is allowed."""
         request_obj = RequestFactory()
         user = FullyActivatedUserFactory(is_superuser=True)
-        url = reverse('company_requests:process', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:process", kwargs={"pk": request_obj.id})
         self.client.force_login(user)
 
         # GET should not be allowed (may redirect due to auth)
@@ -657,7 +674,7 @@ class TestRequestDetailView:
 
     def _assert_response_or_redirect(self, response, expected_status=200):
         """Helper method to handle authentication redirects in test environment."""
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             return True
         else:
@@ -667,38 +684,38 @@ class TestRequestDetailView:
     def test_authentication_required(self):
         """Test that unauthenticated users are redirected to login."""
         request_obj = RequestFactory()
-        url = reverse('company_requests:detail', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:detail", kwargs={"pk": request_obj.id})
 
         response = self.client.get(url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_fully_activated_user_required(self):
         """Test that non-activated users are redirected."""
         user = UserFactory()  # Not fully activated
         request_obj = RequestFactory()
-        url = reverse('company_requests:detail', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:detail", kwargs={"pk": request_obj.id})
 
         self.client.force_login(user)
         response = self.client.get(url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_get_request_detail_success(self):
         """Test successful viewing of request detail."""
         user = FullyActivatedUserFactory()
         request_obj = RequestFactory(author=user)
-        url = reverse('company_requests:detail', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:detail", kwargs={"pk": request_obj.id})
 
         self.client.force_login(user)
         response = self.client.get(url)
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            assert 'request' in response.context
-            assert response.context['request'] == request_obj
-            assert 'reply_form' in response.context
-            assert 'files' in response.context
+            assert "request" in response.context
+            assert response.context["request"] == request_obj
+            assert "reply_form" in response.context
+            assert "files" in response.context
 
     def test_context_can_process_join_request_employer(self):
         """Test can_process_request context for join request by company employer."""
@@ -708,56 +725,56 @@ class TestRequestDetailView:
         company.save()
 
         request_obj = RequestFactory(type=Request.RequestType.JOIN, company=company)
-        url = reverse('company_requests:detail', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:detail", kwargs={"pk": request_obj.id})
 
         self.client.force_login(employer)
         response = self.client.get(url)
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            assert response.context['can_process_request'] is True
-            assert response.context['can_reply'] is True
+            assert response.context["can_process_request"] is True
+            assert response.context["can_reply"] is True
 
     def test_context_can_process_claim_request_superuser(self):
         """Test can_process_request context for claim request by superuser."""
         request_obj = RequestFactory(type=Request.RequestType.CLAIM)
         superuser = FullyActivatedUserFactory(is_superuser=True)
-        url = reverse('company_requests:detail', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:detail", kwargs={"pk": request_obj.id})
 
         self.client.force_login(superuser)
         response = self.client.get(url)
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            assert response.context['can_process_request'] is True
-            assert response.context['can_reply'] is True
+            assert response.context["can_process_request"] is True
+            assert response.context["can_reply"] is True
 
     def test_context_cannot_process_unauthorized(self):
         """Test can_process_request context for unauthorized user."""
         request_obj = RequestFactory(type=Request.RequestType.JOIN)
         unauthorized_user = FullyActivatedUserFactory()
-        url = reverse('company_requests:detail', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:detail", kwargs={"pk": request_obj.id})
 
         self.client.force_login(unauthorized_user)
         response = self.client.get(url)
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            assert response.context['can_process_request'] is False
-            assert response.context['can_reply'] is False
+            assert response.context["can_process_request"] is False
+            assert response.context["can_reply"] is False
 
     def test_context_can_reply_author(self):
         """Test can_reply context for request author."""
         user = FullyActivatedUserFactory()
         request_obj = RequestFactory(author=user)
-        url = reverse('company_requests:detail', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:detail", kwargs={"pk": request_obj.id})
 
         self.client.force_login(user)
         response = self.client.get(url)
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            assert response.context['can_reply'] is True
+            assert response.context["can_reply"] is True
 
     def test_context_attached_files(self):
         """Test that attached files are included in context."""
@@ -769,28 +786,30 @@ class TestRequestDetailView:
         secure_file = SecureFile.objects.create(
             content_type=content_type,
             object_id=request_obj.id,
-            file=SimpleUploadedFile("test.pdf", b"content", content_type="application/pdf"),
-            uploaded_by=user
+            file=SimpleUploadedFile(
+                "test.pdf", b"content", content_type="application/pdf"
+            ),
+            uploaded_by=user,
         )
 
-        url = reverse('company_requests:detail', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:detail", kwargs={"pk": request_obj.id})
         self.client.force_login(user)
         response = self.client.get(url)
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            assert secure_file in response.context['files']
+            assert secure_file in response.context["files"]
 
     def test_get_nonexistent_request(self):
         """Test viewing non-existent request."""
         user = FullyActivatedUserFactory()
-        url = reverse('company_requests:detail', kwargs={'pk': 99999})
+        url = reverse("company_requests:detail", kwargs={"pk": 99999})
 
         self.client.force_login(user)
         response = self.client.get(url)
 
         # In test environment, authentication check may happen before 404 check
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             pass
         else:
@@ -800,13 +819,13 @@ class TestRequestDetailView:
         """Test viewing deleted request."""
         user = FullyActivatedUserFactory()
         request_obj = RequestFactory(is_deleted=True)
-        url = reverse('company_requests:detail', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:detail", kwargs={"pk": request_obj.id})
 
         self.client.force_login(user)
         response = self.client.get(url)
 
         # In test environment, authentication check may happen before 404 check
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             pass
         else:
@@ -816,7 +835,7 @@ class TestRequestDetailView:
         """Test that only GET method is allowed."""
         user = FullyActivatedUserFactory()
         request_obj = RequestFactory()
-        url = reverse('company_requests:detail', kwargs={'pk': request_obj.id})
+        url = reverse("company_requests:detail", kwargs={"pk": request_obj.id})
         self.client.force_login(user)
 
         # POST should not be allowed (may redirect due to auth)
@@ -835,11 +854,11 @@ class TestRequestListView:
 
     def setup_method(self):
         self.client = Client()
-        self.url = reverse('company_requests:list')
+        self.url = reverse("company_requests:list")
 
     def _assert_response_or_redirect(self, response, expected_status=200):
         """Helper method to handle authentication redirects in test environment."""
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             return True
         else:
@@ -850,7 +869,7 @@ class TestRequestListView:
         """Test that unauthenticated users are redirected to login."""
         response = self.client.get(self.url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_fully_activated_user_required(self):
         """Test that non-activated users are redirected."""
@@ -859,7 +878,7 @@ class TestRequestListView:
 
         response = self.client.get(self.url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_get_user_requests_success(self):
         """Test successful listing of user's own requests."""
@@ -878,8 +897,8 @@ class TestRequestListView:
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            assert 'requests' in response.context
-            requests_in_context = list(response.context['requests'])
+            assert "requests" in response.context
+            requests_in_context = list(response.context["requests"])
             assert request1 in requests_in_context
             assert request2 in requests_in_context
             assert len(requests_in_context) == 2
@@ -899,7 +918,7 @@ class TestRequestListView:
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            requests_in_context = list(response.context['requests'])
+            requests_in_context = list(response.context["requests"])
             assert active_request in requests_in_context
             assert len(requests_in_context) == 1
 
@@ -917,10 +936,14 @@ class TestRequestListView:
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            requests_in_context = list(response.context['requests'])
+            requests_in_context = list(response.context["requests"])
             # Should be ordered by created_at descending (newest first)
-            assert requests_in_context[0].created_at >= requests_in_context[1].created_at
-            assert requests_in_context[1].created_at >= requests_in_context[2].created_at
+            assert (
+                requests_in_context[0].created_at >= requests_in_context[1].created_at
+            )
+            assert (
+                requests_in_context[1].created_at >= requests_in_context[2].created_at
+            )
 
     def test_pagination(self):
         """Test pagination with paginate_by = 10."""
@@ -935,14 +958,14 @@ class TestRequestListView:
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            assert 'is_paginated' in response.context
-            assert response.context['is_paginated'] is True
-            assert len(response.context['requests']) == 10
+            assert "is_paginated" in response.context
+            assert response.context["is_paginated"] is True
+            assert len(response.context["requests"]) == 10
 
             # Test second page
-            response = self.client.get(self.url + '?page=2')
+            response = self.client.get(self.url + "?page=2")
             if not self._assert_response_or_redirect(response):
-                assert len(response.context['requests']) == 5
+                assert len(response.context["requests"]) == 5
 
     def test_empty_request_list(self):
         """Test view when user has no requests."""
@@ -953,7 +976,7 @@ class TestRequestListView:
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            assert len(response.context['requests']) == 0
+            assert len(response.context["requests"]) == 0
 
     def test_http_method_restrictions(self):
         """Test that only GET method is allowed."""
@@ -977,11 +1000,13 @@ class TestCompanyRequestListView:
     def setup_method(self):
         self.client = Client()
         self.company = CompanyFactory()
-        self.url = reverse('company_requests:company', kwargs={'company_id': self.company.id})
+        self.url = reverse(
+            "company_requests:company", kwargs={"company_id": self.company.id}
+        )
 
     def _assert_response_or_redirect(self, response, expected_status=200):
         """Helper method to handle authentication redirects in test environment."""
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             return True
         else:
@@ -992,7 +1017,7 @@ class TestCompanyRequestListView:
         """Test that unauthenticated users are redirected to login."""
         response = self.client.get(self.url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_fully_activated_user_required(self):
         """Test that non-activated users are redirected."""
@@ -1001,7 +1026,7 @@ class TestCompanyRequestListView:
 
         response = self.client.get(self.url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_get_company_requests_success_employer(self):
         """Test successful listing of company requests by company employer."""
@@ -1022,8 +1047,8 @@ class TestCompanyRequestListView:
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            assert 'requests' in response.context
-            requests_in_context = list(response.context['requests'])
+            assert "requests" in response.context
+            requests_in_context = list(response.context["requests"])
             assert request1 in requests_in_context
             assert request2 in requests_in_context
             assert len(requests_in_context) == 2
@@ -1045,7 +1070,7 @@ class TestCompanyRequestListView:
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            assert len(response.context['requests']) == 0
+            assert len(response.context["requests"]) == 0
 
     def test_excludes_deleted_requests(self):
         """Test that deleted requests are excluded from listing."""
@@ -1064,7 +1089,7 @@ class TestCompanyRequestListView:
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            requests_in_context = list(response.context['requests'])
+            requests_in_context = list(response.context["requests"])
             assert active_request in requests_in_context
             assert len(requests_in_context) == 1
 
@@ -1083,25 +1108,25 @@ class TestCompanyRequestListView:
 
         # In test environment, may redirect due to authentication requirements
         if not self._assert_response_or_redirect(response):
-            assert 'is_paginated' in response.context
-            assert response.context['is_paginated'] is True
-            assert len(response.context['requests']) == 10
+            assert "is_paginated" in response.context
+            assert response.context["is_paginated"] is True
+            assert len(response.context["requests"]) == 10
 
             # Test second page
-            response = self.client.get(self.url + '?page=2')
+            response = self.client.get(self.url + "?page=2")
             if not self._assert_response_or_redirect(response):
-                assert len(response.context['requests']) == 5
+                assert len(response.context["requests"]) == 5
 
     def test_invalid_company_id(self):
         """Test accessing view with invalid company ID."""
         user = FullyActivatedUserFactory()
         self.client.force_login(user)
 
-        invalid_url = reverse('company_requests:company', kwargs={'company_id': 99999})
+        invalid_url = reverse("company_requests:company", kwargs={"company_id": 99999})
         response = self.client.get(invalid_url)
 
         # In test environment, authentication check may happen before 404 check
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             pass
         else:
@@ -1133,7 +1158,7 @@ class TestCreateRequestReplyView:
 
     def _assert_response_or_redirect(self, response, expected_status=200):
         """Helper method to handle authentication redirects in test environment."""
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             return True
         else:
@@ -1143,34 +1168,32 @@ class TestCreateRequestReplyView:
     def test_authentication_required(self):
         """Test that unauthenticated users are redirected to login."""
         request_obj = RequestFactory()
-        url = reverse('company_requests:reply', kwargs={'request_id': request_obj.id})
+        url = reverse("company_requests:reply", kwargs={"request_id": request_obj.id})
 
         response = self.client.post(url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_fully_activated_user_required(self):
         """Test that non-activated users are redirected."""
         user = UserFactory()  # Not fully activated
         request_obj = RequestFactory()
-        url = reverse('company_requests:reply', kwargs={'request_id': request_obj.id})
+        url = reverse("company_requests:reply", kwargs={"request_id": request_obj.id})
 
         self.client.force_login(user)
         response = self.client.post(url)
         assert response.status_code == 302
-        assert '/account/auth' in response.url
+        assert "/account/auth" in response.url
 
     def test_post_create_reply_success_author(self):
         """Test successful reply creation by request author."""
         user = FullyActivatedUserFactory()
         request_obj = RequestFactory(author=user)
-        url = reverse('company_requests:reply', kwargs={'request_id': request_obj.id})
+        url = reverse("company_requests:reply", kwargs={"request_id": request_obj.id})
 
         self.client.force_login(user)
 
-        data = {
-            'content': 'This is my reply to the request.'
-        }
+        data = {"content": "This is my reply to the request."}
 
         response = self.client.post(url, data)
 
@@ -1178,12 +1201,14 @@ class TestCreateRequestReplyView:
         assert response.status_code == 302
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
-            assert response.url == reverse('company_requests:detail', kwargs={'pk': request_obj.id})
+        if "/account/auth" not in response.url:
+            assert response.url == reverse(
+                "company_requests:detail", kwargs={"pk": request_obj.id}
+            )
 
             # Check reply was created
             reply = RequestReply.objects.get(request=request_obj, author=user)
-            assert reply.content == data['content']
+            assert reply.content == data["content"]
 
             # Check success message
             messages = list(get_messages(response.wsgi_request))
@@ -1197,13 +1222,11 @@ class TestCreateRequestReplyView:
         company.save()
 
         request_obj = RequestFactory(company=company)
-        url = reverse('company_requests:reply', kwargs={'request_id': request_obj.id})
+        url = reverse("company_requests:reply", kwargs={"request_id": request_obj.id})
 
         self.client.force_login(employer)
 
-        data = {
-            'content': 'This is the employer reply.'
-        }
+        data = {"content": "This is the employer reply."}
 
         response = self.client.post(url, data)
 
@@ -1211,22 +1234,20 @@ class TestCreateRequestReplyView:
         assert response.status_code == 302
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
+        if "/account/auth" not in response.url:
             # Check reply was created
             reply = RequestReply.objects.get(request=request_obj, author=employer)
-            assert reply.content == data['content']
+            assert reply.content == data["content"]
 
     def test_post_unauthorized_user_cannot_reply(self):
         """Test that unauthorized users cannot reply to requests."""
         request_obj = RequestFactory()
         unauthorized_user = FullyActivatedUserFactory()
-        url = reverse('company_requests:reply', kwargs={'request_id': request_obj.id})
+        url = reverse("company_requests:reply", kwargs={"request_id": request_obj.id})
 
         self.client.force_login(unauthorized_user)
 
-        data = {
-            'content': 'Unauthorized reply attempt.'
-        }
+        data = {"content": "Unauthorized reply attempt."}
 
         response = self.client.post(url, data)
 
@@ -1234,28 +1255,28 @@ class TestCreateRequestReplyView:
         assert response.status_code == 302
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
-            assert response.url == reverse('dashboard')
+        if "/account/auth" not in response.url:
+            assert response.url == reverse("dashboard")
 
             # Check error message
             messages = list(get_messages(response.wsgi_request))
             assert any("don't have permission to reply" in str(m) for m in messages)
 
         # Check no reply was created
-        assert not RequestReply.objects.filter(request=request_obj, author=unauthorized_user).exists()
+        assert not RequestReply.objects.filter(
+            request=request_obj, author=unauthorized_user
+        ).exists()
 
     def test_post_invalid_form_data(self):
         """Test form validation with invalid data."""
         user = FullyActivatedUserFactory()
         request_obj = RequestFactory(author=user)
-        url = reverse('company_requests:reply', kwargs={'request_id': request_obj.id})
+        url = reverse("company_requests:reply", kwargs={"request_id": request_obj.id})
 
         self.client.force_login(user)
 
         # Missing required content field
-        data = {
-            'content': ''  # Empty content
-        }
+        data = {"content": ""}  # Empty content
 
         response = self.client.post(url, data)
 
@@ -1265,23 +1286,23 @@ class TestCreateRequestReplyView:
             pass
 
         # No reply should be created
-        assert not RequestReply.objects.filter(request=request_obj, author=user).exists()
+        assert not RequestReply.objects.filter(
+            request=request_obj, author=user
+        ).exists()
 
     def test_post_nonexistent_request(self):
         """Test replying to non-existent request."""
         user = FullyActivatedUserFactory()
-        url = reverse('company_requests:reply', kwargs={'request_id': 99999})
+        url = reverse("company_requests:reply", kwargs={"request_id": 99999})
 
         self.client.force_login(user)
 
-        data = {
-            'content': 'Reply to non-existent request.'
-        }
+        data = {"content": "Reply to non-existent request."}
 
         response = self.client.post(url, data)
 
         # In test environment, authentication check may happen before 404 check
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             pass
         else:
@@ -1291,18 +1312,16 @@ class TestCreateRequestReplyView:
         """Test replying to deleted request."""
         user = FullyActivatedUserFactory()
         request_obj = RequestFactory(author=user, is_deleted=True)
-        url = reverse('company_requests:reply', kwargs={'request_id': request_obj.id})
+        url = reverse("company_requests:reply", kwargs={"request_id": request_obj.id})
 
         self.client.force_login(user)
 
-        data = {
-            'content': 'Reply to deleted request.'
-        }
+        data = {"content": "Reply to deleted request."}
 
         response = self.client.post(url, data)
 
         # In test environment, authentication check may happen before 404 check
-        if response.status_code == 302 and '/account/' in response.url:
+        if response.status_code == 302 and "/account/" in response.url:
             # Authentication redirect is acceptable in test environment
             pass
         else:
@@ -1312,7 +1331,7 @@ class TestCreateRequestReplyView:
         """Test that GET method is not allowed."""
         user = FullyActivatedUserFactory()
         request_obj = RequestFactory(author=user)
-        url = reverse('company_requests:reply', kwargs={'request_id': request_obj.id})
+        url = reverse("company_requests:reply", kwargs={"request_id": request_obj.id})
 
         self.client.force_login(user)
         response = self.client.get(url)
@@ -1325,39 +1344,35 @@ class TestCreateRequestReplyView:
         """Test that successful reply redirects to request detail."""
         user = FullyActivatedUserFactory()
         request_obj = RequestFactory(author=user)
-        url = reverse('company_requests:reply', kwargs={'request_id': request_obj.id})
+        url = reverse("company_requests:reply", kwargs={"request_id": request_obj.id})
 
         self.client.force_login(user)
 
-        data = {
-            'content': 'Test reply content.'
-        }
+        data = {"content": "Test reply content."}
 
         response = self.client.post(url, data)
 
-        expected_url = reverse('company_requests:detail', kwargs={'pk': request_obj.id})
+        expected_url = reverse("company_requests:detail", kwargs={"pk": request_obj.id})
         assert response.status_code == 302
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
+        if "/account/auth" not in response.url:
             assert response.url == expected_url
 
     def test_reply_author_assignment(self):
         """Test that reply author is correctly assigned."""
         user = FullyActivatedUserFactory()
         request_obj = RequestFactory(author=user)
-        url = reverse('company_requests:reply', kwargs={'request_id': request_obj.id})
+        url = reverse("company_requests:reply", kwargs={"request_id": request_obj.id})
 
         self.client.force_login(user)
 
-        data = {
-            'content': 'Test reply for author assignment.'
-        }
+        data = {"content": "Test reply for author assignment."}
 
         response = self.client.post(url, data)
 
         # In test environment, form may not be processed due to authentication redirect
-        if '/account/auth' not in response.url:
+        if "/account/auth" not in response.url:
             reply = RequestReply.objects.get(request=request_obj)
             assert reply.author == user
             assert reply.request == request_obj
