@@ -21,28 +21,30 @@ jobs:
       - name: Wait for app to be ready
         run: sleep 30
 
-      - name: Run ZAP Baseline Scan and save HTML report
+      - name: Run ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.11.0
         with:
           target: 'https://feedit.online'
-          fail_action: false  # prevents job failure due to any warning
-          cmd_options: '-r zap_report.html'  # generate report
+          fail_action: false
+          artifact_name: zap-report
+          cmd_options: '-w zap_report.md'  # write Markdown summary
         continue-on-error: true
 
-      - name: Upload ZAP HTML Report
+      - name: Display ZAP Summary in GitHub UI
+        if: success()
+        run: |
+          if [ -f zap_report.md ]; then
+            echo "## 🔐 OWASP ZAP Baseline Scan Summary" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            cat zap_report.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ No Markdown report found. ZAP may have failed or produced no output." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload ZAP Report Files
         uses: actions/upload-artifact@v4
         with:
-          name: zap-html-report
-          path: zap_report.html
-
-      - name: Summarize ZAP Results
-        run: |
-          echo "## 🔐 OWASP ZAP Baseline Scan Summary" >> $GITHUB_STEP_SUMMARY
-          if grep -q "FAIL-" owasp-zap-baseline-results.md; then
-            echo "⚠️ Some security risks were found. Please review the full report artifact." >> $GITHUB_STEP_SUMMARY
-          else
-            echo "✅ No critical security issues detected." >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "👉 **[Download the full ZAP HTML report from the run artifacts for details.]**" >> $GITHUB_STEP_SUMMARY
-        continue-on-error: true
+          name: zap-report
+          path: |
+            zap_report.md
+            zap_report.html
