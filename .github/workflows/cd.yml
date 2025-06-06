@@ -27,9 +27,12 @@ jobs:
       - name: Log in to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
 
+      - name: Clear Docker build cache
+        run: docker builder prune -af
+
       - name: Build Docker image
         run: |
-          docker build -t $ECR_REPOSITORY_URI:latest .
+          docker build --no-cache -t $ECR_REPOSITORY_URI:latest .
 
       - name: Install Grype (container vulnerability scanner)
         run: |
