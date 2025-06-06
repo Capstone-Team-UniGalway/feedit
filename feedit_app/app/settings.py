@@ -16,11 +16,14 @@ from app.settings_loader import load_secrets
 
 load_secrets()  # ✅ Load AWS secrets before using env() - production only
 
-# Initialize environ first
-env = environ.Env(DEBUG=(bool, False))
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Storage backend
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
+# Initialize environ first
+env = environ.Env(DEBUG=(bool, False))
 
 # Load .env in development, otherwise use system environment variables
 ENVIRONMENT = env("DJANGO_ENV", default="development")
@@ -46,6 +49,8 @@ if ENVIRONMENT == "development":
     }
     # Email settings for development
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    # Storage backend
+    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 else:
     DATABASES = {
         "default": {
