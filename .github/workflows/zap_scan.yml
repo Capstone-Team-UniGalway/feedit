@@ -40,11 +40,3 @@ jobs:
           else
             echo "⚠️ No Markdown report found. ZAP may have failed or produced no output." >> $GITHUB_STEP_SUMMARY
           fi
-
-      - name: Upload ZAP Report Files
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-report
-          path: |
-            report_md.md
-            report_html.html

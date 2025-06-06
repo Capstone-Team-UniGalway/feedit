@@ -49,16 +49,18 @@ class FullyActivatedUserMixin(SuperuserBypassMixin):
             not self.request.user.is_authenticated
             or not self.request.user.is_fully_activated
         ):
-            return super().handle_no_permission()
+            messages.warning(
+                self.request,
+                getattr(
+                    self.request,
+                    "permission_denied_message",
+                    "Please complete your profile to access this feature.",
+                ),
+            )
+            return redirect(
+                getattr(
+                    self.request, "permission_denied_redirect_url", self.redirect_url
+                )
+            )
 
-        messages.warning(
-            self.request,
-            getattr(
-                self,
-                "permission_denied_message",
-                "Please complete your profile to access this feature.",
-            ),
-        )
-        return redirect(
-            getattr(self, "permission_denied_redirect_url", self.redirect_url)
-        )
+        return super().handle_no_permission()

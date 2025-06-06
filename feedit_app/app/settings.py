@@ -16,6 +16,8 @@ from app.settings_loader import load_secrets
 
 load_secrets()  # ✅ Load AWS secrets before using env() - production only
 
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
 # Initialize environ first
 env = environ.Env(DEBUG=(bool, False))
 
@@ -28,16 +30,6 @@ ENVIRONMENT = env("DJANGO_ENV", default="development")
 # Loads from .env file on development
 if ENVIRONMENT == "development":
     environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
-
-# Security & Debug
-SECRET_KEY = env("SECRET_KEY", default="super-secret-key")
-DEBUG = env.bool("DEBUG", default=False)
-# Allowed Hosts
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
-
-
-# Database Configuration
-if ENVIRONMENT == "development":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -46,6 +38,8 @@ if ENVIRONMENT == "development":
     }
     # Email settings for development
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+
 else:
     DATABASES = {
         "default": {
@@ -90,6 +84,11 @@ else:
     AWS_S3_FILE_OVERWRITE = False
     AWS_DEFAULT_ACL = None  # Do not make files public by default
 
+# Security & Debug
+SECRET_KEY = env("SECRET_KEY", default="super-secret-key")
+DEBUG = env.bool("DEBUG", default=False)
+# Allowed Hosts
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
 # Application definition
 SITE_ID = 1
