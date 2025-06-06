@@ -12,6 +12,9 @@ import os
 from pathlib import Path
 
 import environ
+from app.settings_loader import load_secrets
+
+load_secrets()  # ✅ Load AWS secrets before using env() - production only
 
 # Initialize environ first
 env = environ.Env(DEBUG=(bool, False))
