@@ -6,7 +6,7 @@ import sys
 import boto3
 
 
-def fetch_secrets(secret_name, region_name="en-north-1"):
+def fetch_secrets(secret_name, region_name="eu-north-1"):
     session = boto3.session.Session()
     client = session.client(service_name="secretsmanager", region_name=region_name)
     get_secret_value_response = client.get_secret_value(SecretId=secret_name)
@@ -40,14 +40,21 @@ def main():
     else:
         print("Development mode: using local environment variables / .env")
 
-    # ✅ Print storage backend for verification
+    # ✅ Setup Django before touching settings
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.settings")
+    import django
+
+    django.setup()
+
+    # Now it's safe to access settings and storage
     from django.core.files.storage import default_storage
+    from django.conf import settings
 
     print(f"✅ Active storage backend: {default_storage.__class__}")
+    print(f"✅ DEBUG: {settings.DEBUG}")
 
     # Continue running Django command or gunicorn
     cmd = sys.argv[1:]
-    # If no command is passed, run migrate + gunicorn
     if not cmd:
         print("No command passed. Running migrate and gunicorn.")
         subprocess.run(["python", "manage.py", "migrate", "--noinput"], check=True)
