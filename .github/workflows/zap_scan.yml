@@ -27,16 +27,16 @@ jobs:
           target: 'https://feedit.online'
           fail_action: false
           artifact_name: zap-report
-          cmd_options: '-w zap_report.md -r zap_report.html'
+          cmd_options: '-w report_md.md -r zap_report.html'
           allow_issue_writing: false
         continue-on-error: true
 
       - name: Display ZAP Summary in GitHub UI
         run: |
-          if [ -f zap_report.md ]; then
+          if [ -f report_md.md ]; then
             echo "## 🔐 OWASP ZAP Baseline Scan Summary" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            cat zap_report.md >> $GITHUB_STEP_SUMMARY
+            cat report_md.md >> $GITHUB_STEP_SUMMARY
           else
             echo "⚠️ No Markdown report found. ZAP may have failed or produced no output." >> $GITHUB_STEP_SUMMARY
           fi
@@ -46,5 +46,5 @@ jobs:
         with:
           name: zap-report
           path: |
-            zap_report.md
+            report_md.md
             zap_report.html
