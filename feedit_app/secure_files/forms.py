@@ -1,6 +1,8 @@
 from django import forms
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.utils.module_loading import import_string
 
 from .models import SecureFile, get_allowed_content_types
 
@@ -53,6 +55,14 @@ class SecureFileForm(forms.ModelForm):
         # Set uploaded_by if provided
         if self.uploaded_by:
             instance.uploaded_by = self.uploaded_by
+
+        # 🔁 Dynamically assign storage backend
+        if (
+            settings.DEFAULT_FILE_STORAGE
+            != "django.core.files.storage.FileSystemStorage"
+        ):
+            storage_class = import_string(settings.DEFAULT_FILE_STORAGE)
+            instance.file.storage = storage_class()
 
         if commit:
             instance.save()
