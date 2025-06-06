@@ -27,7 +27,7 @@ jobs:
           target: 'https://feedit.online'
           fail_action: false
           artifact_name: zap-report
-          cmd_options: '-w report_md.md -r zap_report.html'
+          cmd_options: '-w report_md.md -r report_html.html'
           allow_issue_writing: false
         continue-on-error: true
 
@@ -47,4 +47,4 @@ jobs:
           name: zap-report
           path: |
             report_md.md
-            zap_report.html
+            report_html.html
