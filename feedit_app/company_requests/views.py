@@ -35,7 +35,10 @@ class CreateRequestView(FullyActivatedUserMixin, CreateView):
 
         # 🔐 Block all access if no company is resolvable
         if self.company is None:
-            if self.request.user.type == "employer":
+            if (
+                self.request.user.is_authenticated
+                and self.request.user.type == "employer"
+            ):
                 message = "Find and claim your company! Create it if not in the list."
             else:
                 message = "You must join a company before making a request."
@@ -46,7 +49,7 @@ class CreateRequestView(FullyActivatedUserMixin, CreateView):
         return super().dispatch(request, *args, **kwargs)
 
     def determine_request_type(self):
-        if self.request.user.type == "employer":
+        if self.request.user.is_authenticated and self.request.user.type == "employer":
             return Request.RequestType.CLAIM
         else:
             if "company_id" in self.kwargs:

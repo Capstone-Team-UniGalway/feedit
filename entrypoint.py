@@ -40,6 +40,11 @@ def main():
     else:
         print("Development mode: using local environment variables / .env")
 
+    # ✅ Print storage backend for verification
+    from django.core.files.storage import default_storage
+
+    print(f"✅ Active storage backend: {default_storage.__class__}")
+
     # Continue running Django command or gunicorn
     cmd = sys.argv[1:]
     # If no command is passed, run migrate + gunicorn

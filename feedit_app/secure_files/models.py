@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.core.files.storage import get_storage_class
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from threads.models import Thread
@@ -64,6 +65,7 @@ class SecureFile(BaseModel):
 
     file = models.FileField(
         upload_to=upload_to,
+        storage=get_storage_class(settings.DEFAULT_FILE_STORAGE)(),
         validators=[
             FileExtensionValidator(
                 allowed_extensions=["pdf", "docx", "jpg", "png", "jpeg", "webp", "xlsx"]
