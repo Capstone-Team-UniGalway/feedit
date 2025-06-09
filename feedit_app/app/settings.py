@@ -114,6 +114,7 @@ INSTALLED_APPS = [
     "django_cotton",
     "django_ckeditor_5",
     "widget_tweaks",
+    'csp',
     # created
     "accounts",
     "companies",
@@ -127,6 +128,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    'csp.middleware.CSPMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -417,6 +419,38 @@ CKEDITOR_5_CONFIGS = {
             "startIndex": "true",
             "reversed": "true",
         }
+    },
+}
+
+from csp.constants import SELF, UNSAFE_INLINE
+
+CONTENT_SECURITY_POLICY = {
+    "REPORT_ONLY": True,  # Change to False when fully working
+    "DIRECTIVES": {
+        "default-src": [SELF],
+        "script-src": [
+            SELF,
+            UNSAFE_INLINE,
+            "https://cdn.jsdelivr.net",
+            "https://cdnjs.cloudflare.com",
+            "https://unpkg.com",
+        ],
+        "style-src": [
+            SELF,
+            UNSAFE_INLINE,
+            "https://fonts.googleapis.com",
+            "https://cdn.jsdelivr.net",
+            "https://cdnjs.cloudflare.com",
+            "https://unpkg.com",
+        ],
+        "font-src": [
+            SELF,
+            "https://fonts.gstatic.com",
+            "https://cdnjs.cloudflare.com",
+            "https://cdn.jsdelivr.net",
+        ],
+        "img-src": [SELF, "data:"],
+        "connect-src": [SELF],
     },
 }
 
