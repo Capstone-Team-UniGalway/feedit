@@ -158,7 +158,7 @@
         {% endif %}
     </div>
 
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         .badge-forum {
             background-color: var(--color-primary);
             color: var(--color-primary-content);

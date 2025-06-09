@@ -13,6 +13,7 @@ from pathlib import Path
 
 import environ
 from app.settings_loader import load_secrets
+from csp.constants import SELF, NONCE, UNSAFE_INLINE
 
 load_secrets()  # ✅ Load AWS secrets before using env() - production only
 
@@ -70,6 +71,7 @@ else:
     EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="***")
     EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="***")
     DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@feedit.online")
+    ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
 
     # Security settings for production
     CSRF_COOKIE_SECURE = True
@@ -114,7 +116,7 @@ INSTALLED_APPS = [
     "django_cotton",
     "django_ckeditor_5",
     "widget_tweaks",
-    'csp',
+    "csp",
     # created
     "accounts",
     "companies",
@@ -127,8 +129,8 @@ INSTALLED_APPS = [
 
 
 MIDDLEWARE = [
+    "csp.middleware.CSPMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    'csp.middleware.CSPMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -422,15 +424,12 @@ CKEDITOR_5_CONFIGS = {
     },
 }
 
-from csp.constants import SELF, UNSAFE_INLINE
-
 CONTENT_SECURITY_POLICY = {
-    "REPORT_ONLY": True,  # Change to False when fully working
     "DIRECTIVES": {
         "default-src": [SELF],
         "script-src": [
             SELF,
-            UNSAFE_INLINE,
+            NONCE,
             "https://cdn.jsdelivr.net",
             "https://cdnjs.cloudflare.com",
             "https://unpkg.com",

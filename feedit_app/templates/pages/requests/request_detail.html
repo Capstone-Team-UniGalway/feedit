@@ -173,7 +173,7 @@
         </div>
         {% endif %}
     </div>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         function openRequestModal(type, reqId, reqTitle) {
             const modal = document.getElementById("request_modal");
             const form = document.getElementById("modalForm");
