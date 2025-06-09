@@ -4,13 +4,21 @@
     <title>FeedIT</title>
 
     <!-- DaisyUI and Tailwind CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.9/theme/light/" rel="stylesheet" type="text/css" />
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.9/theme/dark/" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.9/daisyui.css" rel="stylesheet" type="text/css"
+        integrity="sha384-ng8lM6MoH4ah6l69RTgjfDQl00C7sGfL6LQnhTt50fQIQdQIREyT9hlCimwHdH4R" crossorigin="anonymous" />
+    <!-- <script src="https://cdn.jsdelivr.net/npm/daisyui@5.0.9/theme/light/index.js"
+        integrity="sha384-Tivrr09pcdu9hRUnkGJL0HMmIK+Sq2drDF+mgk2cbyCfXcr7Klq6tQEd9IMc2ELu"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/daisyui@5.0.9/theme/dark/index.js"
+        integrity="sha384-1dYqgR4S65WKonYBtdwgV39f9ZXey9DZEMVhyWFMWv89pvwNOrCxDsNsl6DsX0jp"
+        crossorigin="anonymous"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.8/dist/index.global.js"
+        integrity="sha384-8X5W4SD/nWpjc4BXk/HRuQ+rhoTF2Dx9DJ+7I2oQctvF4jSQjwtYIeo6fGqZSGGR"
+        crossorigin="anonymous"></script>
 
     <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous" />
 
     <!-- HTMX for dynamic content -->
     <script src="https://unpkg.com/htmx.org@2.0.4"
@@ -19,7 +27,7 @@
 
     {{ slot }}
 
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         .nav-link {
             display: flex;
             align-items: center;

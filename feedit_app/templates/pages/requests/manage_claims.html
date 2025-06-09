@@ -147,7 +147,7 @@
         </div>
     </dialog>
 
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         function openRequestModal(type, reqId, reqTitle) {
             const form = document.getElementById("modalForm");
             const modal = document.getElementById("request_modal");

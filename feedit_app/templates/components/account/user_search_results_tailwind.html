@@ -44,7 +44,7 @@
 </div>
 
 <!-- Script to register this dropdown with the MentionManager -->
-<script>
+<script nonce="{{ request.csp_nonce }}">
   console.log("User search results rendered");
   console.log("Users found: {{ users|length }}");
   console.log("Query: {{ query|default:'none' }}");

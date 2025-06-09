@@ -93,7 +93,7 @@
         </div>
     </section>
 
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(function () {
                 alert('Secret code copied to clipboard!');

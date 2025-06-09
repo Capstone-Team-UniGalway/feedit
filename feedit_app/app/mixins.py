@@ -33,6 +33,7 @@ class FullyActivatedUserMixin(SuperuserBypassMixin):
     """
 
     redirect_url = reverse_lazy("account_edit")
+    login_redirect_url = reverse_lazy("account_auth")
 
     def user_test_func(self):
         user = self.request.user
@@ -45,16 +46,15 @@ class FullyActivatedUserMixin(SuperuserBypassMixin):
         return user.is_fully_activated
 
     def handle_no_permission(self):
-        if (
-            not self.request.user.is_authenticated
-            or not self.request.user.is_fully_activated
-        ):
-            return super().handle_no_permission()
+        user = self.request.user
+        if not user.is_authenticated:
+            messages.warning(self.request, "Please sign in to access this feature.")
+            return redirect(self.login_redirect_url)
 
         messages.warning(
             self.request,
             getattr(
-                self,
+                self.request,
                 "permission_denied_message",
                 "Please complete your profile to access this feature.",
             ),

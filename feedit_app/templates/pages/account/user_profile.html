@@ -157,7 +157,7 @@
         </div>
     </section>
     <!-- JavaScript for Share Profile Functionality -->
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         // Function to copy profile URL to clipboard
         function copyProfileUrl() {
             const profileUrl = document.getElementById('profile-url');

@@ -21,7 +21,7 @@
   </div>
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
   // Global object to track mention dropdowns and their state
   window.MentionManager = window.MentionManager || {
     activeDropdowns: new Set(),

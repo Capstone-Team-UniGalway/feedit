@@ -357,7 +357,7 @@
     </dialog>
 
     <!-- JavaScript for Share Profile Functionality -->
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", function () {
             const nativeShareBtn = document.getElementById("native-share-btn");
 

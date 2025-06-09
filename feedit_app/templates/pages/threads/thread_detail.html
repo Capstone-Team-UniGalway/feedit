@@ -252,7 +252,7 @@
         {% endif %}
     </div>
 
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         .badge-forum {
             background-color: var(--color-primary);
             color: var(--color-primary-content);
@@ -279,7 +279,7 @@
             text-decoration: none;
         }
     </style>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         function openReplyDeleteModal(replyId, replyTitle) {
             const form = document.getElementById('deleteReplyForm');
             form.action = `/threads/${replyId}/delete/`;  // adjust this URL to match your actual delete view
