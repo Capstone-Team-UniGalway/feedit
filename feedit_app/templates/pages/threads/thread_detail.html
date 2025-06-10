@@ -62,7 +62,8 @@
                     <a href="{% url 'thread_update' thread.pk %}" class="btn btn-sm btn-outline">
                         <i class="fas fa-edit mr-1"></i> Edit
                     </a>
-                    <button class="btn btn-sm btn-outline btn-error" onclick="delete_thread_modal.showModal()">
+                    <button class="btn btn-sm btn-outline btn-error" type="button" data-modal-id="delete_thread_modal"
+                        data-modal-action="showModal">
                         <i class="fas fa-trash mr-1"></i> Delete
                     </button>
                     <!-- Modal -->
@@ -153,8 +154,8 @@
                                     <span class="text-xs text-gray-500">{{ reply.created_at|date:"M d, Y" }}</span>
                                 </div>
                                 {% if reply.author == request.user %}
-                                <button type="button" class="btn btn-xs btn-outline btn-error"
-                                    onclick="openReplyDeleteModal('{{ reply.pk }}', '{{ reply.title|escapejs }}')">
+                                <button type="button" class="btn btn-xs btn-outline btn-error open-reply-delete-btn"
+                                    data-reply-id="{{ reply.pk }}">
                                     <i class="fas fa-trash"></i>
                                 </button>
                                 {% endif %}
@@ -169,7 +170,7 @@
                     <!-- Show more/less replies button -->
                     {% if total_replies > display_count %}
                     <div class="text-center py-4 border-t border-base-200 mt-4" id="show-more-container">
-                        <button id="toggle-replies-btn" class="btn btn-primary btn-sm" onclick="toggleReplies()">
+                        <button class="btn btn-primary btn-sm" data-toggle-replies="more">
                             <i class="fas fa-chevron-down mr-2"></i> Show More Replies ({{ total_replies|add:"-3" }}
                             more)
                         </button>
@@ -195,8 +196,8 @@
                                         <span class="text-xs text-gray-500">{{ reply.created_at|date:"M d, Y" }}</span>
                                     </div>
                                     {% if reply.author == request.user %}
-                                    <button type="button" class="btn btn-xs btn-outline btn-error"
-                                        onclick="openReplyDeleteModal('{{ reply.pk }}', '{{ reply.title|escapejs }}')">
+                                    <button type="button" class="btn btn-xs btn-outline btn-error open-reply-delete-btn"
+                                        data-reply-id="{{ reply.pk }}">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                     {% endif %}
@@ -210,7 +211,7 @@
 
                         <!-- Show less button (only visible when expanded) -->
                         <div class="text-center py-4 border-t border-base-200 mt-4">
-                            <button class="btn btn-primary btn-sm" onclick="toggleReplies()">
+                            <button class="btn btn-primary btn-sm" data-toggle-replies="less">
                                 <i class="fas fa-chevron-up mr-2"></i> Show Less
                             </button>
                         </div>
@@ -237,10 +238,8 @@
                                     <button type="submit" class="btn btn-error">
                                         <i class="fas fa-exclamation-triangle mr-2"></i> Yes, Delete Reply
                                     </button>
-                                    <form method="dialog">
-                                        <button type="button" class="btn"
-                                            onclick="delete_reply_modal.close()">Cancel</button>
-                                    </form>
+                                    <button type="button" class="btn" data-modal-id="delete_reply_modal"
+                                        data-modal-action="close">Cancel</button>
                                 </div>
                             </form>
                         </div>
@@ -280,39 +279,52 @@
         }
     </style>
     <script nonce="{{ request.csp_nonce }}">
-        function openReplyDeleteModal(replyId, replyTitle) {
-            const form = document.getElementById('deleteReplyForm');
-            form.action = `/threads/${replyId}/delete/`;  // adjust this URL to match your actual delete view
+        document.addEventListener("DOMContentLoaded", function () {
+            // Generic modal toggler
+            document.querySelectorAll("[data-modal-id]").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const modal = document.getElementById(btn.dataset.modalId);
+                    const action = btn.dataset.modalAction || "showModal";
+                    if (modal && typeof modal[action] === "function") modal[action]();
+                });
+            });
 
-            const modal = document.getElementById('delete_reply_modal');
-            modal.showModal();
-        }
+            // Delete reply modal opener
+            document.querySelectorAll(".open-reply-delete-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const replyId = btn.dataset.replyId;
+                    const form = document.getElementById("deleteReplyForm");
+                    form.action = `/threads/${replyId}/delete/`; // adjust as needed
+                    const modal = document.getElementById("delete_reply_modal");
+                    if (modal) modal.showModal();
+                });
+            });
 
-        function toggleReplies() {
-            const hiddenReplies = document.getElementById('hidden-replies');
-            const toggleButton = document.getElementById('toggle-replies-btn');
-            const showMoreContainer = document.getElementById('show-more-container');
+            // Toggle replies: show more or less
+            document.querySelectorAll("[data-toggle-replies]").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const action = btn.dataset.toggleReplies;
+                    const hiddenReplies = document.getElementById("hidden-replies");
+                    const showMoreContainer = document.getElementById("show-more-container");
 
-            if (hiddenReplies.classList.contains('hidden')) {
-                // Show more replies
-                hiddenReplies.classList.remove('hidden');
-                showMoreContainer.classList.add('hidden');
+                    if (action === "more") {
+                        hiddenReplies.classList.remove("hidden");
+                        showMoreContainer.classList.add("hidden");
 
-                // Scroll to the first hidden reply
-                const firstHiddenReply = hiddenReplies.querySelector('.bg-base-100');
-                if (firstHiddenReply) {
-                    setTimeout(() => {
-                        firstHiddenReply.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 100);
-                }
-            } else {
-                // Show fewer replies
-                hiddenReplies.classList.add('hidden');
-                showMoreContainer.classList.remove('hidden');
+                        const firstHiddenReply = hiddenReplies.querySelector(".bg-base-100");
+                        if (firstHiddenReply) {
+                            setTimeout(() => {
+                                firstHiddenReply.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }, 100);
+                        }
+                    } else if (action === "less") {
+                        hiddenReplies.classList.add("hidden");
+                        showMoreContainer.classList.remove("hidden");
 
-                // Scroll back to the show more button
-                showMoreContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }
+                        showMoreContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }
+                });
+            });
+        });
     </script>
 </c-layouts.base>

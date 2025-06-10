@@ -167,7 +167,8 @@
                     Closing your account will deactivate your access. This action cannot be undone.
                 </p>
                 <div class="card-actions justify-end">
-                    <button class="btn btn-error btn-outline" onclick="close_account_modal.showModal()">
+                    <button class="btn btn-error btn-outline" data-modal-id="close_account_modal"
+                        data-modal-action="showModal">
                         <i class="fas fa-trash-alt mr-2"></i> Close Account
                     </button>
                 </div>
@@ -195,4 +196,23 @@
             </div>
         </div>
     </section>
+    <script nonce="{{ request.csp_nonce }}">
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll("[data-modal-id]").forEach(button => {
+                button.addEventListener("click", () => {
+                    const id = button.getAttribute("data-modal-id");
+                    const action = button.getAttribute("data-modal-action") || "showModal";
+                    const modal = document.getElementById(id);
+
+                    if (!modal) return;
+
+                    if (action === "showModal" && typeof modal.showModal === "function") {
+                        modal.showModal();
+                    } else if (action === "close" && typeof modal.close === "function") {
+                        modal.close();
+                    }
+                });
+            });
+        });
+    </script>
 </c-layouts.base>

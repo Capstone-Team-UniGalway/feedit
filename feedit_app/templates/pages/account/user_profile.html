@@ -66,7 +66,7 @@
                         <i class="fas fa-edit mr-2"></i> Edit Profile
                     </a>
                     {% endif %}
-                    <button class="btn btn-ghost" onclick="share_profile_modal.showModal()">
+                    <button class="btn btn-ghost" data-modal-id="share_profile_modal" data-modal-action="showModal">
                         <i class="fas fa-share-alt mr-2"></i> Share Profile
                     </button>
 
@@ -82,7 +82,7 @@
                                     <input type="text" id="profile-url"
                                         value="{{ request.scheme }}://{{ request.get_host }}{% url 'account_public_profile' identifier=user.id %}"
                                         class="input input-bordered w-full font-mono text-sm" readonly />
-                                    <button class="btn btn-square" onclick="copyProfileUrl()">
+                                    <button class="btn btn-square" data-action="copy-url">
                                         <i class="fas fa-copy"></i>
                                     </button>
                                 </div>
@@ -93,14 +93,20 @@
                             <div class="mb-6">
                                 <label class="label font-medium">Share via</label>
                                 <div class="flex flex-wrap gap-2 justify-center">
-                                    <button class="btn btn-outline" onclick="shareVia('email')">
+                                    <button class="btn btn-outline" data-share-platform="email">
                                         <i class="fas fa-envelope mr-2"></i> Email
                                     </button>
-                                    <button class="btn btn-outline" onclick="shareVia('slack')">
+                                    <button class="btn btn-outline" data-share-platform="slack">
                                         <i class="fab fa-slack mr-2"></i> Slack
                                     </button>
-                                    <button class="btn btn-outline" onclick="shareVia('teams')">
+                                    <button class="btn btn-outline" data-share-platform="teams">
                                         <i class="fab fa-microsoft mr-2"></i> Teams
+                                    </button>
+                                    <button id="native-share-btn" class="btn btn-outline hidden"
+                                        data-url="{{ request.scheme }}://{{ request.get_host }}{% url 'account_profile'  %}?user={{ user.id }}"
+                                        data-title="{{ user.get_full_name }}"
+                                        data-text="{{ user.get_full_name }} on FeedIT!">
+                                        <i class="fas fa-share-alt mr-2"></i> Other Options
                                     </button>
                                 </div>
                             </div>
@@ -158,53 +164,73 @@
     </section>
     <!-- JavaScript for Share Profile Functionality -->
     <script nonce="{{ request.csp_nonce }}">
-        // Function to copy profile URL to clipboard
-        function copyProfileUrl() {
-            const profileUrl = document.getElementById('profile-url');
-            profileUrl.select();
-            document.execCommand('copy');
+        document.addEventListener("DOMContentLoaded", function () {
+            // Modal toggler
+            document.querySelectorAll("[data-modal-id]").forEach(button => {
+                button.addEventListener("click", () => {
+                    const id = button.getAttribute("data-modal-id");
+                    const action = button.getAttribute("data-modal-action") || "showModal";
+                    const modal = document.getElementById(id);
+                    if (!modal) return;
 
-            // Show a toast notification
-            const toast = document.createElement('div');
-            toast.className = 'toast toast-top toast-end';
-            toast.innerHTML = `
-            <div class="alert alert-success">
-                <i class="fas fa-check-circle"></i>
-                <span>Profile URL copied to clipboard!</span>
-            </div>
-        `;
-            document.body.appendChild(toast);
+                    if (action === "showModal" && typeof modal.showModal === "function") {
+                        modal.showModal();
+                    } else if (action === "close" && typeof modal.close === "function") {
+                        modal.close();
+                    }
+                });
+            });
 
-            // Remove the toast after 3 seconds
-            setTimeout(() => {
-                toast.remove();
-            }, 3000);
-        }
+            // Copy profile URL
+            document.querySelector("[data-action='copy-url']")?.addEventListener("click", () => {
+                const profileUrlInput = document.getElementById("profile-url");
+                profileUrlInput.select();
+                document.execCommand("copy");
 
-        // Function to share via different platforms
-        function shareVia(platform) {
-            const profileUrl = document.getElementById('profile-url').value;
-            const userName = "{{ user.get_full_name }}";
-            let shareUrl = '';
+                const toast = document.createElement("div");
+                toast.className = "toast toast-top toast-end";
+                toast.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Profile URL copied to clipboard!</span>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            });
 
-            switch (platform) {
-                case 'email':
-                    shareUrl = `mailto:?subject=Check out ${userName}'s profile&body=I thought you might be interested in ${userName}'s profile: ${profileUrl}`;
-                    break;
-                case 'slack':
-                    // This would typically use Slack's Web API, but for demo we'll show a notification
-                    alert(`To share on Slack, paste this in a channel:\n\n${userName}'s profile: ${profileUrl}`);
-                    return;
-                case 'teams':
-                    // This would typically use Microsoft Teams API, but for demo we'll show a notification
-                    alert(`To share on Microsoft Teams, paste this in a chat:\n\n${userName}'s profile: ${profileUrl}`);
-                    return;
-                default:
-                    return;
+            // Share via platform
+            document.querySelectorAll("[data-share-platform]").forEach(button => {
+                button.addEventListener("click", () => {
+                    const platform = button.getAttribute("data-share-platform");
+                    const profileUrl = document.getElementById("profile-url").value;
+                    const userName = "{{ user.get_full_name|escapejs }}";
+                    let shareUrl = "";
+
+                    if (platform === "email") {
+                        shareUrl = `mailto:?subject=Check out ${userName}'s profile&body=I thought you might be interested in ${userName}'s profile: ${profileUrl}`;
+                        window.open(shareUrl, "_blank");
+                    } else {
+                        alert(`To share on ${platform.charAt(0).toUpperCase() + platform.slice(1)}, paste this in a chat:\n\n${userName}'s profile: ${profileUrl}`);
+                    }
+                });
+            });
+
+            const nativeShareBtn = document.getElementById("native-share-btn");
+
+            if (navigator.share && nativeShareBtn) {
+                nativeShareBtn.classList.remove("hidden");
+
+                nativeShareBtn.addEventListener("click", () => {
+                    navigator.share({
+                        title: nativeShareBtn.dataset.title,
+                        text: nativeShareBtn.dataset.text,
+                        url: nativeShareBtn.dataset.url,
+                    }).catch((error) => {
+                        console.warn("Sharing failed:", error);
+                    });
+                });
             }
-
-            // Open the share URL in a new window/tab
-            window.open(shareUrl, '_blank');
-        }
+        });
     </script>
 </c-layouts.base>

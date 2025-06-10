@@ -143,47 +143,43 @@
         clearTimeout(this.searchTimeouts.get(textareaId));
       }
 
-      // Set a new timeout to throttle the search requests
       const timeoutId = setTimeout(() => {
         console.log(`[MentionManager] Executing search after throttle delay`);
 
-        // Check if HTMX is available
-        if (typeof htmx === 'undefined') {
-          console.error('[MentionManager] HTMX is not available!');
-          return;
-        }
-
-        // Add the mention query as a URL parameter
         const baseUrl = textarea.getAttribute('data-mention-search-url');
         if (!baseUrl) {
           console.error('[MentionManager] No mention search URL found on textarea');
           return;
         }
+
         const separator = baseUrl.includes('?') ? '&' : '?';
         const searchUrl = `${baseUrl}${separator}q=${encodeURIComponent(mentionText)}`;
+        const resultsEl = document.getElementById(`mention-results-${textareaId}`);
 
-        console.log(`[MentionManager] Making HTMX request to: ${searchUrl}`);
+        fetch(searchUrl, {
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP error ${response.status}`);
+            }
+            return response.text();
+          })
+          .then((html) => {
+            resultsEl.innerHTML = html;
+            this.showDropdown(textareaId);
+          })
+          .catch((error) => {
+            console.error(`[MentionManager] Fetch request failed:`, error);
+          });
 
-        // Make the HTMX request directly
-        htmx.ajax('GET', searchUrl, {
-          target: `#mention-results-${textareaId}`,
-          swap: 'innerHTML'
-        }).then(() => {
-          console.log(`[MentionManager] HTMX request completed successfully`);
-          this.showDropdown(textareaId);
-        }).catch((error) => {
-          console.error(`[MentionManager] HTMX request failed:`, error);
-        });
-
-        // Remove the timeout from our map
         this.searchTimeouts.delete(textareaId);
-      }, 200); // 200ms throttle
+      }, 200);
 
-      // Store the timeout ID
       this.searchTimeouts.set(textareaId, timeoutId);
     },
-
-
 
     // Hide dropdown for a specific textarea
     hideDropdown: function (textareaId) {
@@ -206,6 +202,23 @@
       });
     }
   };
+
+  // Global delegation for dynamic .mention-item clicks
+  document.getElementById("mention-results-{{ id|default:name }}")
+    ?.addEventListener("click", function (e) {
+      const item = e.target.closest(".mention-item[data-mention-user-id]");
+      if (!item) return;
+
+      const textareaId = item.getAttribute("data-mention-textarea");
+      const userId = item.getAttribute("data-mention-user-id");
+      const userName = item.getAttribute("data-mention-user-name");
+
+      if (window.selectMention && typeof window.selectMention === "function") {
+        window.selectMention(textareaId, userId, userName);
+      } else {
+        console.warn("selectMention() is not defined.");
+      }
+    });
 
   // Global click handler to hide dropdowns when clicking outside
   document.addEventListener('click', function (e) {

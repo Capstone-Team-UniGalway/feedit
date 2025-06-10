@@ -172,9 +172,11 @@ def render_mentions(text):
     return result
 
 
-@register.inclusion_tag("components/threads/mention_input_tailwind.html")
+@register.inclusion_tag(
+    "components/threads/mention_input_tailwind.html", takes_context=True
+)
 def mention_input(
-    name, id=None, value=None, css_class="", placeholder=None, required=False
+    context, name, id=None, value=None, css_class="", placeholder=None, required=False
 ):
     """
     Renders a textarea with @mention support using Tailwind CSS.
@@ -184,6 +186,7 @@ def mention_input(
     css_class="h-32" %}
     """
     return {
+        "request": context["request"],  # ✅ make sure request is passed to the template
         "name": name,
         "id": id,
         "value": value,

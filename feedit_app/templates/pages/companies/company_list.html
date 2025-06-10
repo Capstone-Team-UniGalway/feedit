@@ -54,7 +54,8 @@
                     {% if user.is_authenticated %}
                     {% if user.workplace == company %}
                     <!-- Leave current workplace -->
-                    <button class="btn btn-sm btn-error" onclick="leave_company_modal.showModal()">
+                    <button class="btn btn-sm btn-error" data-modal-id="leave_company_modal"
+                        data-modal-action="showModal">
                         <i class="fas fa-sign-out-alt mr-1"></i> Leave Company
                     </button>
                     {% elif company.id in pending_requests %}
@@ -177,4 +178,22 @@
         </div>
     </dialog>
     {% endif %}
+    <script nonce="{{ request.csp_nonce }}">
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll("[data-modal-id]").forEach(button => {
+                button.addEventListener("click", () => {
+                    const id = button.getAttribute("data-modal-id");
+                    const action = button.getAttribute("data-modal-action") || "showModal";
+                    const modal = document.getElementById(id);
+                    if (!modal) return;
+
+                    if (action === "showModal" && typeof modal.showModal === "function") {
+                        modal.showModal();
+                    } else if (action === "close" && typeof modal.close === "function") {
+                        modal.close();
+                    }
+                });
+            });
+        });
+    </script>
 </c-layouts.base>

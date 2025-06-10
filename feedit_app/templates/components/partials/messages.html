@@ -1,7 +1,8 @@
 {% if messages %}
 <div class="messages-container mb-6 space-y-2">
     {% for message in messages %}
-    <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-error{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %} shadow-md flex justify-between items-center">
+    <div
+        class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-error{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %} shadow-md flex justify-between items-center">
         <div class="flex items-center">
             {% if message.tags == 'success' %}
             <i class="fas fa-check-circle mr-2"></i>
@@ -14,10 +15,20 @@
             {% endif %}
             <span>{{ message }}</span>
         </div>
-        <button onclick="this.parentElement.remove()" class="btn btn-ghost btn-sm btn-circle">
+        <button data-dismiss-parent class="btn btn-ghost btn-sm btn-circle">
             <i class="fas fa-times"></i>
         </button>
     </div>
+    <script nonce="{{ request.csp_nonce }}">
+        document.querySelectorAll("[data-dismiss-parent]").forEach(button => {
+            button.addEventListener("click", () => {
+                const parent = button.parentElement;
+                if (parent) {
+                    parent.remove();
+                }
+            });
+        });
+    </script>
     {% endfor %}
 </div>
 {% endif %}

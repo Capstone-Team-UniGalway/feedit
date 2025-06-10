@@ -48,7 +48,7 @@
             </p>
 
             <!-- Trigger Button -->
-            <button class="btn btn-error btn-outline w-full" onclick="delete_modal.showModal()">
+            <button class="btn btn-error btn-outline w-full" data-modal-id="delete_modal" data-modal-action="showModal">
                 Delete Company
             </button>
 
@@ -75,4 +75,22 @@
         {% endif %}
 
     </section>
+    <script nonce="{{ request.csp_nonce }}">
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll("[data-modal-id]").forEach(button => {
+                button.addEventListener("click", () => {
+                    const id = button.getAttribute("data-modal-id");
+                    const action = button.getAttribute("data-modal-action") || "showModal";
+                    const modal = document.getElementById(id);
+                    if (!modal) return;
+
+                    if (action === "showModal" && typeof modal.showModal === "function") {
+                        modal.showModal();
+                    } else if (action === "close" && typeof modal.close === "function") {
+                        modal.close();
+                    }
+                });
+            });
+        });
+    </script>
 </c-layouts.base>

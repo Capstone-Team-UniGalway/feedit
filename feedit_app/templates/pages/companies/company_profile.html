@@ -80,14 +80,15 @@
                     </a>
                     {% else %}
                     <!-- Dispute ownership -->
-                    <button class="btn btn-sm btn-outline btn-warning" onclick="claim_dispute_modal.showModal()">
+                    <button class="btn btn-sm btn-outline btn-warning" data-modal-id="claim_dispute_modal"
+                        data-modal-action="showModal">
                         <i class="fas fa-gavel mr-1"></i> Dispute Ownership
                     </button>
                     {% endif %}
                     {% endif %}
 
                     {% endif %}
-                    <button class="btn btn-sm btn-neutral" onclick="document.getElementById('share_modal').showModal()">
+                    <button class="btn btn-sm btn-neutral" data-modal-id="share_modal" data-modal-action="showModal">
                         <i class="fas fa-share-alt mr-1"></i> Share Profile
                     </button>
                     <a href="{% url 'companies:company_directory' pk=company.id %}">
@@ -250,8 +251,24 @@
                     <input type="text" id="company-url"
                         value="{{ request.scheme }}://{{ request.get_host }}{% url 'companies:detail' company.id %}"
                         class="join-item input input-bordered w-full" readonly />
-                    <button class="join-item btn btn-square" onclick="copyProfileUrl()">
+                    <button class="join-item btn btn-square" data-action="copy-url">
                         <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Share Options -->
+            <div class="mb-6">
+                <label class="label font-medium">Share via</label>
+                <div class="flex flex-wrap gap-2 justify-center">
+                    <button class="btn btn-outline" data-share-platform="email">
+                        <i class="fas fa-envelope mr-2"></i> Email
+                    </button>
+                    <button class="btn btn-outline" data-share-platform="slack">
+                        <i class="fab fa-slack mr-2"></i> Slack
+                    </button>
+                    <button class="btn btn-outline" data-share-platform="teams">
+                        <i class="fab fa-microsoft mr-2"></i> Teams
                     </button>
                 </div>
             </div>
@@ -312,7 +329,8 @@
 
                 <div class="modal-action">
                     <button type="submit" class="btn btn-primary">Submit Claim</button>
-                    <button type="button" class="btn" onclick="claim_company_modal.close()">Cancel</button>
+                    <button type="button" class="btn" data-modal-id="claim_company_modal"
+                        data-modal-action="close">Cancel</button>
                 </div>
             </form>
         </div>
@@ -350,7 +368,8 @@
 
                 <div class="modal-action">
                     <button type="submit" class="btn btn-primary">Submit Dispute</button>
-                    <button type="button" class="btn" onclick="claim_dispute_modal.close()">Cancel</button>
+                    <button type="button" class="btn" data-modal-id="claim_dispute_modal"
+                        data-modal-action="close">Cancel</button>
                 </div>
             </form>
         </div>
@@ -359,8 +378,49 @@
     <!-- JavaScript for Share Profile Functionality -->
     <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", function () {
-            const nativeShareBtn = document.getElementById("native-share-btn");
+            // Modal handler
+            document.querySelectorAll("[data-modal-id]").forEach(button => {
+                button.addEventListener("click", () => {
+                    const id = button.getAttribute("data-modal-id");
+                    const action = button.getAttribute("data-modal-action") || "showModal";
+                    const modal = document.getElementById(id);
+                    if (!modal) return;
 
+                    if (action === "showModal" && typeof modal.showModal === "function") {
+                        modal.showModal();
+                    } else if (action === "close" && typeof modal.close === "function") {
+                        modal.close();
+                    }
+                });
+            });
+
+            // Copy to clipboard
+            document.querySelector("[data-action='copy-url']")?.addEventListener("click", () => {
+                const input = document.getElementById("company-url");
+                input.select();
+                document.execCommand("copy");
+                alert("Link copied to clipboard!");
+            });
+
+            // Share via platform
+            document.querySelectorAll("[data-share-platform]").forEach(button => {
+                button.addEventListener("click", () => {
+                    const platform = button.getAttribute("data-share-platform");
+                    const profileUrl = document.getElementById("profile-url").value;
+                    const userName = "{{ user.get_full_name|escapejs }}";
+                    let shareUrl = "";
+
+                    if (platform === "email") {
+                        shareUrl = `mailto:?subject=Check out ${userName}'s profile&body=I thought you might be interested in ${userName}'s profile: ${profileUrl}`;
+                        window.open(shareUrl, "_blank");
+                    } else {
+                        alert(`To share on ${platform.charAt(0).toUpperCase() + platform.slice(1)}, paste this in a chat:\n\n${userName}'s profile: ${profileUrl}`);
+                    }
+                });
+            });
+
+            // Native share
+            const nativeShareBtn = document.getElementById("native-share-btn");
             if (navigator.share && nativeShareBtn) {
                 nativeShareBtn.classList.remove("hidden");
 
@@ -375,16 +435,6 @@
                 });
             }
         });
-
-        // Function to copy profile URL to clipboard
-        function copyProfileUrl() {
-            const profileUrl = document.getElementById('company-url');
-            profileUrl.select();
-            document.execCommand('copy');
-
-            // Show a toast or some feedback
-            alert('Link copied to clipboard!');
-        }
     </script>
 
 </c-layouts.base>
