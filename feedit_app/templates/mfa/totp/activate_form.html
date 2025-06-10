@@ -61,7 +61,8 @@
                     <div class="flex gap-2 items-center">
                         <input type="text" value="{{ form.secret }}" readonly
                             class="input input-bordered w-full font-mono text-sm" />
-                        <button class="btn btn-square btn-sm" onclick="copyToClipboard('{{ form.secret }}')">
+                        <button type="button" class="btn btn-square btn-sm copy-secret-btn"
+                            data-secret="{{ form.secret }}">
                             <i class="fas fa-copy"></i>
                         </button>
                     </div>
@@ -94,12 +95,17 @@
     </section>
 
     <script nonce="{{ request.csp_nonce }}">
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(function () {
-                alert('Secret code copied to clipboard!');
-            }, function () {
-                alert('Failed to copy text');
+        document.addEventListener("DOMContentLoaded", function () {
+            document.addEventListener("click", function (e) {
+                const btn = e.target.closest(".copy-secret-btn");
+                if (!btn) return;
+
+                const text = btn.getAttribute("data-secret");
+                navigator.clipboard.writeText(text).then(
+                    () => alert("Secret code copied to clipboard!"),
+                    () => alert("Failed to copy text")
+                );
             });
-        }
+        });
     </script>
 </c-layouts.base>

@@ -171,7 +171,7 @@ class CreateRequestView(FullyActivatedUserMixin, CreateView):
 class RequestDetailView(FullyActivatedUserMixin, DetailView):
     model = Request
     template_name = "pages/requests/request_detail.html"
-    context_object_name = "request"
+    context_object_name = "request_obj"
 
     def user_test_func(self):
         user = self.request.user
@@ -215,6 +215,8 @@ class RequestDetailView(FullyActivatedUserMixin, DetailView):
         context["can_reply"] = can_process or user == request_obj.author
         context["reply_form"] = RequestReplyForm()
         context["files"] = files
+
+        context["request"] = self.request
 
         return context
 

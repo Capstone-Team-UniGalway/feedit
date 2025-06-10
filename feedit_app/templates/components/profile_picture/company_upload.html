@@ -39,8 +39,8 @@ Parameters:
                         <span class="label-text-alt">JPG, PNG, WEBP (max 5MB)</span>
                     </label>
                     <input type="file" name="file" class="file-input file-input-bordered w-full"
-                        accept="image/jpeg,image/jpg,image/png,image/webp" required
-                        onchange="previewCompanyLogo(this)" />
+                        accept="image/jpeg,image/jpg,image/png,image/webp" required data-preview-image
+                        data-preview-target="company-logo-preview" />
                 </div>
 
                 <div class="card-actions justify-end">
@@ -82,8 +82,8 @@ Parameters:
                                 <form method="post" action="{% url 'secure_files:delete' file_id=file.id %}"
                                     class="inline">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-error btn-outline"
-                                        onclick="return confirm('Are you sure you want to delete this company logo?')">
+                                    <button type="submit" class="btn btn-sm btn-error btn-outline confirm-delete-btn"
+                                        data-confirm-message="Are you sure you want to delete this company logo?">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -99,13 +99,33 @@ Parameters:
 </div>
 
 <script nonce="{{ request.csp_nonce }}">
-    function previewCompanyLogo(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                document.getElementById('company-logo-preview').src = e.target.result;
+    document.addEventListener("DOMContentLoaded", function () {
+        // Preview image handler for any input marked with data-preview-image
+        document.querySelectorAll('[data-preview-image]').forEach(input => {
+            input.addEventListener('change', function () {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const targetId = input.getAttribute('data-preview-target');
+                        const img = document.getElementById(targetId);
+                        if (img) {
+                            img.src = e.target.result;
+                        }
+                    };
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        });
+
+        // Confirm delete handler using delegation
+        document.addEventListener("click", function (e) {
+            const btn = e.target.closest(".confirm-delete-btn");
+            if (!btn) return;
+
+            const msg = btn.getAttribute("data-confirm-message") || "Are you sure?";
+            if (!confirm(msg)) {
+                e.preventDefault();
             }
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
+        });
+    });
 </script>

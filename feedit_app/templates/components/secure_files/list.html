@@ -53,8 +53,8 @@ Parameters:
                     <td>
                         <form method="post" action="{% url 'secure_files:delete' file_id=file.id %}" class="inline">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-error"
-                                onclick="return confirm('Are you sure you want to delete this file?')">
+                            <button type="submit" class="btn btn-sm btn-error confirm-delete-btn"
+                                data-confirm-message="Are you sure you want to delete this file?">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </form>
@@ -71,3 +71,16 @@ Parameters:
     </div>
     {% endif %}
 </div>
+<script nonce="{{ request.csp_nonce }}">
+    document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("click", function (e) {
+            const btn = e.target.closest(".confirm-delete-btn");
+            if (!btn) return;
+
+            const msg = btn.getAttribute("data-confirm-message") || "Are you sure?";
+            if (!confirm(msg)) {
+                e.preventDefault();
+            }
+        });
+    });
+</script>
