@@ -251,6 +251,8 @@ STATIC_URL = "/assets/"
 # without the need of a separate server (apache/nginx)
 if ENVIRONMENT == "production":
     MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+    # Insert custom CORS middleware after WhiteNoise
+    MIDDLEWARE.insert(2, "app.middleware.StaticCORSHeadersMiddleware")
 
 
 # Default primary key field type
