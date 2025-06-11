@@ -450,6 +450,8 @@ CONTENT_SECURITY_POLICY = {
         ],
         "img-src": [SELF, "data:"],
         "connect-src": [SELF],
+        "frame-ancestors": [SELF],
+        "form-action": [SELF],
     },
 }
 
