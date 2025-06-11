@@ -65,9 +65,7 @@
                             {% csrf_token %}
                             <button type="submit" class="btn btn-error">Confirm Delete</button>
                         </form>
-                        <form method="dialog">
-                            <button class="btn btn-outline">Cancel</button>
-                        </form>
+                        <button class="btn" data-modal-id="delete_modal" data-modal-action="close">Cancel</button>
                     </div>
                 </div>
             </dialog>
