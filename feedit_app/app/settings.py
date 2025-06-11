@@ -75,6 +75,7 @@ else:
 
     # Security settings for production
     CSRF_COOKIE_SECURE = True
+    CSRF_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -251,6 +252,8 @@ STATIC_URL = "/assets/"
 # without the need of a separate server (apache/nginx)
 if ENVIRONMENT == "production":
     MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+    # Insert custom CORS middleware after WhiteNoise
+    MIDDLEWARE.insert(2, "app.middleware.StaticCORSHeadersMiddleware")
 
 
 # Default primary key field type
@@ -450,6 +453,8 @@ CONTENT_SECURITY_POLICY = {
         ],
         "img-src": [SELF, "data:"],
         "connect-src": [SELF],
+        "frame-ancestors": [SELF],
+        "form-action": [SELF],
     },
 }
 
