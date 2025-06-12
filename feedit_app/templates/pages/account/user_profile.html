@@ -9,11 +9,11 @@
                 <div class="avatar mb-4">
                     <div class="w-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
                         {# {% if has_profile_picture %} #}
-                        <img src="{{ user.profile_picture }}" alt="{{ user.get_full_name }}" />
+                        <img src="{{ profile_user.profile_picture }}" alt="{{ profile_user.get_full_name }}" />
                         {# {% else %}
                         <div
                             class="bg-primary text-primary-content w-32 h-32 flex items-center justify-center text-3xl font-bold">
-                            {{ user.get_initials|default:user.email.0|upper }}
+                            {{ profile_user.get_initials|default:profile_user.email.0|upper }}
                         </div>
                         {% endif %} #}
                     </div>
@@ -21,24 +21,24 @@
 
                 <!-- User Name and Badge -->
                 <div class="flex items-center gap-2 mb-1">
-                    <h2 class="text-2xl font-bold">{{ user.get_full_name }}</h2>
-                    <div class="badge badge-primary">{{ user.type|title }}</div>
+                    <h2 class="text-2xl font-bold">{{ profile_user.get_full_name }}</h2>
+                    <div class="badge badge-primary">{{ profile_user.type|title }}</div>
                 </div>
 
                 <!-- Job Title -->
-                {% if user.job_title %}
-                <p class="text-gray-500 mb-1">{{ user.job_title }}</p>
+                {% if profile_user.job_title %}
+                <p class="text-gray-500 mb-1">{{ profile_user.job_title }}</p>
                 {% endif %}
 
                 <!-- Workplace -->
                 <p class="text-gray-400 mb-2">
-                    {% if user.workplace %}
-                    <a href="{% url 'companies:detail' pk=user.workplace.id %}">
-                        <i class="fas fa-building mr-1"></i> {{ user.workplace.name }}
+                    {% if profile_user.workplace %}
+                    <a href="{% url 'companies:detail' pk=profile_user.workplace.id %}">
+                        <i class="fas fa-building mr-1"></i> {{ profile_user.workplace.name }}
                     </a>
-                    {% elif user.company %}
-                    <a href="{% url 'companies:detail' pk=user.company.id %}">
-                        <i class="fas fa-building mr-1"></i> {{ user.company.name }}
+                    {% elif profile_user.company %}
+                    <a href="{% url 'companies:detail' pk=profile_user.company.id %}">
+                        <i class="fas fa-building mr-1"></i> {{ profile_user.company.name }}
                     </a>
                     {% else %}
                     <i class="fas fa-user mr-1"></i> Independent
@@ -46,13 +46,13 @@
                 </p>
 
                 <!-- Bio -->
-                {% if user.bio %}
+                {% if profile_user.bio %}
                 <div class="divider my-2"></div>
-                <p class="text-gray-600 max-w-md">{{ user.bio }}</p>
+                <p class="text-gray-600 max-w-md">{{ profile_user.bio }}</p>
                 {% endif %}
 
                 <!-- Email Verification Warning -->
-                {% if is_own_profile and not user.emailaddress_set.first.verified %}
+                {% if is_own_profile and not request.user.emailaddress_set.first.verified %}
                 <div class="alert alert-warning mt-4 max-w-md">
                     <i class="fas fa-exclamation-triangle"></i>
                     <span>Your email is not verified. Please check your inbox.</span>
@@ -80,7 +80,7 @@
                                 <label class="label font-medium">Profile URL</label>
                                 <div class="flex gap-2">
                                     <input type="text" id="profile-url"
-                                        value="{{ request.scheme }}://{{ request.get_host }}{% url 'account_public_profile' identifier=user.id %}"
+                                        value="{{ request.scheme }}://{{ request.get_host }}{% url 'account_public_profile' identifier=profile_user.id %}"
                                         class="input input-bordered w-full font-mono text-sm" readonly />
                                     <button class="btn btn-square" data-action="copy-url">
                                         <i class="fas fa-copy"></i>
@@ -103,9 +103,9 @@
                                         <i class="fab fa-microsoft mr-2"></i> Teams
                                     </button>
                                     <button id="native-share-btn" class="btn btn-outline hidden"
-                                        data-url="{{ request.scheme }}://{{ request.get_host }}{% url 'account_profile'  %}?user={{ user.id }}"
-                                        data-title="{{ user.get_full_name }}"
-                                        data-text="{{ user.get_full_name }} on FeedIT!">
+                                        data-url="{{ request.scheme }}://{{ request.get_host }}{% url 'account_profile'  %}?user={{ profile_user.id }}"
+                                        data-title="{{ profile_user.get_full_name }}"
+                                        data-text="{{ profile_user.get_full_name }} on FeedIT!">
                                         <i class="fas fa-share-alt mr-2"></i> Other Options
                                     </button>
                                 </div>
@@ -114,7 +114,8 @@
                             <!-- Mention Info -->
                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle"></i>
-                                <span>You can also mention <strong>@{{ user.get_full_name }}</strong> in threads and
+                                <span>You can also mention <strong>@{{ profile_user.get_full_name }}</strong> in threads
+                                    and
                                     comments!</span>
                             </div>
 
@@ -147,7 +148,7 @@
                         <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline">
                             <i class="fas fa-home mr-1"></i> Go to Dashboard
                         </a>
-                        {% if not user.workplace %}
+                        {% if not request.user.workplace %}
                         <button class="btn btn-sm btn-outline">
                             <i class="fas fa-building mr-1"></i> Join a Company
                         </button>
@@ -203,7 +204,7 @@
                 button.addEventListener("click", () => {
                     const platform = button.getAttribute("data-share-platform");
                     const profileUrl = document.getElementById("profile-url").value;
-                    const userName = "{{ user.get_full_name|escapejs }}";
+                    const userName = "{{ profile_user.get_full_name|escapejs }}";
                     let shareUrl = "";
 
                     if (platform === "email") {

@@ -1,4 +1,30 @@
 from django.shortcuts import redirect
+from django.contrib.auth import logout
+
+
+class SessionSecurityMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        print("MIDDLEWARE CALL")
+        if request.user.is_authenticated:
+            print("USER IS AUTH")
+            ua = request.META.get("HTTP_USER_AGENT", "")
+            ip = request.META.get("REMOTE_ADDR")
+
+            if "user_agent" not in request.session:
+                print("UA not in session")
+                request.session["user_agent"] = ua
+                request.session["ip"] = ip
+            else:
+                print("UA IN session")
+                if request.session["user_agent"] != ua or request.session["ip"] != ip:
+                    print("LOGOUT - UA or IP not allowed")
+                    logout(request)
+                    request.session.flush()
+
+        return self.get_response(request)
 
 
 class AdminMFAEnforcementMiddleware:

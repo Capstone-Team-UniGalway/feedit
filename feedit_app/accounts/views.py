@@ -195,7 +195,7 @@ class ConfirmSuccessView(TemplateView):
 
 class ProfileView(UserPassesTestMixin, DetailView):
     template_name = "pages/account/user_profile.html"
-    context_object_name = "user"
+    context_object_name = "profile_user"
     model = User
 
     def get_object(self):
