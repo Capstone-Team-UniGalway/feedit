@@ -1,5 +1,4 @@
 {% load widget_tweaks %}
-{% load mention_tags %}
 
 <c-layouts.base>
     <div class="max-w-3xl mx-auto">
@@ -20,14 +19,32 @@
             <div class="p-6">
                 <form method="post">
                     {% csrf_token %}
-
-                    <!-- Content -->
-                    <div class="form-control mb-4">
-                        {% mention_input name="content" id="reply_content_top" css_class="min-h-32" placeholder="Write your reply here..." required=True %}
-                        {% if reply_form.content.errors %}
-                        <p class="text-red-500 text-sm mt-1">{{ reply_form.content.errors.0 }}</p>
-                        {% endif %}
+                    {{ form.media }}
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-error mb-4">
+                        {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
                     </div>
+                    {% endif %}
+                    {% for field in form.visible_fields %}
+
+                    <div class="form-control mb-4">
+                        <label class="label" for="{{ field.id_for_label }}">
+                            <span class="label-text">{{ field.label }}</span>
+                            {% if field.help_text %}
+                            <div class="tooltip">
+                                <div class="tooltip-content">{{ field.help_text }}</div>
+                                <i class="fas fa-circle-info"></i>
+                            </div>
+                            {% endif %}
+                        </label>
+                        {% for error in field.errors %}
+                        <p class="text-sm text-error">{{ error }}</p>
+                        {% endfor %}
+                        {{ field }}
+                    </div>
+                    {% endfor %}
 
                     <!-- Form Actions -->
                     <div class="flex justify-end gap-2">

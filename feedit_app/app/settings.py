@@ -13,7 +13,7 @@ from pathlib import Path
 
 import environ
 from app.settings_loader import load_secrets
-from csp.constants import SELF, NONCE, UNSAFE_INLINE
+from csp.constants import NONCE, SELF, UNSAFE_INLINE
 
 load_secrets()  # ✅ Load AWS secrets before using env() - production only
 
@@ -76,7 +76,12 @@ else:
     # Security settings for production
     CSRF_COOKIE_SECURE = True
     CSRF_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_AGE = 7200  # 2 hours
+    SESSION_SAVE_EVERY_REQUEST = True
+    SESSION_EXPIRE_AT_BROWSER_CLOSE = False
     SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
     CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
@@ -140,6 +145,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "accounts.middleware.AdminMFAEnforcementMiddleware",
+    "accounts.middleware.SessionSecurityMiddleware",
 ]
 
 ROOT_URLCONF = "app.urls"
@@ -346,7 +352,6 @@ CKEDITOR_5_CONFIGS = {
             "codeBlock",
             "|",
             "horizontalLine",
-            "pageBreak",
             "|",
             "sourceEditing",
         ],
@@ -415,6 +420,15 @@ CKEDITOR_5_CONFIGS = {
                     "title": "Heading 3",
                     "class": "ck-heading_heading3",
                 },
+            ]
+        },
+        "mention": {
+            "feeds": [
+                {
+                    "marker": "@",
+                    "feed": [],  # 👈 just an empty placeholder, injected via widget
+                    "minimumCharacters": 0,
+                }
             ]
         },
     },

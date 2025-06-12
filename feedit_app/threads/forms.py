@@ -1,11 +1,23 @@
+# forms.py
 from django import forms
 from django_ckeditor_5.widgets import CKEditor5Widget
+from utils.sanitizers import sanitize_html
 
 from .models import Thread
 
 
 class ThreadForm(forms.ModelForm):
-    """Form for creating and updating threads."""
+
+    def __init__(self, *args, mention_feed=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if mention_feed:
+            self.fields["content"].widget.config.setdefault("mention", {})["feeds"] = [
+                {
+                    "marker": "@",
+                    "feed": mention_feed,
+                    "minimumCharacters": 0,
+                }
+            ]
 
     class Meta:
         model = Thread
@@ -27,16 +39,23 @@ class ThreadForm(forms.ModelForm):
                 attrs={"class": "select select-bordered w-full"}
             ),
         }
-        help_texts = {
-            "type": "Forum threads allow replies; announcements don't.",
-            "visibility": (
-                "Internal: visible to all. Private: visible to employees only."
-            ),
-        }
+
+    def clean_content(self):
+        return sanitize_html(self.cleaned_data.get("content", ""))
 
 
 class ThreadReplyForm(forms.ModelForm):
-    """Form for creating replies to threads."""
+
+    def __init__(self, *args, mention_feed=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if mention_feed:
+            self.fields["content"].widget.config.setdefault("mention", {})["feeds"] = [
+                {
+                    "marker": "@",
+                    "feed": mention_feed,
+                    "minimumCharacters": 0,
+                }
+            ]
 
     class Meta:
         model = Thread
@@ -45,5 +64,8 @@ class ThreadReplyForm(forms.ModelForm):
             "content": CKEditor5Widget(
                 attrs={"class": "django_ckeditor_5 w-full textarea"},
                 config_name="extends",
-            )
+            ),
         }
+
+    def clean_content(self):
+        return sanitize_html(self.cleaned_data.get("content", ""))

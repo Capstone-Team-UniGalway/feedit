@@ -47,7 +47,7 @@
                         </a>
                     </div>
                     <div class="prose max-w-none text-sm line-clamp-2">
-                        {{ mention.thread.content|render_mentions|safe }}
+                        {{ mention.thread.content|render_mentions }}
                     </div>
                     <div class="mt-2">
                         <a href="{{ mention.thread.get_absolute_url }}" class="btn btn-sm btn-outline">

@@ -12,6 +12,7 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
+from utils.mentions import get_mentionable_users_for
 
 from .forms import ThreadForm, ThreadReplyForm
 from .models import Thread
@@ -144,7 +145,9 @@ class ThreadDetailView(FullyActivatedUserMixin, DetailView):
         # Replies already prefetched → no extra query
         # Sort by created_at in ascending order (oldest first)
         context["replies"] = thread.replies.order_by("created_at")
-        context["reply_form"] = ThreadReplyForm()
+        context["reply_form"] = ThreadReplyForm(
+            mention_feed=get_mentionable_users_for(self.request.user)
+        )
 
         # We're no longer automatically marking mentions as read when viewing a thread
         # This allows mentions to remain visible on the dashboard
@@ -173,6 +176,7 @@ class ThreadCreateView(FullyActivatedUserMixin, CreateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
+        kwargs["mention_feed"] = get_mentionable_users_for(self.request.user)
         user = self.request.user
 
         # Patch POST data to inject required hidden values before validation
@@ -239,6 +243,7 @@ class ThreadUpdateView(FullyActivatedUserMixin, UpdateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         user = self.request.user
+        kwargs["mention_feed"] = get_mentionable_users_for(user)
 
         if self.request.method == "POST":
             data = kwargs["data"].copy()
@@ -366,3 +371,10 @@ class ThreadReplyCreateView(FullyActivatedUserMixin, CreateView):
 
     def get_success_url(self):
         return self.object.parent.get_absolute_url()
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        user = self.request.user
+        kwargs["mention_feed"] = get_mentionable_users_for(user)
+
+        return kwargs

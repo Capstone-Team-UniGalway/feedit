@@ -38,7 +38,7 @@
 
                     <div class="mt-4 text-sm">
                         {% if request.content %}
-                        {{ request.content|safe|truncatechars:150 }}
+                        {{ request.content|truncatechars:150 }}
                         {% else %}
                         <span class="text-gray-400">No message provided</span>
                         {% endif %}
