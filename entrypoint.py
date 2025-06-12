@@ -47,8 +47,8 @@ def main():
     django.setup()
 
     # Now it's safe to access settings and storage
-    from django.core.files.storage import default_storage
     from django.conf import settings
+    from django.core.files.storage import default_storage
 
     print(f"✅ Active storage backend: {default_storage.__class__}")
     print(f"✅ DEBUG: {settings.DEBUG}")

@@ -13,7 +13,7 @@ from pathlib import Path
 
 import environ
 from app.settings_loader import load_secrets
-from csp.constants import SELF, NONCE, UNSAFE_INLINE
+from csp.constants import NONCE, SELF, UNSAFE_INLINE
 
 load_secrets()  # ✅ Load AWS secrets before using env() - production only
 

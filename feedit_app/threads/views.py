@@ -12,10 +12,10 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
+from utils.mentions import get_mentionable_users_for
 
 from .forms import ThreadForm, ThreadReplyForm
 from .models import Thread
-from utils.mentions import get_mentionable_users_for
 
 
 class ThreadListView(FullyActivatedUserMixin, ListView):

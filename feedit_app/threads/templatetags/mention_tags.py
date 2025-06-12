@@ -1,6 +1,7 @@
 # mention_tags.py
 
 import re
+
 from django import template
 from django.contrib.auth import get_user_model
 from django.urls import reverse

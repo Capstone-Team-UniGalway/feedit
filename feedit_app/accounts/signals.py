@@ -1,19 +1,18 @@
-from django.contrib.sessions.models import Session
-from django.dispatch import receiver
-from django.utils.timezone import now
-
 # Allauth Signals
 from allauth.account.signals import (
-    password_set,
+    email_changed,
     password_changed,
     password_reset,
-    email_changed,
+    password_set,
 )
 from allauth.mfa.signals import (
     authenticator_added,
     authenticator_removed,
     authenticator_reset,
 )
+from django.contrib.sessions.models import Session
+from django.dispatch import receiver
+from django.utils.timezone import now
 
 
 def logout_other_sessions(user, current_session_key):
