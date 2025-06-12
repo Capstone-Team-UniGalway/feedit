@@ -255,11 +255,11 @@ STATIC_URL = "/assets/"
 # python manage.py collectstatic
 
 # Use WhiteNoise for static file handling in production
-# without the need of a separate server (apache/nginx)
+# Add correct CORS headers dynamically using WhiteNoise hook
 if ENVIRONMENT == "production":
+    WHITENOISE_ALLOW_ALL_ORIGINS = False
+    WHITENOISE_ADD_HEADERS_FUNCTION = "app.middleware.set_cors_headers"
     MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
-    # Insert custom CORS middleware after WhiteNoise
-    MIDDLEWARE.insert(2, "app.middleware.StaticCORSHeadersMiddleware")
 
 
 # Default primary key field type
