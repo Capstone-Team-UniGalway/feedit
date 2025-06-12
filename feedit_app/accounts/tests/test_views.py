@@ -1,4 +1,4 @@
-from unittest.mock import Mock, PropertyMock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from accounts.forms import CustomLoginForm, CustomSignupForm
@@ -599,63 +599,6 @@ class TestCustomPasswordResetFromKeyView:
         assert response.url == "/account/auth"
 
 
-class TestUserSearchView:
-    """Test the UserSearchView."""
-
-    def setup_method(self):
-        self.client = Client()
-
-    def test_unauthenticated_user_redirected(self):
-        """Test unauthenticated user is redirected."""
-        response = self.client.get(reverse("api_search_users"))
-
-        assert response.status_code == 302
-
-    def test_search_users_by_name(self):
-        """Test searching users by name."""
-        company = CompanyFactory()
-        user = FullyActivatedUserFactory(workplace=company)
-
-        UserFactory(first_name="John", last_name="Doe", workplace=company)
-
-        self.client.force_login(user)
-
-        response = self.client.get(reverse("api_search_users"), {"q": "John"})
-
-        # Due to mixin behavior in test environment, redirected to auth
-        assert response.status_code == 302
-        assert "/account/auth" in response.url
-
-    def test_search_excludes_current_user(self):
-        """Test search excludes the current user."""
-        company = CompanyFactory()
-        user = FullyActivatedUserFactory(first_name="John", workplace=company)
-
-        self.client.force_login(user)
-
-        response = self.client.get(reverse("api_search_users"), {"q": "John"})
-
-        # Due to mixin behavior in test environment, redirected to auth
-        assert response.status_code == 302
-        assert "/account/auth" in response.url
-
-    def test_search_sanitizes_query(self):
-        """Test search sanitizes malicious query input."""
-        company = CompanyFactory()
-        user = FullyActivatedUserFactory(workplace=company)
-
-        self.client.force_login(user)
-
-        # Test with potentially malicious input
-        response = self.client.get(
-            reverse("api_search_users"), {"q": "test<script>alert(1)</script>"}
-        )
-
-        # Due to mixin behavior in test environment, redirected to auth
-        assert response.status_code == 302
-        assert "/account/auth" in response.url
-
-
 class TestMentionsListView:
     """Test the MentionsListView."""
 
@@ -984,171 +927,6 @@ class TestAdvancedProfileViews:
         assert response.context["password_change_form"].errors
 
 
-class TestAdvancedUserSearchView:
-    """Additional comprehensive tests for UserSearchView."""
-
-    def setup_method(self):
-        self.client = Client()
-
-    def _assert_response_or_redirect(self, response, expected_status=200):
-        """Helper method to handle authentication redirects in test environment."""
-        if response.status_code == 302 and "/account/" in response.url:
-            # Authentication redirect is acceptable in test environment
-            return True
-        else:
-            assert response.status_code == expected_status
-            return False
-
-    def test_search_by_email(self):
-        """Test searching users by email."""
-        user = UserFactory()
-        company = CompanyFactory()
-        user.workplace = company
-        user.save()
-
-        target_user = UserFactory(email="searchable@example.com", workplace=company)
-
-        with patch.object(
-            type(user),
-            "is_fully_activated",
-            new_callable=PropertyMock,
-            return_value=True,
-        ):
-            self.client.force_login(user)
-
-            response = self.client.get(reverse("api_search_users"), {"q": "searchable"})
-
-            assert response.status_code == 200
-            assert target_user in response.context["users"]
-
-    def test_search_with_at_symbol(self):
-        """Test search query starting with @ symbol."""
-        user = UserFactory()
-        company = CompanyFactory()
-        user.workplace = company
-        user.save()
-
-        target_user = UserFactory(first_name="AtSymbol", workplace=company)
-
-        with patch.object(
-            type(user),
-            "is_fully_activated",
-            new_callable=PropertyMock,
-            return_value=True,
-        ):
-            self.client.force_login(user)
-
-            response = self.client.get(reverse("api_search_users"), {"q": "@AtSymbol"})
-
-            assert response.status_code == 200
-            assert target_user in response.context["users"]
-
-    def test_search_no_company_returns_empty(self):
-        """Test search with user not in any company returns empty results."""
-        user = FullyActivatedUserFactory()  # No workplace
-        self.client.force_login(user)
-
-        response = self.client.get(reverse("api_search_users"), {"q": "anything"})
-
-        # In test environment, may redirect due to authentication requirements
-        if not self._assert_response_or_redirect(response):
-            assert len(response.context["users"]) == 0
-
-    def test_search_limits_results(self):
-        """Test search limits results to 10."""
-        user = UserFactory()
-        company = CompanyFactory()
-        user.workplace = company
-        user.save()
-
-        # Create 15 users with similar names
-        for i in range(15):
-            UserFactory(first_name=f"Similar{i}", workplace=company)
-
-        with patch.object(
-            type(user),
-            "is_fully_activated",
-            new_callable=PropertyMock,
-            return_value=True,
-        ):
-            self.client.force_login(user)
-
-            response = self.client.get(reverse("api_search_users"), {"q": "Similar"})
-
-            assert response.status_code == 200
-            assert len(response.context["users"]) <= 10
-
-    def test_search_with_selected_user_id(self):
-        """Test search with selected_user parameter."""
-        user = UserFactory()
-        company = CompanyFactory()
-        user.workplace = company
-        user.save()
-
-        target_user = UserFactory(workplace=company)
-
-        with patch.object(
-            type(user),
-            "is_fully_activated",
-            new_callable=PropertyMock,
-            return_value=True,
-        ):
-            self.client.force_login(user)
-
-            response = self.client.get(
-                reverse("api_search_users"),
-                {"q": "test", "selected_user": str(target_user.id)},
-            )
-
-            assert response.status_code == 200
-
-    def test_search_with_invalid_selected_user_id(self):
-        """Test search with invalid selected_user parameter."""
-        user = UserFactory()
-        company = CompanyFactory()
-        user.workplace = company
-        user.save()
-
-        with patch.object(
-            type(user),
-            "is_fully_activated",
-            new_callable=PropertyMock,
-            return_value=True,
-        ):
-            self.client.force_login(user)
-
-            response = self.client.get(
-                reverse("api_search_users"),
-                {"q": "test", "selected_user": "invalid_id"},
-            )
-
-            assert response.status_code == 200
-
-    def test_search_with_textarea_content(self):
-        """Test search extracting query from textarea content."""
-        user = UserFactory()
-        company = CompanyFactory()
-        user.workplace = company
-        user.save()
-
-        UserFactory(first_name="Mentioned", workplace=company)
-
-        with patch.object(
-            type(user),
-            "is_fully_activated",
-            new_callable=PropertyMock,
-            return_value=True,
-        ):
-            self.client.force_login(user)
-
-            response = self.client.get(
-                reverse("api_search_users"),
-                {"content": "Hello @Mentioned how are you?", "id": "content"},
-            )
-
-            assert response.status_code == 200
-
-
 class TestAdvancedMentionsListView:
     """Additional comprehensive tests for MentionsListView."""
 
@@ -1396,7 +1174,6 @@ class TestViewPermissions:
             reverse("account_logout"),
             reverse("account_email_verification_send"),
             reverse("account_mentions"),
-            reverse("api_search_users"),
             reverse("dashboard"),
         ]
 
@@ -1414,7 +1191,6 @@ class TestViewPermissions:
         fully_activated_required_urls = [
             reverse("account_profile"),
             reverse("account_mentions"),
-            reverse("api_search_users"),
             reverse("dashboard"),
         ]
 

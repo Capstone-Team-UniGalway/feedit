@@ -260,8 +260,10 @@ STATIC_URL = "/assets/"
 # Use WhiteNoise for static file handling in production
 # Add correct CORS headers dynamically using WhiteNoise hook
 if ENVIRONMENT == "production":
+    from app.middleware import set_cors_headers
+
     WHITENOISE_ALLOW_ALL_ORIGINS = False
-    WHITENOISE_ADD_HEADERS_FUNCTION = "app.middleware.set_cors_headers"
+    WHITENOISE_ADD_HEADERS_FUNCTION = set_cors_headers
     MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
 
