@@ -346,7 +346,6 @@ CKEDITOR_5_CONFIGS = {
             "codeBlock",
             "|",
             "horizontalLine",
-            "pageBreak",
             "|",
             "sourceEditing",
         ],
@@ -415,6 +414,15 @@ CKEDITOR_5_CONFIGS = {
                     "title": "Heading 3",
                     "class": "ck-heading_heading3",
                 },
+            ]
+        },
+        "mention": {
+            "feeds": [
+                {
+                    "marker": "@",
+                    "feed": [],  # 👈 just an empty placeholder, injected via widget
+                    "minimumCharacters": 0,
+                }
             ]
         },
     },

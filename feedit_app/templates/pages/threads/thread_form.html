@@ -1,5 +1,4 @@
 {% load widget_tweaks %}
-{% load mention_tags %}
 
 <c-layouts.base>
     <div class="max-w-3xl mx-auto">
@@ -19,6 +18,7 @@
             <div class="p-6">
                 <form method="post">
                     {% csrf_token %}
+                    {{ form.media }}
                     {% if form.non_field_errors %}
                     <div class="alert alert-error mb-4">
                         {% for error in form.non_field_errors %}
@@ -33,7 +33,7 @@
                             <span class="label-text">{{ field.label }}</span>
                             {% if field.help_text %}
                             <div class="tooltip">
-                                <div class="tooltip-content">{{ field.help_text|safe }}</div>
+                                <div class="tooltip-content">{{ field.help_text }}</div>
                                 <i class="fas fa-circle-info"></i>
                             </div>
                             {% endif %}
@@ -41,11 +41,7 @@
                         {% for error in field.errors %}
                         <p class="text-sm text-error">{{ error }}</p>
                         {% endfor %}
-                        {% if field.name == "content" %}
-                        {% mention_input name="content" id="reply_content_top" css_class="min-h-32" placeholder="Write your reply here..." required=True %}
-                        {% else %}
                         {{ field }}
-                        {% endif %}
                     </div>
                     {% endfor %}
 
@@ -60,22 +56,4 @@
             </div>
         </div>
     </div>
-
-    <style nonce="{{ request.csp_nonce }}">
-        /* Mention styling for thread creation form */
-        a.mention {
-            color: var(--color-primary);
-            font-weight: 500;
-            background-color: color-mix(in oklab, var(--color-primary) 10%, transparent);
-            padding: 0.125rem 0.25rem;
-            border-radius: 0.25rem;
-            text-decoration: none;
-            transition: background-color 0.2s;
-        }
-
-        a.mention:hover {
-            background-color: color-mix(in oklab, var(--color-primary) 20%, transparent);
-            text-decoration: none;
-        }
-    </style>
 </c-layouts.base>

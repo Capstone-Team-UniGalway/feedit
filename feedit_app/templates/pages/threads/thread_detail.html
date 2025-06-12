@@ -107,7 +107,10 @@
                     <form method="post" action="{% url 'thread_reply' thread.pk %}">
                         {% csrf_token %}
                         <div class="form-control mb-4">
-                            {% mention_input name="content" id="reply_content_top" css_class="min-h-32" placeholder="Write your reply here..." required=True %}
+                            {{ reply_form.media }}
+                            {% for field in reply_form.visible_fields %}
+                            {{ field }}
+                            {% endfor %}
                             {% if reply_form.content.errors %}
                             <p class="text-red-500 text-sm mt-1">{{ reply_form.content.errors.0 }}</p>
                             {% endif %}

@@ -18,7 +18,6 @@ from .views import (
     MentionsListView,
     ProfileView,
     ResendEmailVerificationView,
-    UserSearchView,
 )
 
 urlpatterns = [
@@ -84,7 +83,6 @@ urlpatterns = [
         ReauthenticateView.as_view(),
         name="account_reauthenticate",
     ),
-    path("api/search-users/", UserSearchView.as_view(), name="api_search_users"),
     # This must be the last path as it takes everything after /account/ as identifier
     path("<str:identifier>/", ProfileView.as_view(), name="account_public_profile"),
 ]

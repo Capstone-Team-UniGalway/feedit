@@ -1,3 +1,4 @@
+{% load mention_tags %}
 <c-layouts.base>
     <div class="container mx-auto">
         <!-- Header -->
@@ -92,7 +93,7 @@
                         {% endif %}
                     </div>
                     <div class="prose max-w-none line-clamp-3 mb-4">
-                        {{ thread.content|safe|truncatewords_html:30 }}
+                        {{ thread.content|render_mentions|truncatewords_html:30|safe }}
                     </div>
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-2">
@@ -167,6 +168,22 @@
         .badge-announcement {
             background-color: var(--color-secondary);
             color: var(--color-secondary-content);
+        }
+
+        /* Mention styling */
+        a.mention {
+            color: var(--color-primary);
+            font-weight: 500;
+            background-color: color-mix(in oklab, var(--color-primary) 10%, transparent);
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+
+        a.mention:hover {
+            background-color: color-mix(in oklab, var(--color-primary) 20%, transparent);
+            text-decoration: none;
         }
     </style>
 </c-layouts.base>
