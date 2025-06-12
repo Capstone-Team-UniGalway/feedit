@@ -23,6 +23,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 from django.views.generic import TemplateView
 from django.views.static import serve
+from django_prometheus.exports import ExportToDjangoView
 
 from .views import WelcomeView
 
@@ -50,6 +51,7 @@ urlpatterns = [
     path("notifications/", include("notifications.urls")),
     path("uploads/", include("secure_files.urls")),
     path("upload/", include("django_ckeditor_5.urls")),
+    path("metrics/", ExportToDjangoView, name="prometheus-metrics"),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # 👇 Only serve /media in development

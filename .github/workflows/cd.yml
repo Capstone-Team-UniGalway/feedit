@@ -97,29 +97,36 @@ jobs:
 
             echo "Logging in to ECR...."
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REPOSITORY_URI }}
-            echo "Logged in successfuly..."
+            echo "Logged in successfully..."
+
+            echo "Ensuring Docker network 'feedit' exists..."
+            docker network inspect feedit >/dev/null 2>&1 || docker network create feedit
 
             echo "Listing current Docker images..."
             docker images
 
-            echo "Pruning unused Docker data (containers, images, networks, volumes)..."
-            docker system prune -af --volumes
+            echo "Pruning unused Docker data (safe)..."
+            docker container prune -f
+            docker image prune -af
 
-            echo "Removing ALL Docker images manually (if any left dangling)..."
+            echo "Removing ALL dangling Docker images (if any)..."
             docker rmi -f $(docker images -aq) || true
 
             echo "Pulling image from ECR ..."
             docker pull ${{ env.ECR_REPOSITORY_URI }}:latest
             echo "Docker pull completed..."
 
-            echo "Stop the current running container if exist..."
+            echo "Stop the current running container if it exists..."
             docker stop feedit-app || true
 
             echo "Remove the previous container..."
             docker rm feedit-app || true
 
-            echo "Running the container"
-            docker run -d --name feedit-app -p 8000:8000 \
+            echo "Running the new container..."
+            docker run -d --name feedit-app \
+              --network feedit \
+              --restart unless-stopped \
+              -p 8000:8000 \
               -e DJANGO_ENV=production \
               -e AWS_REGION=${{ env.AWS_REGION }} \
               -e DJANGO_AWS_SECRET_NAME=${{ secrets.DJANGO_AWS_SECRET_NAME }} \
