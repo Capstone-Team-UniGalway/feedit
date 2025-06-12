@@ -55,7 +55,7 @@ if ENVIRONMENT == "development":
 else:
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.postgresql",
+            "ENGINE": "django_prometheus.db.backends.postgresql",
             "NAME": env("DB_NAME"),
             "USER": env("DB_USER"),
             "PASSWORD": env("DB_PASSWORD"),
@@ -121,6 +121,7 @@ INSTALLED_APPS = [
     "allauth.mfa",
     "django_cotton",
     "django_ckeditor_5",
+    "django_prometheus",
     "widget_tweaks",
     "csp",
     # created
@@ -135,6 +136,7 @@ INSTALLED_APPS = [
 
 
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "csp.middleware.CSPMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -146,6 +148,7 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
     "accounts.middleware.AdminMFAEnforcementMiddleware",
     "accounts.middleware.SessionSecurityMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 ROOT_URLCONF = "app.urls"
