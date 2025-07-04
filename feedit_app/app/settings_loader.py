@@ -1,7 +1,9 @@
+import importlib
 import json
 import os
 
 import boto3
+import django.core.files.storage
 
 
 def load_secrets():
@@ -21,3 +23,5 @@ def load_secrets():
 
     for key, value in secrets.items():
         os.environ.setdefault(key, value)  # only sets if not already present
+
+    importlib.reload(django.core.files.storage)
