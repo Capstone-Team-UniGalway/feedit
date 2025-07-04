@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from threads.models import Thread
+from django.utils.module_loading import import_string
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 ALLOWED_MODELS = [get_user_model(), Company, Thread, Request, RequestReply]
@@ -82,6 +83,14 @@ class SecureFile(BaseModel):
     size = models.PositiveIntegerField(editable=False)
 
     def save(self, *args, **kwargs):
+        # ✅ Force correct storage backend in production
+        if settings.ENVIRONMENT == "production" and not isinstance(
+            self.file.storage, import_string(settings.DEFAULT_FILE_STORAGE)
+        ):
+            storage_class = import_string(settings.DEFAULT_FILE_STORAGE)
+            self.file.storage = storage_class()
+            print(f"📦 Forcing file storage to {self.file.storage.__class__.__name__}")
+
         model = self.content_type.model
 
         # 🔒 Skip validation if part of soft-deletion

@@ -43,6 +43,7 @@ class PublicCompanyListView(ListView):
                 author=user,
                 type="join",  # Using string value instead of enum
                 status="pending",  # Using string value instead of enum
+                is_deleted=False,
             ).values_list("company_id", flat=True)
 
             context["pending_requests"] = list(pending_requests)
@@ -118,6 +119,7 @@ class CompanyDetailView(DetailView):
                     company=company,
                     type="join",  # Using string value instead of enum
                     status="pending",  # Using string value instead of enum
+                    is_deleted=False,
                 ).exists()
 
                 context["pending_requests"] = (
