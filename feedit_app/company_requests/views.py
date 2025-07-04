@@ -156,8 +156,9 @@ class CreateRequestView(FullyActivatedUserMixin, CreateView):
         file = self.request.FILES.get("verification_document")
         if file:
             SecureFile.objects.create(
-                content_type=ContentType.objects.get_for_model(Request),
-                object_id=self.object.id,
+                # content_type=ContentType.objects.get_for_model(Request),
+                # object_id=self.object.id,
+                content_object=self.object,
                 file=file,
                 uploaded_by=self.request.user,
             )
@@ -398,8 +399,9 @@ class CreateRequestReplyView(FullyActivatedUserMixin, CreateView):
         file = self.request.FILES.get("upload_document")
         if file:
             SecureFile.objects.create(
-                content_type=ContentType.objects.get_for_model(RequestReply),
-                object_id=self.object.id,
+                # content_type=ContentType.objects.get_for_model(RequestReply),
+                # object_id=self.object.id,
+                content_object=self.object,
                 file=file,
                 uploaded_by=self.request.user,
             )

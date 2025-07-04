@@ -31,7 +31,7 @@ def upload_to(instance, filename):
     model = instance.content_type.model
     obj = instance.content_object
 
-    if not obj:
+    if not obj or not hasattr(obj, "id") or not obj.id:
         return f"unresolved/{model}/unsaved/{filename}"
 
     # User and company profile pictures
