@@ -20,8 +20,8 @@ load_secrets()  # ✅ Load AWS secrets before using env() - production only
 # Build paths inside the project like this: BASE_DIR / 'subdir'
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Storage backend
-DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+# # Storage backend
+# DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
 # Initialize environ first
 env = environ.Env(DEBUG=(bool, False))
